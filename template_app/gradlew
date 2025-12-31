@@ -1,5 +1,0 @@
-#!/usr/bin/env sh
-# Placeholder wrapper. Use the parent repo wrapper for now.
-echo "Use ../gradlew from the parent repo: cd .. && ./gradlew -p template_app :app:installDebug"
-exit 1
-

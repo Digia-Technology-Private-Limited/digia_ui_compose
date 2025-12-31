@@ -20,5 +20,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "digia_ui_compose"
-include(":app")
 include(":digia-ui")

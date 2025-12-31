@@ -1,2 +1,6 @@
-<manifest />
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Digia UI Library Manifest -->
+    <!-- Library doesn't need permissions or activities -->
+</manifest>
 

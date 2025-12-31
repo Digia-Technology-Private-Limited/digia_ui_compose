@@ -41,6 +41,10 @@ android {
         compose = true
     }
 
+    composeOptions {
+        kotlinCompilerExtensionVersion = "1.4.3"
+    }
+
 
     packaging {
         resources {
@@ -50,10 +54,10 @@ android {
 
     sourceSets {
         getByName("main") {
-            java.srcDirs("../app/src/main/java")
-            res.srcDirs("../app/src/main/res")
-            assets.srcDirs("../app/src/main/assets")
-            manifest.srcFile("../app/src/main/AndroidManifest.xml")
+            java.srcDirs("src/main/java")
+            res.srcDirs("src/main/res")
+            assets.srcDirs("src/main/assets")
+            manifest.srcFile("src/main/AndroidManifest.xml")
         }
     }
 }
@@ -137,6 +141,7 @@ afterEvaluate {
                 name = "local"
                 url = uri(layout.buildDirectory.dir("repo"))
             }
+
         }
     }
 }
