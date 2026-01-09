@@ -3,9 +3,11 @@ package com.digia.digiaui.framework
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
+import com.digia.digiaui.framework.actions.base.ActionFlow
 import com.digia.digiaui.framework.expr.ScopeContext
 import com.digia.digiaui.framework.expression.evaluate
 import com.digia.digiaui.framework.models.ExprOr
+import com.digia.digiaui.framework.utils.JsonLike
 import com.digia.digiaui.network.APIModel
 import defaultTextStyle
 import makeTextStyle
@@ -59,6 +61,24 @@ data class RenderPayload(
         copy(
             scopeContext = chainExprContext(scopeContext)
         )
+
+    /* ---------------- Action execution ---------------- */
+
+    /**
+     * Executes an action flow with optional trigger context
+     * Currently a stub - will be implemented when action executor is available
+     */
+    fun executeAction(
+        actionJson: JsonLike?,
+        triggerType: String? = null
+    ) {
+        if (actionJson == null) return
+        
+        // TODO: Implement action execution when ActionExecutor is ready
+        // For now, this is a no-op to prevent compilation errors
+        // val actionFlow = ActionFlow.fromJson(actionJson)
+        // actionExecutor.execute(actionFlow, scopeContext, triggerType)
+    }
 }
 
 
