@@ -1,6 +1,7 @@
 package com.digia.digiaui.framework.widgets
 
 import com.digia.digiaui.framework.DefaultVirtualWidgetRegistry
+import com.digia.digiaui.framework.widgets.icon.iconBuilder
 
 /** Register all built-in widgets with the registry */
 fun DefaultVirtualWidgetRegistry.registerBuiltInWidgets() {
@@ -19,6 +20,15 @@ fun DefaultVirtualWidgetRegistry.registerBuiltInWidgets() {
 
     // Register Button Widget widget
     register("digia/button", ::buttonBuilder) 
+
+    register("digia/lottie", ::lottieBuilder)
+
+    // Register Icon widget
+    register("digia/icon", ::iconBuilder)
+
+    // Register Wrap widget
+    register("digia/wrap", ::wrapBuilder)
+    register("digia/videoPlayer", ::videoPlayerBuilder)
 
     // Register Scaffold widget (commented out for now)
     // register("digia/scaffold", ::scaffoldBuilder)
