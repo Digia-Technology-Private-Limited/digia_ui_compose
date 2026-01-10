@@ -30,6 +30,21 @@ fun DefaultVirtualWidgetRegistry.registerBuiltInWidgets() {
     register("digia/wrap", ::wrapBuilder)
     register("digia/videoPlayer", ::videoPlayerBuilder)
 
+    // Register RichText widget
+    register("digia/richText", ::richTextBuilder)
+
+    // Register Image widget
+    register("digia/image", ::imageBuilder)
+
+    // Register CircularProgress widget
+    register("digia/circularProgress", ::circularProgressBuilder)
+
+    // Register TextFormField widget
+    register("digia/textFormField", ::textFormFieldBuilder)
+
+    // Register Carousel widget
+    register("digia/carousel", ::carouselBuilder)
+
     // Register Scaffold widget (commented out for now)
     // register("digia/scaffold", ::scaffoldBuilder)
 }
