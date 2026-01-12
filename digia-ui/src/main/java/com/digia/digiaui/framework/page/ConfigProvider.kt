@@ -73,6 +73,13 @@ abstract class ConfigProvider {
      * represents a component or doesn't exist.
      */
     abstract fun isPage(id: String): Boolean
+
+    /**
+     * Gets the complete DUIConfig instance.
+     *
+     * @return The full configuration object
+     */
+    abstract fun getConfig(): DUIConfig
 }
 
 /**
@@ -139,4 +146,6 @@ class DUIConfigProvider(
     }
 
     override fun isPage(id: String): Boolean = config.pages.containsKey(id)
+
+    override fun getConfig(): DUIConfig = config
 }

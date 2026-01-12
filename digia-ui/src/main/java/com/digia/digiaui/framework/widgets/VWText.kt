@@ -56,7 +56,7 @@ class VWText(
     @Composable
     override fun Render(payload: RenderPayload) {
         // Evaluate expressions
-        val text = payload.evalExpr(props.text) ?: ""
+        val text = payload.evalObserve(props.text) ?: ""
         val style = payload.textStyle(props.textStyle)
         val maxLines = payload.evalExpr(props.maxLines)
         val alignmentStr = payload.evalExpr(props.alignment)

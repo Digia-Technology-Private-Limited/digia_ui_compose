@@ -131,7 +131,7 @@ data class Variable(val name: String, val type: String, val defaultValue: Any? =
             return Variable(
                     name = json["name"] as? String ?: "",
                     type = json["type"] as? String ?: "any",
-                    defaultValue = json["defaultValue"]
+                    defaultValue = tryKeys(json, listOf("defaultValue", "default"))
             )
         }
     }

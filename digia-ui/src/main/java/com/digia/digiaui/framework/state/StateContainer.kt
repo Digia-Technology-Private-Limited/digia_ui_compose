@@ -20,7 +20,7 @@ class VWStateContainer(
     parent: VirtualNode?,
     parentProps: Props?,
     private val initStateDefs: Map<String, Variable>,
-    private val childGroups: Map<String, List<VirtualNode>>?,
+    private val childGroups: Map<String, List<VirtualNode>>?
 ) : VirtualNode(refName, parent, parentProps) {
 
     // Get the first child from childGroups (similar to Flutter implementation)

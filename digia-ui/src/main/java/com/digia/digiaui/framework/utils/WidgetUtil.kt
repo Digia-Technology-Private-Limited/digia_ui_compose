@@ -17,13 +17,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.digia.digiaui.framework.RenderPayload
+import com.digia.digiaui.framework.actions.LocalActionExecutor
 import com.digia.digiaui.framework.actions.base.ActionFlow
 import com.digia.digiaui.framework.color
 import com.digia.digiaui.framework.models.CommonProps
 import com.digia.digiaui.framework.models.CommonStyle
+import com.digia.digiaui.framework.state.LocalStateContextProvider
+
 val PaddingValuesZero = PaddingValues(0.dp)
 
 
@@ -34,6 +38,12 @@ fun Modifier.applyCommonProps(
 ): Modifier {
     if (commonProps == null) return this
 
+    // Capture action executor and context at Composable scope level
+    val actionExecutor = LocalActionExecutor.current
+    // Use applicationContext to prevent memory leaks - it lives for app lifetime
+    val context = LocalContext.current.applicationContext
+
+    val stateContext= LocalStateContextProvider.current
     val style = commonProps.style
 
     var modifier = this
@@ -85,10 +95,12 @@ fun Modifier.applyCommonProps(
     val actionFlow = commonProps.onClick
     if (actionFlow != null && actionFlow.actions.isNotEmpty()) {
         modifier = modifier.clickable {
-//            payload.executeAction(
-//                actionFlow = actionFlow,
-//                triggerType = "onTap"
-//            )
+            payload.executeAction(
+                context = context,
+                actionFlow = actionFlow,
+                stateContext= stateContext,
+                actionExecutor = actionExecutor
+            )
         }
     }
     val padding = ToUtils.edgeInsets(style?.margin)

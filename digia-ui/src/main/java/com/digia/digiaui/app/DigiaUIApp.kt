@@ -7,6 +7,7 @@ import com.digia.digiaui.analytics.DUIAnalytics
 import com.digia.digiaui.core.DigiaUIScope
 import com.digia.digiaui.framework.DUIFactory
 import com.digia.digiaui.framework.DUIFontFactory
+import com.digia.digiaui.framework.appstate.DUIAppState
 import com.digia.digiaui.framework.logging.Logger
 import com.digia.digiaui.framework.message.MessageBus
 import com.digia.digiaui.framework.page.ConfigProvider
@@ -64,42 +65,55 @@ fun DigiaUIApp(
     environmentVariables: Map<String, Any?>? = null,
     content: @Composable () -> Unit
 ) {
-    // Initialize on first composition
-    DisposableEffect(digiaUI) {
-        // Initialize the Digia UI manager with the provided configuration
+
+    var isReady by remember { mutableStateOf(false) }
+
+    /**
+     * One-time async initialization
+     */
+    LaunchedEffect(digiaUI) {
         DigiaUIManager.initialize(digiaUI)
 
-        // Initialize global app state with configuration from DSL
-        // DUIAppState.init(digiaUI.config.appState ?: emptyList())
+        DUIAppState.instance.init(
+            digiaUI.dslConfig.appState ?: emptyList()
+        )
 
-        // Set up the UI factory with custom resources and providers
-        DUIFactory.getInstance()
-                .initialize(
-                        config = digiaUI.dslConfig,
-                        pageConfigFetcher = pageConfigFetcher,
-                        icons = icons as Map<String, ImageVector>?,
-                        images = images as Map<String, ImageBitmap>?,
-                        fontFactory = fontFactory as DUIFontFactory?
-                        )
+        DUIFactory.getInstance().initialize(
+            config = digiaUI.dslConfig,
+            pageConfigFetcher = pageConfigFetcher,
+            icons = icons ,
+            images = images ,
+            fontFactory = fontFactory as DUIFontFactory?
+        )
 
-        // Apply environment variables if provided
-        environmentVariables?.let { DUIFactory.getInstance().setEnvironmentVariables(it) }
+        environmentVariables?.let {
+            DUIFactory.getInstance().setEnvironmentVariables(it)
+        }
 
+        isReady = true
         Logger.log("DigiaUIApp initialized")
+    }
 
+    /**
+     * Cleanup (non-suspending)
+     */
+    DisposableEffect(Unit) {
         onDispose {
-            // Clean up all Digia UI resources when disposed
             DigiaUIManager.destroy()
             DUIFactory.getInstance().destroy()
             Logger.log("DigiaUIApp disposed")
         }
     }
 
-    // Wrap the child composable tree with DigiaUIScope to provide
-    // analytics and message bus context to all descendant composables
+    if(!isReady){
+        // Optionally, you can show a loading indicator here
+        return
+    }
+
     DigiaUIScope(
-            messageBus = messageBus,
-            analytics = analytics,
-            content = content
-    )
+        messageBus = messageBus,
+        analytics = analytics
+    ) {
+        content()
+    }
 }

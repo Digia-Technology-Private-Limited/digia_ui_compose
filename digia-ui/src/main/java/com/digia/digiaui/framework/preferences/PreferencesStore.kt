@@ -3,6 +3,7 @@ package com.digia.digiaui.framework.preferences
 import android.content.Context
 import android.content.SharedPreferences
 import com.digia.digiaui.framework.logging.Logger
+import androidx.core.content.edit
 
 /**
  * PreferencesStore provides a centralized way to access SharedPreferences.
@@ -92,5 +93,28 @@ class PreferencesStore private constructor() {
                 Logger.log("PreferencesStore initialized")
             }
         }
+    }
+}
+
+
+interface KeyValueStorage {
+    fun getString(key: String): String?
+    fun putString(key: String, value: String)
+    fun remove(key: String)
+}
+
+class AndroidKeyValueStorage(
+    private val prefs: SharedPreferences
+) : KeyValueStorage {
+
+    override fun getString(key: String): String? =
+        prefs.getString(key, null)
+
+    override fun putString(key: String, value: String) {
+        prefs.edit { putString(key, value) }
+    }
+
+    override fun remove(key: String) {
+        prefs.edit { remove(key) }
     }
 }

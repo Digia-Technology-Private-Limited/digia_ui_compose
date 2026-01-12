@@ -5,6 +5,8 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.snapshots.Snapshot
 
 class StateContext(
     val namespace: String? = null,
@@ -57,13 +59,11 @@ class StateContext(
         return owner.values[key]
     }
 
-    @Composable
     fun observe(stateName: String) {
         if (stateName == namespace) {
-            scopeVersion.intValue
+            scopeVersion.intValue // 👈 subscription point
             return
         }
-
         tree.parentOf(this)?.observe(stateName)
     }
 
@@ -77,15 +77,19 @@ class StateContext(
 
     /* ---------------- Flush ---------------- */
 
-    private fun flush() {
-        scopeVersion.intValue++
+     fun flush() {
+        Snapshot.withMutableSnapshot {
+            scopeVersion.intValue++
+        }
         dirty = false
 
         tree.childrenOf(this).forEach { it.flushFromParent() }
     }
 
     private fun flushFromParent() {
-        scopeVersion.intValue++
+        Snapshot.withMutableSnapshot {
+            scopeVersion.intValue++
+        }
         dirty = false
 
         tree.childrenOf(this).forEach { it.flushFromParent() }
@@ -103,5 +107,9 @@ class StateContext(
 
     fun containsLocal(key: String): Boolean =
         values.containsKey(key)
+
+    fun debugVersion(): Int = scopeVersion.intValue
+
 }
+
 

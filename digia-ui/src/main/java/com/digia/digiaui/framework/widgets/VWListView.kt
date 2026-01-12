@@ -1,10 +1,7 @@
 package com.digia.digiaui.framework.widgets
 
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -21,7 +18,6 @@ import com.digia.digiaui.framework.models.CommonProps
 import com.digia.digiaui.framework.models.Props
 import com.digia.digiaui.framework.models.VWNodeData
 import com.digia.digiaui.framework.utils.JsonLike
-import com.digia.digiaui.framework.utils.applyIf
 
 /**
  * Scroll direction for ListView
@@ -108,14 +104,14 @@ class VWListView(
             }
         }
 
-        val listModifier = if (shrinkWrap) Modifier.wrapContentHeight() else Modifier
+        val listModifier = if (shrinkWrap) Modifier else Modifier.fillMaxWidth()
 
         when (scrollDirection) {
             ScrollDirection.VERTICAL -> {
                 LazyColumn(
                     state = listState,
                     reverseLayout = reverse,
-//                    modifier = Modifier.buildModifier(payload).applyIf(!shrinkWrap,{ Modifier.fillMaxHeight()})
+                    modifier = listModifier
                 ) {
                     itemsIndexed(items) { index, item ->
                         val scopedPayload = payload.copyWithChainedContext(
@@ -126,14 +122,11 @@ class VWListView(
                 }
             }
 
-
-
             ScrollDirection.HORIZONTAL -> {
                 LazyRow(
                     state = listState,
                     reverseLayout = reverse,
-//                    modifier = Modifier.buildModifier(payload)
-//                      .applyIf(shrinkWrap,{ Modifier.fillMaxWidth()})
+                    modifier = listModifier
                 ) {
                     itemsIndexed(items) { index, item ->
                         val scopedPayload = payload.copyWithChainedContext(

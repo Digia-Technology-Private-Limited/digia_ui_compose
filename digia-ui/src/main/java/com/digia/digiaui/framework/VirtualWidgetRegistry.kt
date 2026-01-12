@@ -9,6 +9,7 @@ import com.digia.digiaui.framework.models.VWComponentData
 import com.digia.digiaui.framework.models.VWData
 import com.digia.digiaui.framework.models.VWNodeData
 import com.digia.digiaui.framework.models.VWStateData
+import com.digia.digiaui.framework.state.VWStateContainer
 import com.digia.digiaui.framework.utils.JsonLike
 
 /** Type alias for widget builder functions */
@@ -73,9 +74,15 @@ class DefaultVirtualWidgetRegistry(private val componentBuilder: ComponentBuilde
                 )
             }
             is VWStateData -> {
-                // State containers would be implemented with State management
-                // For now, just render children
-                throw NotImplementedError("State containers not yet implemented")
+                // Create state container widget with resolved children
+                val childGroups = createChildGroups(data.childGroups, parent, this)
+                VWStateContainer(
+                    refName = data.refName,
+                    parent = parent,
+                    parentProps = data.parentProps,
+                    initStateDefs = data.initStateDefs,
+                    childGroups = childGroups
+                )
             }
         }
     }

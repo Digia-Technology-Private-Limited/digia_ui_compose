@@ -1,12 +1,20 @@
 package com.digia.digiaui.framework
 
+import android.content.Context
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
+import com.digia.digiaui.framework.actions.ActionExecutor
+import com.digia.digiaui.framework.actions.LocalActionExecutor
+import com.digia.digiaui.framework.actions.base.ActionFlow
 import com.digia.digiaui.framework.expr.ScopeContext
 import com.digia.digiaui.framework.expression.evaluate
 import com.digia.digiaui.framework.models.ExprOr
 import com.digia.digiaui.framework.state.LocalStateContextProvider
+import com.digia.digiaui.framework.state.StateContext
 import com.digia.digiaui.framework.state.StateScopeContext
 import com.digia.digiaui.network.APIModel
 import defaultTextStyle
@@ -53,22 +61,62 @@ data class RenderPayload(
         val stateContext= LocalStateContextProvider.current
 stateContext?.startTracking()
         val data =evaluate(expression, chainExprContext(scopeContext), decoder)
-     val trackList=   stateContext?.stopTracking()
+        val trackList=   stateContext?.stopTracking()
         trackList?.forEach { e -> stateContext.observe(e) }
         return data
     }
 
     @Composable
-    inline fun  <reified T : Any> evalObserve(
+    inline fun <reified T : Any> evalObserve(
         expr: ExprOr<T>?,
         noinline decoder: ((Any) -> T?)? = null
     ): T? {
-        val stateContext = LocalStateContextProvider.current
-        stateContext?.startTracking()
-        val data= expr?.evaluate(scopeContext, decoder)
-        val trackList=   stateContext?.stopTracking()
-        trackList?.forEach { e -> stateContext.observe(e) }
-        return data
+        val stateContext = LocalStateContextProvider.current ?: return null
+
+        // 🔥 DerivedState anchors observation
+        val value by remember(expr) {
+            derivedStateOf {
+                stateContext.startTracking()
+                val result = expr?.evaluate(scopeContext, decoder)
+                val deps = stateContext.stopTracking()
+
+                // 🔥 READ ALL DEPENDENCY VERSIONS HERE
+                deps.forEach { name ->
+                    stateContext?.observe(name)
+                }
+
+                result
+            }
+        }
+
+        return value
+    }
+
+
+    /**
+     * Executes an ActionFlow (sequence of actions).
+     * This matches the Dart executeAction implementation.
+     */
+    fun executeAction(
+        context: Context,
+        actionFlow: ActionFlow?,
+        actionExecutor: ActionExecutor,
+        stateContext: StateContext?,
+        incomingScopeContext: ScopeContext? = null,
+    ): Any? {
+        if (actionFlow == null) return null
+
+        // Chaining context ensures the action can see variables from the
+        // current widget/row and the global state.
+        val combinedContext = chainExprContext(incomingScopeContext)
+
+        return actionExecutor?.execute(
+            context = context,
+            actionFlow = actionFlow,
+            scopeContext = combinedContext,
+            stateContext =stateContext,
+//            id = com.android.identity.util.UUID.randomUUID().toString()
+        )
     }
 
 

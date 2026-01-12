@@ -171,6 +171,8 @@ data class DUIConfig(
         return resources[id] as? Map<String, Any>
                 ?: throw NoSuchElementException("API model with id '$id' not found")
     }
+    
+
 
     companion object {
         /** Creates a DUIConfig instance from a JSON string */

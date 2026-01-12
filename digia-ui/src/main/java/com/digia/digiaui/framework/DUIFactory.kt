@@ -7,6 +7,8 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
 import com.digia.digiaui.config.model.DUIConfig
+import com.digia.digiaui.framework.actions.ActionExecutor
+import com.digia.digiaui.framework.actions.ActionProvider
 import com.digia.digiaui.framework.logging.Logger
 import com.digia.digiaui.framework.models.ComponentDefinition
 import com.digia.digiaui.framework.models.PageDefinition
@@ -162,15 +164,19 @@ class DUIFactory private constructor() {
             darkColors = mergeMap(resources.darkColors, overrideDarkColors),
             fontFactory = resources.fontFactory
         )
+        ActionProvider(
+         actionExecutor = ActionExecutor()
+        ){
 
-        ResourceProvider(mergedResources, apiModels = configProvider.getAllApiModels()) {
-            DUIPage(
-                pageId = pageId,
-                pageArgs = pageArgs,
-                pageDef = pageDef,
-                registry = widgetRegistry,
+            ResourceProvider(mergedResources, apiModels = configProvider.getAllApiModels()) {
+                DUIPage(
+                    pageId = pageId,
+                    pageArgs = pageArgs,
+                    pageDef = pageDef,
+                    registry = widgetRegistry,
 //                resources = mergedResources
-            )
+                )
+            }
         }
     }
 
@@ -208,6 +214,58 @@ class DUIFactory private constructor() {
             overrideColors = overrideColors,
             overrideDarkColors = overrideDarkColors
         )
+    }
+
+    /**
+     * Creates a navigation host with all pages from configuration.
+     *
+     * This creates a NavHost that manages navigation between all pages defined in the config.
+     * Use this when you want full navigation support with back stack management.
+     *
+     * @param startPageId Optional custom start page ID (defaults to config's initialRoute)
+     * @param overrideIcons Custom icons to override defaults
+     * @param overrideImages Custom images to override defaults
+     * @param overrideTextStyles Custom text styles to override defaults
+     * @param overrideColors Custom colors to override defaults
+     * @param overrideDarkColors Custom dark colors to override defaults
+     *
+     * @throws IllegalStateException if factory is not initialized
+     */
+    @Composable
+    fun CreateNavHost(
+        startPageId: String? = null,
+        overrideIcons: Map<String, ImageVector>? = null,
+        overrideImages: Map<String, ImageBitmap>? = null,
+        overrideTextStyles: Map<String, TextStyle>? = null,
+        overrideColors: Map<String, Color>? = null,
+        overrideDarkColors: Map<String, Color>? = null
+    ) {
+        checkInitialized()
+
+        // Get initial route from config if not specified
+        val initialRoute = startPageId ?: configProvider.getInitialRoute()
+
+        // Merge overriding resources with existing resources
+        val mergedResources = UIResources(
+            icons = mergeMap(resources.icons, overrideIcons),
+            images = mergeMap(resources.images, overrideImages),
+            textStyles = mergeMap(resources.textStyles, overrideTextStyles),
+            colors = mergeMap(resources.colors, overrideColors),
+            darkColors = mergeMap(resources.darkColors, overrideDarkColors),
+            fontFactory = resources.fontFactory
+        )
+
+        ActionProvider(
+            actionExecutor = ActionExecutor()
+        ) {
+            ResourceProvider(mergedResources, apiModels = configProvider.getAllApiModels()) {
+                com.digia.digiaui.framework.navigation.DUINavHost(
+                    configProvider = configProvider,
+                    startPageId = initialRoute,
+                    registry = widgetRegistry
+                )
+            }
+        }
     }
 
     /**

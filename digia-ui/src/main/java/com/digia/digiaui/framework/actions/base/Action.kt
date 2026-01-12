@@ -7,11 +7,16 @@ import com.digia.digiaui.framework.utils.JsonLike
 enum class ActionType(val value: String) {
     SHOW_TOAST("Action.showToast"),
     SET_STATE("Action.setState"),
+    REBUILD_STATE("Action.rebuildState"),
     NAVIGATE_TO_PAGE("Action.navigateToPage"),
     NAVIGATE_BACK("Action.pop"),
     SHOW_DIALOG("Action.openDialog"),
     SHOW_BOTTOM_SHEET("Action.showBottomSheet"),
-    CALL_REST_API("Action.callRestApi");
+    CALL_REST_API("Action.callRestApi"),
+    OPEN_URL("Action.openUrl"),
+    SET_APP_STATE("Action.setAppState"),
+    GET_APP_STATE("Action.getAppState"),
+    RESET_APP_STATE("Action.resetAppState");
 
     companion object {
         fun fromString(value: String): ActionType {
@@ -28,38 +33,43 @@ data class ActionId(val id: String)
 interface Action {
     val actionType: ActionType
     var actionId: ActionId?
-    val disableActionIf: ExprOr<Boolean>?
+    var disableActionIf: ExprOr<Boolean>?
 
     fun toJson(): JsonLike
 }
 
 /** Action flow - sequence of actions to execute */
-data class ActionFlow(val actions: List<Action>) {
+/** Action flow - sequence of actions to execute */
+data class ActionFlow(
+    val actions: List<Action>,
+    val inkWell: Boolean = true // Added property
+) {
+    fun toJson(): JsonLike {
+        return mapOf(
+            "steps" to actions.map { it.toJson() },
+            "inkWell" to inkWell
+        )
+    }
+
     companion object {
-        fun fromJson(json: JsonLike): ActionFlow {
-            val actionsList = json["actions"] as? List<*> ?: emptyList<Any>()
-            val actions =
-                    actionsList.mapNotNull { actionJson ->
-                        parseAction(actionJson as? JsonLike ?: return@mapNotNull null)
-                    }
-            return ActionFlow(actions)
-        }
+        fun fromJson(json: JsonLike?): ActionFlow? {
+            if(json == null) return null
+            // Dart uses 'inkWell' key
+            val inkWell = (json["inkWell"] as? Boolean) ?: true
 
-        private fun parseAction(json: JsonLike): Action? {
-            val typeStr = json["type"] as? String ?: return null
-            val actionType =
-                    try {
-                        ActionType.fromString(typeStr)
-                    } catch (e: IllegalArgumentException) {
-                        return null // Skip unknown action types
-                    }
+            // Dart looks for 'steps' key
+            val actionsList = json["steps"] as? List<*> ?: emptyList<Any>()
 
-            return when (actionType) {
-//                ActionType.SHOW_TOAST ->
-//                        com.digia.digiaui.framework.actions.showToast.ShowToastAction.fromJson(json)
-                // Other action types will be implemented later
-                else -> null
+            val actions = actionsList.mapNotNull { actionJson ->
+                val jsonMap = actionJson as? JsonLike ?: return@mapNotNull null
+                com.digia.digiaui.framework.actions.ActionFactory.fromJson(jsonMap)
             }
+
+            if (actions.isEmpty()) return null
+
+            return ActionFlow(actions, inkWell)
         }
+
+        fun empty() = ActionFlow(emptyList())
     }
 }
