@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.compositionLocalOf
 import com.digia.digiaui.analytics.DUIAnalytics
+import com.digia.digiaui.framework.actions.showToast.DUISnackbarHost
 import com.digia.digiaui.framework.message.MessageBus
 
 /** CompositionLocal for providing MessageBus down the tree */
@@ -32,7 +33,9 @@ fun DigiaUIScope(
     CompositionLocalProvider(
             LocalMessageBus provides messageBus,
             LocalAnalytics provides analytics,
-            content = content
+            content = {
+                content()
+            }
     )
 }
 

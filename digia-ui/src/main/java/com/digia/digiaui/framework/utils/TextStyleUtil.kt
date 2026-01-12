@@ -6,10 +6,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.sp
 import com.digia.digiaui.framework.DUIFontFactory
+import com.digia.digiaui.framework.UIResources
 import com.digia.digiaui.framework.utils.JsonLike
 import com.digia.digiaui.framework.utils.JsonUtil.Companion.tryKeys
 import com.digia.digiaui.framework.utils.NumUtil
 import com.digia.digiaui.framework.utils.valueFor
+import kotlin.text.get
 
 /* ---------------------------------------------------------
  * Defaults
@@ -31,6 +33,8 @@ fun makeTextStyle(
     json: Map<String, Any?>?,
     eval: (Any?) -> String?,
     fallback: TextStyle? = defaultTextStyle,
+    resources: UIResources? = null,
+    useLocalResources: Boolean = true
 ): TextStyle? {
     if (json == null) return fallback
 
@@ -56,7 +60,7 @@ fun makeTextStyle(
     /* ---------------- Case 2: Token string ---------------- */
 
     if (fontToken is String) {
-        val tokenStyle = resourceTextStyle(fontToken) ?: defaultTextStyle
+        val tokenStyle = resources?.textStyles?.get(fontToken) ?: (if (useLocalResources) resourceTextStyle(fontToken) else null) ?: defaultTextStyle
 
         return tokenStyle.copy(
             color = textColor ?: tokenStyle.color,
@@ -103,8 +107,7 @@ fun makeTextStyle(
     /* -------- Case 3a: Design token selected -------- */
 
     if (tokenValue != null) {
-        val tokenStyle = resourceTextStyle(tokenValue)
-
+        val tokenStyle = resources?.textStyles?.get(tokenValue) ?: (if (useLocalResources) resourceTextStyle(tokenValue) else null)
         if (tokenStyle != null) {
             return tokenStyle.copy(
                 color = textColor ?: tokenStyle.color,
@@ -126,7 +129,8 @@ fun makeTextStyle(
         textDecoration = textDecoration,
     )
 
-    val fontFactory = resourceFontFactory()
+
+    val fontFactory = resources?.fontFactory ?: if (useLocalResources) resourceFontFactory() else null
 
     if (fontFactory != null && overridingFontFamily != null) {
         return fontFactory.getFont(overridingFontFamily, textStyle = resolvedStyle)

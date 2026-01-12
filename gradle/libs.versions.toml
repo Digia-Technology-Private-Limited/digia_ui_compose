@@ -10,6 +10,8 @@ runtime = "1.10.0"
 composeMaterial3 = "1.5.6"
 foundationLayout = "1.10.0"
 animationCore = "1.10.0"
+ui = "1.10.0"
+browser = "1.9.0"
 #navigationRuntimeKtx = "2.9.6"
 
 [libraries]
@@ -63,6 +65,8 @@ androidx-compose-runtime = { group = "androidx.compose.runtime", name = "runtime
 compose-material3 = { group = "androidx.wear.compose", name = "compose-material3", version.ref = "composeMaterial3" }
 androidx-compose-foundation-layout = { group = "androidx.compose.foundation", name = "foundation-layout", version.ref = "foundationLayout" }
 androidx-compose-animation-core = { group = "androidx.compose.animation", name = "animation-core", version.ref = "animationCore" }
+androidx-ui = { group = "androidx.compose.ui", name = "ui", version.ref = "ui" }
+androidx-browser = { group = "androidx.browser", name = "browser", version.ref = "browser" }
 #androidx-navigation-runtime-ktx = { group = "androidx.navigation", name = "navigation-runtime-ktx", version.ref = "navigationRuntimeKtx" }
 
 [plugins]

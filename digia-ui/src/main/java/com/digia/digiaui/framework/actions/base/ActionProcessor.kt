@@ -1,6 +1,8 @@
 package com.digia.digiaui.framework.actions.base
 
 import android.content.Context
+import com.digia.digiaui.framework.RenderPayload
+import com.digia.digiaui.framework.UIResources
 import com.digia.digiaui.framework.expr.ScopeContext
 import com.digia.digiaui.framework.state.StateContext
 
@@ -12,6 +14,7 @@ abstract class ActionProcessor<T : Action> {
         action: T,
         scopeContext: ScopeContext?,
         stateContext: StateContext?,
+        resourceProvider: UIResources?,
         id: String
     ): Any?
 }

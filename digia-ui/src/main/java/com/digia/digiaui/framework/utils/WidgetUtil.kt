@@ -1,5 +1,6 @@
 package com.digia.digiaui.framework.utils
 
+import LocalUIResources
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -42,6 +43,7 @@ fun Modifier.applyCommonProps(
     val actionExecutor = LocalActionExecutor.current
     // Use applicationContext to prevent memory leaks - it lives for app lifetime
     val context = LocalContext.current.applicationContext
+    val re = LocalUIResources.current
 
     val stateContext= LocalStateContextProvider.current
     val style = commonProps.style
@@ -99,6 +101,7 @@ fun Modifier.applyCommonProps(
                 context = context,
                 actionFlow = actionFlow,
                 stateContext= stateContext,
+                resourceProvider = re,
                 actionExecutor = actionExecutor
             )
         }

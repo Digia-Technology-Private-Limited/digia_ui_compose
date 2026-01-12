@@ -1,6 +1,8 @@
 package com.digia.digiaui.framework.actions.navigation
 
 import android.content.Context
+import com.digia.digiaui.framework.RenderPayload
+import com.digia.digiaui.framework.UIResources
 import com.digia.digiaui.framework.actions.base.Action
 import com.digia.digiaui.framework.actions.base.ActionId
 import com.digia.digiaui.framework.actions.base.ActionProcessor
@@ -8,6 +10,7 @@ import com.digia.digiaui.framework.actions.base.ActionType
 import com.digia.digiaui.framework.expr.ScopeContext
 import com.digia.digiaui.framework.models.ExprOr
 import com.digia.digiaui.framework.navigation.NavigationManager
+import com.digia.digiaui.framework.state.StateContext
 import com.digia.digiaui.framework.utils.JsonLike
 
 /**
@@ -45,7 +48,8 @@ class PopPageProcessor : ActionProcessor<PopPageAction>() {
         context: Context,
         action: PopPageAction,
         scopeContext: ScopeContext?,
-        stateContext: com.digia.digiaui.framework.state.StateContext?,
+        stateContext: StateContext?,
+        resourceProvider: UIResources?,
         id: String
     ): Any? {
         // Evaluate result if provided

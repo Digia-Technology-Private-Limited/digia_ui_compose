@@ -141,18 +141,61 @@ class NetworkClient(
             additionalHeaders: Map<String, String>? = null,
             data: Any? = null,
             apiName: String? = null
+    ): ApiResponse<Map<String, Any>> {
+        return try {
+            val response = requestProjectRaw(bodyType, url, method, additionalHeaders, data, apiName)
+            convertToApiResponse(response)
+        } catch (e: Exception) {
+            ApiResponse.Error(
+                message = e.message ?: "Unknown error",
+                exception = e
+            )
+        }
+    }
+
+    private suspend fun requestProjectRaw(
+            bodyType: BodyType,
+            url: String,
+            method: HttpMethod,
+            additionalHeaders: Map<String, String>? = null,
+            data: Any? = null,
+            apiName: String? = null
     ): OkHttpResponse {
         return withContext(Dispatchers.IO) {
             val requestBody =
                     when (bodyType) {
-                        BodyType.JSON ->
-                                data?.toString()?.toRequestBody("application/json".toMediaTypeOrNull())
-                        BodyType.MULTIPART -> data as? RequestBody
-                        BodyType.FORM_URLENCODED ->
-                                data?.toString()
-                                        ?.toRequestBody(
-                                                "application/x-www-form-urlencoded".toMediaTypeOrNull()
-                                        )
+                        BodyType.JSON -> {
+                            if (data == null) {
+                                null
+                            } else {
+                                val json = when (data) {
+                                    is String -> data
+                                    else -> Gson().toJson(data)
+                                }
+                                json.toRequestBody("application/json".toMediaTypeOrNull())
+                            }
+                        }
+                        BodyType.MULTIPART -> {
+                            if (data is FormDataBuilder) {
+                                buildMultipartBody(data)
+                            } else {
+                                data as? RequestBody
+                            }
+                        }
+                        BodyType.FORM_URLENCODED -> {
+                            if (data is Map<*, *>) {
+                                val formBody = FormBody.Builder()
+                                @Suppress("UNCHECKED_CAST")
+                                (data as Map<String, String>).forEach { (key, value) ->
+                                    formBody.add(key, value)
+                                }
+                                formBody.build()
+                            } else {
+                                data?.toString()?.toRequestBody(
+                                    "application/x-www-form-urlencoded".toMediaTypeOrNull()
+                                )
+                            }
+                        }
                         BodyType.GRAPHQL ->
                                 data?.toString()?.toRequestBody("application/json".toMediaTypeOrNull())
                     }
@@ -169,6 +212,62 @@ class NetworkClient(
             filteredAdditionalHeaders?.forEach { (k, v) -> requestBuilder.addHeader(k, v) }
 
             projectClient.newCall(requestBuilder.build()).execute()
+        }
+    }
+
+    private fun buildMultipartBody(formData: FormDataBuilder): RequestBody {
+        val multipartBuilder = MultipartBody.Builder().setType(MultipartBody.FORM)
+        
+        // Add fields
+        formData.fields.forEach { (key, value) ->
+            multipartBuilder.addFormDataPart(key, value)
+        }
+        
+        // Add files
+        formData.files.forEach { (key, file) ->
+            when (file) {
+                is FormFile.LocalFile -> {
+                    val mediaType = file.mimeType?.toMediaTypeOrNull()
+                    val requestBody = RequestBody.create(mediaType, file.file)
+                    multipartBuilder.addFormDataPart(key, file.fileName, requestBody)
+                }
+                is FormFile.BytesFile -> {
+                    val mediaType = file.mimeType?.toMediaTypeOrNull()
+                    val requestBody = RequestBody.create(mediaType, file.bytes)
+                    multipartBuilder.addFormDataPart(key, file.fileName, requestBody)
+                }
+            }
+        }
+        
+        return multipartBuilder.build()
+    }
+
+    private fun convertToApiResponse(
+        response: OkHttpResponse
+    ): ApiResponse<Map<String, Any>> {
+        val body = response.body?.string()
+        val parsedData = if (body != null && body.isNotEmpty()) {
+            try {
+                Gson().fromJson(body, Map::class.java) as? Map<String, Any>
+            } catch (e: Exception) {
+                mapOf("raw" to body)
+            }
+        } else {
+            null
+        }
+
+        return if (response.isSuccessful) {
+            ApiResponse.Success(
+                statusCode = response.code,
+                data = parsedData,
+                headers = response.headers.toMultimap()
+            )
+        } else {
+            ApiResponse.Error(
+                message = "HTTP ${response.code}: ${response.message}",
+                statusCode = response.code,
+                body = body
+            )
         }
     }
 
@@ -256,29 +355,43 @@ class NetworkClient(
             url: String,
             method: HttpMethod,
             additionalHeaders: Map<String, String>? = null,
-            data: RequestBody? = null,
-            uploadProgress: (Int, Int) -> Unit,
+            data: Any? = null,
+            uploadProgress: ((Long, Long) -> Unit)? = null,
             apiName: String? = null
-    ): OkHttpResponse {
+    ): ApiResponse<Map<String, Any>> {
         return withContext(Dispatchers.IO) {
-            // Remove connection timeout for large file uploads
-            val client = projectClient.newBuilder().connectTimeout(0, TimeUnit.MILLISECONDS).build()
+            try {
+                // Remove connection timeout for large file uploads
+                val client = projectClient.newBuilder().connectTimeout(0, TimeUnit.MILLISECONDS).build()
 
-            val requestBuilder = Request.Builder()
-                    .url(url)
-                    .method(method.stringValue, data)
-                    .addHeader(
-                            "Content-Type",
-                            bodyType.contentTypeHeader ?: "multipart/form-data"
-                    )
+                val requestBody = if (data is FormDataBuilder) {
+                    buildMultipartBody(data)
+                } else {
+                    data as? RequestBody
+                }
 
-            // Remove headers already in base headers to avoid conflicts
-            val commonKeys = mutableProjectHeaders.keys.intersect(additionalHeaders?.keys ?: emptySet())
-            val filteredAdditionalHeaders = additionalHeaders?.filterKeys { it !in commonKeys }
+                val requestBuilder = Request.Builder()
+                        .url(url)
+                        .method(method.stringValue, requestBody)
+                        .addHeader(
+                                "Content-Type",
+                                bodyType.contentTypeHeader ?: "multipart/form-data"
+                        )
 
-            filteredAdditionalHeaders?.forEach { (k, v) -> requestBuilder.addHeader(k, v) }
+                // Remove headers already in base headers to avoid conflicts
+                val commonKeys = mutableProjectHeaders.keys.intersect(additionalHeaders?.keys ?: emptySet())
+                val filteredAdditionalHeaders = additionalHeaders?.filterKeys { it !in commonKeys }
 
-            client.newCall(requestBuilder.build()).execute()
+                filteredAdditionalHeaders?.forEach { (k, v) -> requestBuilder.addHeader(k, v) }
+
+                val response = client.newCall(requestBuilder.build()).execute()
+                convertToApiResponse(response)
+            } catch (e: Exception) {
+                ApiResponse.Error(
+                    message = e.message ?: "Unknown error",
+                    exception = e
+                )
+            }
         }
     }
 }

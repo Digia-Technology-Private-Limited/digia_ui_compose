@@ -1,13 +1,17 @@
 package com.digia.digiaui.framework.page
 
 import LocalUIResources
+import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
 import com.digia.digiaexpr.std.StdLibFunctions
 import com.digia.digiaui.framework.RenderPayload
 import com.digia.digiaui.framework.VirtualWidgetRegistry
+import com.digia.digiaui.framework.actions.LocalActionExecutor
 import com.digia.digiaui.framework.appstate.AppStateScopeContext
 import com.digia.digiaui.framework.appstate.DUIAppState
 import com.digia.digiaui.framework.expr.DefaultScopeContext
@@ -19,59 +23,123 @@ import com.digia.digiaui.framework.state.StateScope
 import com.digia.digiaui.framework.state.StateScopeContext
 import com.digia.digiaui.framework.state.StateTree
 import com.digia.digiaui.init.DigiaUIManager
+import kotlinx.coroutines.launch
 
 /** DUIPage - renders a page from its definition Mirrors Flutter DUIPage */
 @Composable
 fun DUIPage(
-        pageId: String,
-        pageArgs: Map<String, Any?>?,
-        pageDef: PageDefinition,
-        registry: VirtualWidgetRegistry
+    pageId: String,
+    pageArgs: Map<String, Any?>?,
+    pageDef: PageDefinition,
+    registry: VirtualWidgetRegistry
 ) {
-    // Resolve page arguments
+    /* ----------------------------------------
+     * Resolve arguments
+     * ---------------------------------------- */
     val resolvedPageArgs =
-            pageDef.pageArgDefs?.mapValues { (key, variable) ->
-                pageArgs?.get(key) ?: variable.defaultValue
-            }
-                    ?: emptyMap()
+        pageDef.pageArgDefs?.mapValues { (key, variable) ->
+            pageArgs?.get(key) ?: variable.defaultValue
+        } ?: emptyMap()
 
-    // Create initial state
     val resolvedState =
-            pageDef.initStateDefs?.mapValues { (_, variable) -> variable.defaultValue }
-                    ?: emptyMap()
+        pageDef.initStateDefs?.mapValues { (_, variable) ->
+            variable.defaultValue
+        } ?: emptyMap()
 
-    // Create scope context
+    val rootNode = pageDef.layout?.root ?: return
 
-    // Get root widget
-    val rootNode = pageDef.layout?.root
-    if (rootNode == null) {
-        // Empty page
-        return
+    val virtualWidget = remember(rootNode) {
+        registry.createWidget(rootNode, null)
     }
 
-    // Create virtual widget
-    val virtualWidget = registry.createWidget(rootNode,null)
+    val appStateContext = remember {
+        AppStateScopeContext(
+            values = DUIAppState.instance.all(),
+            variables = mutableMapOf<String, Any?>().apply {
+                putAll(StdLibFunctions.functions)
+                putAll(DigiaUIManager.getInstance().jsVars)
+            }
+        )
+    }
 
-    val context = AppStateScopeContext(
-        values = DUIAppState.instance.all(),
-        variables = mutableMapOf<String, Any?>().apply {
-            putAll(StdLibFunctions.functions)
-            putAll(DigiaUIManager.getInstance().jsVars)
-        }
-    )
-
-
-    // Render the widget
     RootStateTreeProvider {
-        StateScope(namespace = pageId, initialState = resolvedState) { stateContext ->
-            virtualWidget.ToWidget(  RenderPayload( scopeContext = _createExprContext(params = resolvedPageArgs,
-                stateContext = stateContext,
-                scopeContext = context
+        StateScope(
+            namespace = pageId,
+            initialState = resolvedState
+        ) { stateContext ->
+
+            val scope = rememberCoroutineScope()
+            val context = LocalContext.current
+            val actionContext= LocalActionExecutor.current
+            val resources= LocalUIResources.current
+
+
+            
+            val scopeContext = remember(resolvedPageArgs, stateContext) {
+                _createExprContext(
+                    params = resolvedPageArgs,
+                    stateContext = stateContext,
+                    scopeContext = appStateContext
                 )
-            ))
+            }
+
+            val renderPayload=RenderPayload(
+                scopeContext = scopeContext
+            )
+
+            /* ----------------------------------------
+             * ON PAGE LOAD (runs once)
+             * ---------------------------------------- */
+            LaunchedEffect(pageId) {
+                pageDef.onPageLoad?.let { actionFlow ->
+                    try {
+                        val executor = actionContext.execute(
+                            context = context,
+                            actionFlow = actionFlow,
+                            scopeContext = scopeContext,
+                            stateContext = stateContext,
+                            resourceProvider = resources,
+                            scope = this
+                        )
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+                }
+            }
+
+            /* ----------------------------------------
+             * BACK PRESS HANDLING
+             * ---------------------------------------- */
+            BackHandler(enabled = pageDef.onBackPress != null) {
+                pageDef.onBackPress?.let { actionFlow ->
+                    scope.launch {
+                        try {
+                            val executor = actionContext.execute(
+                                context = context,
+                                actionFlow = actionFlow,
+                                scopeContext = scopeContext,
+                                stateContext = stateContext,
+                                resourceProvider = resources,
+                                scope = this
+                            )
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
+                    }
+                }
+            }
+
+            /* ----------------------------------------
+             * Render page
+             * ---------------------------------------- */
+            virtualWidget.ToWidget(
+                    renderPayload
+            )
+
         }
     }
 }
+
 
 
 @Composable

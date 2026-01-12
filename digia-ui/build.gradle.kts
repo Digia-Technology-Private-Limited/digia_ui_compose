@@ -111,6 +111,8 @@ dependencies {
     implementation(libs.compose.material3)
     implementation(libs.androidx.compose.foundation.layout)
     implementation(libs.androidx.compose.animation.core)
+    implementation(libs.androidx.ui)
+    implementation(libs.androidx.browser)
 //    implementation(libs.androidx.navigation.runtime.ktx)
 
 

@@ -6,6 +6,7 @@ import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.compositionLocalOf
+import com.digia.digiaui.framework.RenderPayload
 import com.digia.digiaui.framework.UIResources
 import com.digia.digiaui.framework.actions.base.Action
 import com.digia.digiaui.framework.actions.base.ActionFlow
@@ -40,6 +41,7 @@ class ActionExecutor(
             context: Context,
             actionFlow: ActionFlow,
             scopeContext: ScopeContext?,
+            resourceProvider: UIResources?,
             stateContext: com.digia.digiaui.framework.state.StateContext?,
             scope: CoroutineScope = CoroutineScope(Dispatchers.Main)
     ) {
@@ -66,7 +68,8 @@ class ActionExecutor(
                             action = action,
                             scopeContext = scopeContext,
                             stateContext = stateContext,
-                            id = action.actionId!!.id
+                            id = action.actionId!!.id,
+                        resourceProvider = resourceProvider
                     )
                 } catch (e: Exception) {
                     // Log error (in production, use proper logging)

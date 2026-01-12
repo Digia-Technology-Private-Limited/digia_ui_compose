@@ -1,6 +1,8 @@
 package com.digia.digiaui.config.model
 
 import com.digia.digiaui.config.JSFunctions
+import com.digia.digiaui.framework.models.Variable
+import com.digia.digiaui.network.APIModel
 import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
 
@@ -87,14 +89,21 @@ data class DUIConfig(
     /**
      * Gets all environment variables defined in the configuration.
      *
-     * Environment variables are used to store configuration values that can vary between different
-     * environments (development, staging, production) or be modified at runtime.
+     * Environment variables are used to store configuration values that can vary between different     * environments.
      *
-     * @return A map of variable names to variable configurations
+     * @return A map of variable names to Variable objects
      */
-    fun getEnvironmentVariables(): Map<String, Any> {
-        return _environment?.get("variables") as? Map<String, Any> ?: emptyMap()
+    fun getEnvironmentVariables(): Map<String, Variable> {
+        val rawVariables = _environment?.get("variables") as? Map<String, Any> ?: return emptyMap()
+
+        return rawVariables.mapValues { (key, value) ->
+            // Assuming Variable has a fromJson or fromMap method that takes a Map or Any
+            // If value is a Map, cast it to Map<String, Any>
+            val varMap = value as? Map<String, Any> ?: emptyMap()
+            Variable.fromJson(varMap)
+        }
     }
+
 
     /**
      * Sets an environment variable value at runtime.
@@ -109,21 +118,22 @@ data class DUIConfig(
      * @param value The new value to set for the variable
      */
     fun setEnvVariable(varName: String, value: Any?) {
-        val variables = getEnvironmentVariables().toMutableMap()
+        val variables = getEnvironmentVariables()
         if (!variables.containsKey(varName)) {
             return
         }
         // Update the variable value
-        val currentVar = variables[varName] as? Map<String, Any> ?: return
-        val updatedVar = currentVar.toMutableMap()
+        val currentVar = variables[varName] as? Variable ?: return
+        val updatedVar = currentVar
 
-        // Handle nullable value properly
-        if (value != null) {
-            updatedVar["defaultValue"] = value
-        } else {
-            updatedVar.remove("defaultValue")
+        _environment?.get("variables")?.let {
+            if (it is MutableMap<*, *>) {
+                (it as MutableMap<String, Any>)[varName] = mapOf(
+                        "type" to updatedVar.type,
+                        "defaultValue" to updatedVar.defaultValue
+                )
+            }
         }
-        variables[varName] = updatedVar
 
         // Note: This doesn't persist the change in the immutable data class
         // For actual persistence, implement state management or return new config
@@ -164,12 +174,13 @@ data class DUIConfig(
      * @return A map containing the API model configuration
      * @throws NoSuchElementException if the API model with the given ID is not found
      */
-    fun getApiDataSource(id: String): Map<String, Any> {
+    fun getApiDataSource(id: String): APIModel? {
         val resources =
                 restConfig["resources"] as? Map<String, Any>
                         ?: throw NoSuchElementException("No resources found in REST config")
-        return resources[id] as? Map<String, Any>
+        val resource= resources[id] as? Map<String, Any>
                 ?: throw NoSuchElementException("API model with id '$id' not found")
+        return APIModel.fromJson(resource )
     }
     
 

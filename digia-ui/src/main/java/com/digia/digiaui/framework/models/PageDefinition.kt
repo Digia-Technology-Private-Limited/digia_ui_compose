@@ -23,13 +23,13 @@ data class PageDefinition(
                             ),
                     initStateDefs = parseVariables(json["initStateDefs"] ?: json["variables"]),
                     layout = (json["layout"] as? JsonLike)?.let { PageLayout.fromJson(it) },
-//                    onPageLoad =
-//                            ((json["actions"] as? JsonLike)?.get("onPageLoadAction") as? JsonLike)
-//                                    ?.let { ActionFlow.fromJson(it) },
-//                    onBackPress =
-//                            ((json["actions"] as? JsonLike)?.get("onBackPress") as? JsonLike)?.let {
-//                                ActionFlow.fromJson(it)
-//                            }
+                    onPageLoad =
+                            ((json["actions"] as? JsonLike)?.get("onPageLoadAction") as? JsonLike)
+                                    ?.let { ActionFlow.fromJson(it) },
+                    onBackPress =
+                            ((json["actions"] as? JsonLike)?.get("onBackPress") as? JsonLike)?.let {
+                                ActionFlow.fromJson(it)
+                            }
             )
         }
 

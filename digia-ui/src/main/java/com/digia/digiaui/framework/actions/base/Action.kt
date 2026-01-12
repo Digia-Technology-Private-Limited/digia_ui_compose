@@ -14,9 +14,7 @@ enum class ActionType(val value: String) {
     SHOW_BOTTOM_SHEET("Action.showBottomSheet"),
     CALL_REST_API("Action.callRestApi"),
     OPEN_URL("Action.openUrl"),
-    SET_APP_STATE("Action.setAppState"),
-    GET_APP_STATE("Action.getAppState"),
-    RESET_APP_STATE("Action.resetAppState");
+    SET_APP_STATE("Action.setAppState");
 
     companion object {
         fun fromString(value: String): ActionType {

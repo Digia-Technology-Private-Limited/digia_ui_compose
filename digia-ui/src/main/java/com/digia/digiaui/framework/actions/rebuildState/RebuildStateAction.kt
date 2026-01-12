@@ -1,12 +1,15 @@
 package com.digia.digiaui.framework.actions.rebuildState
 
 import android.content.Context
+import com.digia.digiaui.framework.RenderPayload
+import com.digia.digiaui.framework.UIResources
 import com.digia.digiaui.framework.actions.base.Action
 import com.digia.digiaui.framework.actions.base.ActionId
 import com.digia.digiaui.framework.actions.base.ActionProcessor
 import com.digia.digiaui.framework.actions.base.ActionType
 import com.digia.digiaui.framework.expr.ScopeContext
 import com.digia.digiaui.framework.models.ExprOr
+import com.digia.digiaui.framework.state.StateContext
 import com.digia.digiaui.framework.utils.JsonLike
 import com.digia.digiaui.framework.utils.JsonUtil.Companion.tryKeys
 
@@ -44,7 +47,8 @@ class RebuildStateProcessor : ActionProcessor<RebuildStateAction>() {
         context: Context,
         action: RebuildStateAction,
         scopeContext: ScopeContext?,
-        stateContext: com.digia.digiaui.framework.state.StateContext?,
+        stateContext: StateContext?,
+        resourceProvider: UIResources?,
         id: String
     ): Any? {
         if (stateContext == null) {
@@ -56,5 +60,6 @@ class RebuildStateProcessor : ActionProcessor<RebuildStateAction>() {
 
         return null
     }
+
 }
 

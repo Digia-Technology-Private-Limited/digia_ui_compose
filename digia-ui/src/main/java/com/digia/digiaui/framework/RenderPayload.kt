@@ -1,5 +1,6 @@
 package com.digia.digiaui.framework
 
+import LocalUIResources
 import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
@@ -102,6 +103,7 @@ stateContext?.startTracking()
         actionFlow: ActionFlow?,
         actionExecutor: ActionExecutor,
         stateContext: StateContext?,
+        resourceProvider: UIResources?,
         incomingScopeContext: ScopeContext? = null,
     ): Any? {
         if (actionFlow == null) return null
@@ -114,6 +116,7 @@ stateContext?.startTracking()
             context = context,
             actionFlow = actionFlow,
             scopeContext = combinedContext,
+            resourceProvider = resourceProvider,
             stateContext =stateContext,
 //            id = com.android.identity.util.UUID.randomUUID().toString()
         )

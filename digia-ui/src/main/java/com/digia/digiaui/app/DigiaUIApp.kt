@@ -1,12 +1,19 @@
 package com.digia.digiaui.app
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.SnackbarHost
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.digia.digiaui.analytics.DUIAnalytics
 import com.digia.digiaui.core.DigiaUIScope
 import com.digia.digiaui.framework.DUIFactory
 import com.digia.digiaui.framework.DUIFontFactory
+import com.digia.digiaui.framework.actions.showToast.DUISnackbarHost
+import com.digia.digiaui.framework.actions.showToast.DUISnackbarManager
 import com.digia.digiaui.framework.appstate.DUIAppState
 import com.digia.digiaui.framework.logging.Logger
 import com.digia.digiaui.framework.message.MessageBus
@@ -110,10 +117,15 @@ fun DigiaUIApp(
         return
     }
 
-    DigiaUIScope(
-        messageBus = messageBus,
-        analytics = analytics
-    ) {
-        content()
+    Box(modifier = Modifier.fillMaxSize()) {
+        DigiaUIScope(
+            messageBus = messageBus,
+            analytics = analytics
+        ) {
+            content()
+        }
+
+        // Global Snackbar Host for showing toasts
+        DUISnackbarHost()
     }
 }
