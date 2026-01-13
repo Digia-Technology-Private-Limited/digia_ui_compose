@@ -54,7 +54,7 @@ jobs:
         run: ./gradlew :digia-ui:publishToMavenLocal
 
       - name: Upload AAR artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: digia-ui-${{ steps.version.outputs.version }}.aar
           path: digia-ui/build/outputs/aar/digia-ui-release.aar
