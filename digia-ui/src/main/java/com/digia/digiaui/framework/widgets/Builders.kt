@@ -30,4 +30,5 @@ fun DefaultVirtualWidgetRegistry.registerBuiltInWidgets() {
     register("digia/linearProgressBar", ::linearProgressBarBuilder)
     register("digia/textFormField", ::textFormFieldBuilder)
     register("digia/videoPlayer", ::videoPlayerBuilder)
+    register("digia/button", ::buttonBuilder)
 }
