@@ -5,9 +5,13 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Surface
@@ -23,6 +27,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -113,17 +118,89 @@ class VWContainer(
             }
         }
 
-        val widthPercent = containerProps.width.toPercentFraction()
-        val heightPercent = containerProps.height.toPercentFraction()
-        // Apply sizing constraints
-        modifier = modifier
-            .applyIf(containerProps.width != null) { size(width = containerProps.width.toDp()!!, height = Dp.Unspecified) }
-            .applyIf(containerProps.height != null) {
-                if (containerProps.width != null) size(width = containerProps.width.toDp()!!, height = containerProps.height.toDp()!!)
-                else size(width = Dp.Unspecified, height = containerProps.height.toDp()!!)
+        // Handle width with percentage
+        containerProps.width?.let { widthValue ->
+            val widthPercent = widthValue.toPercentFraction()
+            if (widthPercent != null) {
+                // Apply percentage width using fillMaxWidth with fraction
+                modifier = modifier.fillMaxWidth(widthPercent)
+            } else {
+                // Apply fixed width
+                widthValue.toDp()?.let { dpValue ->
+                    modifier = modifier.width(dpValue)
+                }
             }
-            .widthIn(min = containerProps.minWidth.toDp() ?: 0.dp, max = containerProps.maxWidth.toDp() ?: Dp.Infinity)
-            .heightIn(min = containerProps.minHeight.toDp() ?: 0.dp, max = containerProps.maxHeight.toDp() ?: Dp.Infinity)
+        }
+
+        // Handle height with percentage
+        containerProps.height?.let { heightValue ->
+            val heightPercent = heightValue.toPercentFraction()
+            if (heightPercent != null) {
+                // Apply percentage height using fillMaxHeight with fraction
+                modifier = modifier.fillMaxHeight(heightPercent)
+            } else {
+                // Apply fixed height
+                heightValue.toDp()?.let { dpValue ->
+                    modifier = modifier.height(dpValue)
+                }
+            }
+        }
+
+        // Handle minimum width with percentage
+        containerProps.minWidth?.let { minWidthValue ->
+            val minWidthPercent = minWidthValue.toPercentFraction()
+            if (minWidthPercent != null) {
+                // Apply percentage minimum width
+                modifier = modifier.fillMinWidth(minWidthPercent)
+            } else {
+                // Apply fixed minimum width
+                minWidthValue.toDp()?.let { dpValue ->
+                    modifier = modifier.widthIn(min = dpValue)
+                }
+            }
+        }
+
+        // Handle minimum height with percentage
+        containerProps.minHeight?.let { minHeightValue ->
+            val minHeightPercent = minHeightValue.toPercentFraction()
+            if (minHeightPercent != null) {
+                // Apply percentage minimum height
+                modifier = modifier.fillMinHeight(minHeightPercent)
+            } else {
+                // Apply fixed minimum height
+                minHeightValue.toDp()?.let { dpValue ->
+                    modifier = modifier.heightIn(min = dpValue)
+                }
+            }
+        }
+
+        // Handle maximum width with percentage
+        containerProps.maxWidth?.let { maxWidthValue ->
+            val maxWidthPercent = maxWidthValue.toPercentFraction()
+            if (maxWidthPercent != null) {
+                // Apply percentage maximum width (clamp to percentage)
+                modifier = modifier.fillMaxWidth(maxWidthPercent)
+            } else {
+                // Apply fixed maximum width
+                maxWidthValue.toDp()?.let { dpValue ->
+                    modifier = modifier.widthIn(max = dpValue)
+                }
+            }
+        }
+
+        // Handle maximum height with percentage
+        containerProps.maxHeight?.let { maxHeightValue ->
+            val maxHeightPercent = maxHeightValue.toPercentFraction()
+            if (maxHeightPercent != null) {
+                // Apply percentage maximum height (clamp to percentage)
+                modifier = modifier.fillMaxHeight(maxHeightPercent)
+            } else {
+                // Apply fixed maximum height
+                maxHeightValue.toDp()?.let { dpValue ->
+                    modifier = modifier.heightIn(max = dpValue)
+                }
+            }
+        }
 
         // Apply background (gradient or color)
         modifier = when {
@@ -206,6 +283,29 @@ class VWContainer(
             Box(modifier = modifier, contentAlignment = alignment) {
                 child?.ToWidget(payload)
             }
+        }
+    }
+}
+
+// Helper extension functions for percentage constraints
+private fun Modifier.fillMinWidth(fraction: Float): Modifier {
+    return this.layout { measurable, constraints ->
+        val minWidth = (constraints.maxWidth * fraction).toInt()
+        val newConstraints = constraints.copy(minWidth = minWidth)
+        val placeable = measurable.measure(newConstraints)
+        layout(placeable.width, placeable.height) {
+            placeable.place(0, 0)
+        }
+    }
+}
+
+private fun Modifier.fillMinHeight(fraction: Float): Modifier {
+    return this.layout { measurable, constraints ->
+        val minHeight = (constraints.maxHeight * fraction).toInt()
+        val newConstraints = constraints.copy(minHeight = minHeight)
+        val placeable = measurable.measure(newConstraints)
+        layout(placeable.width, placeable.height) {
+            placeable.place(0, 0)
         }
     }
 }
