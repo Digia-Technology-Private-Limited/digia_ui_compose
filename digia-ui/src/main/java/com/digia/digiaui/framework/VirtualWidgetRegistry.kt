@@ -11,6 +11,7 @@ import com.digia.digiaui.framework.models.VWNodeData
 import com.digia.digiaui.framework.models.VWStateData
 import com.digia.digiaui.framework.state.VWStateContainer
 import com.digia.digiaui.framework.utils.JsonLike
+import com.digia.digiaui.framework.widgets.dummyBuilder
 
 /** Type alias for widget builder functions */
 typealias VirtualWidgetBuilder = (
@@ -59,8 +60,22 @@ class DefaultVirtualWidgetRegistry(private val componentBuilder: ComponentBuilde
         return when (data) {
             is VWNodeData -> {
                 val builder = builders[data.type]
-                    ?: throw IllegalArgumentException("Unknown widget type: ${data.type}")
-                builder(data, parent, this)
+
+
+//                    throw IllegalArgumentException("Unknown widget type: ${data.type}")
+                if(builder!=null) return builder(data, parent, this)
+                else     dummyBuilder(VWNodeData(
+                    refName = data.refName,
+                    type = data.type,
+                    props = Props(value = mapOf(
+                        "message" to "No builder registered for widget type '${data.type}'"
+                    )),
+                    commonProps = data.commonProps,
+                    parentProps = data.parentProps,
+                    childGroups = data.childGroups
+                ), parent, this)
+
+
             }
             is VWComponentData -> {
                 VirtualBuilderWidget(

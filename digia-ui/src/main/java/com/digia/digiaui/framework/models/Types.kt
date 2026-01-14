@@ -66,25 +66,34 @@ class ExprOr<T : Any> private constructor(
         scopeContext: ScopeContext?,
         noinline decoder: ((Any) -> R?)? = null
     ): R? {
-        if (isExpr) {
-            val expressionString: String = when {
-                value is Map<*, *> && value.containsKey("expr") -> {
-                    // New format: extract expression from map
-                    value["expr"] as String
-                }
-                value is String && value.startsWith("@{") && value.endsWith("}") -> {
-                    // Old format: extract expression from @{...}
-                    value.substring(2, value.length - 1)
-                }
-                else -> value.toString()
-            }
+         try {
 
-            // Evaluate the expression using the expression utility
-            return evaluateExpression<R>(expressionString, scopeContext)
-        } else {
-            // If it's not an expression, use decoder or cast it to R
-            return decoder?.invoke(value) ?: (value as? R)
-        }
+
+             if (isExpr) {
+                 val expressionString: String = when {
+                     value is Map<*, *> && value.containsKey("expr") -> {
+                         // New format: extract expression from map
+                         value["expr"] as String
+                     }
+
+                     value is String && value.startsWith("@{") && value.endsWith("}") -> {
+                         // Old format: extract expression from @{...}
+                         value.substring(2, value.length - 1)
+                     }
+
+                     else -> value.toString()
+                 }
+
+                 // Evaluate the expression using the expression utility
+                 return evaluateExpression<R>(expressionString, scopeContext)
+             } else {
+                 // If it's not an expression, use decoder or cast it to R
+                 return decoder?.invoke(value) ?: (value as? R)
+             }
+         } catch (e: Exception) {
+             e.printStackTrace()
+             return null
+         }
     }
 
     /**

@@ -1,6 +1,7 @@
 package com.digia.digiaui.framework.state
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.key
 import androidx.compose.ui.Modifier
 import com.digia.digiaui.framework.RenderPayload
 import com.digia.digiaui.framework.base.VirtualNode
@@ -44,7 +45,10 @@ class VWStateContainer(
             namespace = refName,
             initialState = resolvedState,
         ) { stateContext ->
-    child.ToWidget(payload.copyWithChainedContext(_createExprContext(stateContext = stateContext)))
+            val version = stateContext.Version()
+            key(version) {
+                child.ToWidget(payload.copyWithChainedContext(_createExprContext(stateContext = stateContext)))
+            }
         }
 
     }

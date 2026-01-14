@@ -1,6 +1,6 @@
 package com.digia.digiaui.config.model
 
-import com.digia.digiaui.config.JSFunctions
+import com.digia.digiaui.core.functions.JSFunctions
 import com.digia.digiaui.framework.models.Variable
 import com.digia.digiaui.network.APIModel
 import com.google.gson.Gson

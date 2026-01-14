@@ -59,6 +59,8 @@ class StateContext(
         return owner.values[key]
     }
 
+    val version= scopeVersion.intValue
+
     fun observe(stateName: String) {
         if (stateName == namespace) {
             scopeVersion.intValue // 👈 subscription point
@@ -95,6 +97,12 @@ class StateContext(
         tree.childrenOf(this).forEach { it.flushFromParent() }
     }
 
+    fun findAncestorNamespace(namespace: String): StateContext? {
+        if (this.namespace == namespace) return this
+        val parent = tree.parentOf(this) ?: return null
+        return parent.findAncestorNamespace(namespace)
+    }
+
     /* ---------------- Utilities ---------------- */
 
     fun snapshot(): Map<String, Any?> {
@@ -108,7 +116,7 @@ class StateContext(
     fun containsLocal(key: String): Boolean =
         values.containsKey(key)
 
-    fun debugVersion(): Int = scopeVersion.intValue
+    fun Version(): Int = scopeVersion.intValue
 
 }
 

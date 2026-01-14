@@ -25,18 +25,26 @@ inline fun <reified T : Any> evaluate(
     scopeContext: ScopeContext? = null,
     noinline decoder: ((Any?) -> T?)? = null
 ): T? {
-    if (expression == null) return null
+    try {
 
-    if (!hasExpression(expression)) {
-        return decoder?.invoke(expression) ?: expression.to<T>()
+
+        if (expression == null) return null
+
+        if (!hasExpression(expression)) {
+            return decoder?.invoke(expression) ?: expression.to<T>()
+        }
+
+        return Expression.eval(expression as String, scopeContext)?.to<T>()
+    } catch (e: Exception) {
+        e.printStackTrace()
+        return null
     }
-
-    return Expression.eval(expression as String, scopeContext)?.to<T>()
 }
 
 fun hasExpression(expression: Any?): Boolean {
     return expression is String && Expression.hasExpression(expression)
 }
+
 
 fun evaluateNestedExpressions(data: Any?, context: ScopeContext?): Any? {
     if (data == null) return null

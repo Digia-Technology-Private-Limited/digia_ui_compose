@@ -1,11 +1,15 @@
 package com.digia.digiaui.init
 
+import com.digia.digiaexpr.callable.ExprCallableImpl
+import com.digia.digiaexpr.callable.ExprClass
+import com.digia.digiaexpr.callable.ExprClassInstance
 import com.digia.digiaui.config.model.DUIConfig
 import com.digia.digiaui.framework.logging.Logger
 import com.digia.digiaui.framework.models.Variable
 import com.digia.digiaui.network.NetworkClient
 import com.digia.digiaui.utils.DigiaInspector
 import com.digia.digiaui.utils.DigiaUIHost
+import kotlin.collections.mapOf
 
 /**
  * Singleton manager for accessing the initialized Digia UI instance.
@@ -86,10 +90,36 @@ class DigiaUIManager private constructor() {
      */
     val jsVars: Map<String, Any>
         get() {
-            // TODO: Implement JS evaluation system
-            // For now, return empty map
-            return emptyMap()
+    return      mapOf(
+                "js" to ExprClassInstance(
+                    ExprClass(
+                        name = "js", fields = mutableMapOf(), methods = mapOf(
+                            "eval" to ExprCallableImpl(
+                            _arity = 2,
+                            fn = { evaluator, arguments ->
+                                safeInstance?.dslConfig?.jsFunctions?.callJs(
+                                    arguments[0].toString(),
+                                    arguments
+                                        .drop(1)
+                                        .map { it }
+                                )
+                            }
+                        )
+
+                    )))
+            )
         }
+
+
+//    fn: (evaluator, arguments) {
+//        return safeInstance?.dslConfig.jsFunctions?.callJs(
+//            _toValue<String>(evaluator, arguments[0])!,
+//            arguments
+//                .skip(1)
+//                .map((e) => _toValue(evaluator, e))
+//        .toList());
+//        ),
+//        arity: 2
 
     companion object {
         @Volatile private var INSTANCE: DigiaUIManager? = null

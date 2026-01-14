@@ -14,9 +14,10 @@ class Logger {
         private val isDebugMode: Boolean
             get() = try {
                 // Try BuildConfig.DEBUG first (most common)
-                val buildConfigClass = Class.forName("com.digia.digiaui.BuildConfig")
-                val debugField = buildConfigClass.getField("DEBUG")
-                debugField.getBoolean(null)
+//                val buildConfigClass = Class.forName("com.digia.digiaui.BuildConfig")
+//                val debugField = buildConfigClass.getField("DEBUG")
+//                debugField.getBoolean(null)
+                false
             } catch (e: Exception) {
                 // Fallback: check build type
                 Build.TYPE == "debug" || Build.TYPE == "eng"

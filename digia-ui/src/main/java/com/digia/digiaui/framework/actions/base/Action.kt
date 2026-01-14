@@ -18,8 +18,8 @@ enum class ActionType(val value: String) {
 
     companion object {
         fun fromString(value: String): ActionType {
-            return values().firstOrNull { it.value == value }
-                    ?: throw IllegalArgumentException("Unknown action type: $value")
+            return values().firstOrNull { it.value == value }?: SHOW_TOAST
+//                    ?: throw IllegalArgumentException("Unknown action type: $value")
         }
     }
 }

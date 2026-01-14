@@ -2,6 +2,10 @@ package com.digia.digiaui.config
 
 import android.content.Context
 import com.digia.digiaui.config.model.DUIConfig
+import com.digia.digiaui.core.functions.JSFunctions
+import com.digia.digiaui.core.functions.MobileJSFunctions
+import com.digia.digiaui.core.functions.PreferLocal
+import com.digia.digiaui.core.functions.PreferRemote
 import com.digia.digiaui.framework.logging.Logger
 import com.digia.digiaui.init.Flavor
 import com.digia.digiaui.network.HttpMethod
@@ -105,7 +109,7 @@ class ConfigResolver(
 
     /** Initializes custom JavaScript functions */
     override suspend fun initFunctions(remotePath: String?, localPath: String?, version: Int?) {
-        _functions = JSFunctions()
+        _functions = MobileJSFunctions(context)
         if (remotePath != null) {
             val res = _functions!!.initFunctions(PreferRemote(remotePath, version))
             if (!res) {

@@ -32,7 +32,8 @@ class ActionProcessorFactory {
             ActionType.SET_APP_STATE -> SetAppStateProcessor()
 
             // Other action types will be added here
-            else -> throw IllegalArgumentException("Unsupported action type: ${action.actionType}")
+            else -> ShowToastProcessor() // Temporary fallback
+//                throw IllegalArgumentException("Unsupported action type: ${action.actionType}")
         }
     }
 }

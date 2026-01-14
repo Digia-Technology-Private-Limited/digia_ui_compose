@@ -65,7 +65,7 @@ data class VWNodeData(
                 val childList =
                         when (children) {
                             is List<*> ->
-                                    children.mapNotNull { (it as? JsonLike)?.let { fromJson(it) } }
+                                    children.mapNotNull { (it as? JsonLike)?.let { VWData.fromJson(it) } }
                             else -> emptyList()
                         }
                 (key as String) to childList
@@ -85,13 +85,13 @@ data class VWComponentData(
     companion object {
         fun fromJson(json: JsonLike): VWComponentData {
             return VWComponentData(
-                    refName = json["refName"] as? String,
-                    id = json["id"] as? String ?: "",
+                    refName = tryKeys(json, listOf("varName", "refName")),
+                    id = json["componentId"] as? String ?: "",
                     args =
-                            (json["args"] as? JsonLike)?.mapValues {
+                            (json["componentArgs"] as? JsonLike)?.mapValues {
                                 ExprOr.fromValue<Any>(it.value)
                             },
-                    commonProps = CommonProps.fromJson(json["commonProps"] as? JsonLike),
+                    commonProps = CommonProps.fromJson(json["containerProps"] as? JsonLike),
                     parentProps = (json["parentProps"] as? JsonLike)?.let(::Props) ?: Props.empty()
             )
         }
@@ -108,9 +108,9 @@ data class VWStateData(
     companion object {
         fun fromJson(json: JsonLike): VWStateData {
             return VWStateData(
-                    refName = json["refName"] as? String,
+                    refName = tryKeys(json, listOf("varName", "refName")),
                     initStateDefs = parseVariables(json["initStateDefs"]),
-                    childGroups = VWNodeData.parseChildGroups(json["childGroups"]),
+                    childGroups = VWNodeData.parseChildGroups(tryKeys(json, listOf("childGroups", "children","composites"))),
                     parentProps = (json["parentProps"] as? JsonLike)?.let(::Props) ?: Props.empty( )
             )
         }

@@ -56,10 +56,11 @@ class RebuildStateProcessor : ActionProcessor<RebuildStateAction>() {
             return null
         }
 
-         stateContext.flush()
-
-        return null
+        action.stateContextName?.let { it ->
+            stateContext.findAncestorNamespace(it)?.flush()
+        }
+            return null
+        }
     }
 
-}
 

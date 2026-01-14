@@ -83,9 +83,10 @@ inline fun <reified T> asSafe(x: Any?): T? {
 /// Checks if the app is in debug mode
 fun isDebugMode(): Boolean = try {
     // Try BuildConfig.DEBUG first (most common)
-    val buildConfigClass = Class.forName("com.digia.digiaui.BuildConfig")
-    val debugField = buildConfigClass.getField("DEBUG")
-    debugField.getBoolean(null)
+//    val buildConfigClass = Class.forName("com.digia.digiaui.BuildConfig")
+//    val debugField = buildConfigClass.getField("DEBUG")
+//    debugField.getBoolean(null)
+    false
 } catch (_: Exception) {
     // Fallback: check build type
     android.os.Build.TYPE == "debug" || android.os.Build.TYPE == "eng"

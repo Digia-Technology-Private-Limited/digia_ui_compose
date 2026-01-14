@@ -119,6 +119,7 @@ dependencies {
     implementation(libs.androidx.media3.ui.compose)
     implementation(libs.androidx.media3.ui.compose.material3)
     implementation(libs.androidx.media3.ui)
+    implementation(libs.androidx.ui.graphics)
 //    implementation(libs.androidx.navigation.runtime.ktx)
 
 

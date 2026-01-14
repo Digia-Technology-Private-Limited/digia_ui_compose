@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -119,34 +121,34 @@ fun Modifier.applyCommonProps(
 
 
 
-private fun Modifier.applySizing(style: CommonStyle): Modifier {
-    val isWidthIntrinsic = style.width.equals("intrinsic", true)
-    val isHeightIntrinsic = style.height.equals("intrinsic", true)
-
-    var m = this
-
-    if (isWidthIntrinsic) {
-        m = m.width(IntrinsicSize.Min)
-    }
-
-    if (isHeightIntrinsic) {
-        m = m.height(IntrinsicSize.Min)
-    }
-
-    val width = if (!isWidthIntrinsic) style.width.toDp() else null
-    val height = if (!isHeightIntrinsic) style.height.toDp() else null
-
-    if (width != null || height != null) {
-        m = m.then(
-            Modifier.size(
-                width = width ?: Dp.Unspecified,
-                height = height ?: Dp.Unspecified
-            )
-        )
-    }
-
-    return m
-}
+//private fun Modifier.applySizing(style: CommonStyle): Modifier {
+//    val isWidthIntrinsic = style.width.equals("intrinsic", true)
+//    val isHeightIntrinsic = style.height.equals("intrinsic", true)
+//
+//    var m = this
+//
+//    if (isWidthIntrinsic) {
+//        m = m.width(IntrinsicSize.Min)
+//    }
+//
+//    if (isHeightIntrinsic) {
+//        m = m.height(IntrinsicSize.Min)
+//    }
+//
+//    val width = if (!isWidthIntrinsic) style.width.toDp() else null
+//    val height = if (!isHeightIntrinsic) style.height.toDp() else null
+//
+//    if (width != null || height != null) {
+//        m = m.then(
+//            Modifier.size(
+//                width = width ?: Dp.Unspecified,
+//                height = height ?: Dp.Unspecified
+//            )
+//        )
+//    }
+//
+//    return m
+//}
 
 
 
@@ -168,6 +170,15 @@ fun Any?.toDp(): Dp? = when (this) {
     else -> null
 }
 
+fun Any?.toPercentFraction(): Float? {
+    if (this !is String) return null
+    val v = trim().lowercase()
+    if (v.endsWith("%")) {
+        return v.removeSuffix("%").toFloatOrNull()?.let { it / 100f }
+    }
+    return null
+}
+
 
 
 
@@ -180,4 +191,30 @@ inline fun Modifier.applyIf(
     } else {
         this
     }
+}
+
+
+private fun Modifier.applySizing(style: CommonStyle): Modifier {
+    var m = this
+
+    // Width logic
+    val wPercent = style.width.toPercentFraction()
+    if (wPercent != null) {
+        m = m.fillMaxWidth(wPercent)
+    } else {
+        style.width.toDp()?.let { m = m.width(it) }
+    }
+
+    // Height logic
+    val hPercent = style.height.toPercentFraction()
+    if (hPercent != null) {
+        m = m.fillMaxHeight(hPercent)
+    } else {
+        style.height.toDp()?.let { m = m.height(it) }
+    }
+
+    if (style.width.equals("intrinsic", true)) m = m.width(IntrinsicSize.Min)
+    if (style.height.equals("intrinsic", true)) m = m.height(IntrinsicSize.Min)
+
+    return m
 }

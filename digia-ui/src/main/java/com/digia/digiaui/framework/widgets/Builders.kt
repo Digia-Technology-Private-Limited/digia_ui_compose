@@ -1,6 +1,17 @@
 package com.digia.digiaui.framework.widgets
 
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import com.digia.digiaui.framework.DefaultVirtualWidgetRegistry
+import com.digia.digiaui.framework.RenderPayload
+import com.digia.digiaui.framework.VirtualWidgetRegistry
+import com.digia.digiaui.framework.base.VirtualLeafNode
+import com.digia.digiaui.framework.base.VirtualNode
+import com.digia.digiaui.framework.models.CommonProps
+import com.digia.digiaui.framework.models.ExprOr
+import com.digia.digiaui.framework.models.Props
+import com.digia.digiaui.framework.models.VWNodeData
 
 /** Register all built-in widgets with the registry */
 fun DefaultVirtualWidgetRegistry.registerBuiltInWidgets() {
@@ -10,6 +21,7 @@ fun DefaultVirtualWidgetRegistry.registerBuiltInWidgets() {
     // Register layout widgets
     register("digia/column", ::columnBuilder)
     register("digia/row", ::rowBuilder)
+    register("digia/stack", ::stackBuilder)
     
     // Register list widget
     register("digia/listView", ::listViewBuilder)
@@ -35,4 +47,50 @@ fun DefaultVirtualWidgetRegistry.registerBuiltInWidgets() {
     register("digia/container", ::containerBuilder)
     register("digia/carousel", ::carouselBuilder)
     register("digia/wrap", ::wrapBuilder)
+    register("digia/stack",::stackBuilder)
+    register("fw/sizedBox",::sizedBoxBuilder)
+    register("fw/sized_box",::sizedBoxBuilder)
+    register("digia/gridView",::dummyBuilder)
+    register("digia/richText",::dummyBuilder)
+    register("digia/styledHorizontalDivider",::dummyBuilder)
+    register("digia/calendar",::dummyBuilder)
+}
+
+
+fun dummyBuilder(
+    nodeData: VWNodeData,
+    parent: VirtualNode?,
+    registry: VirtualWidgetRegistry
+): VirtualNode {
+  return  VWDummy(
+        refName = nodeData.refName,
+        commonProps = nodeData.commonProps,
+        parent = parent,
+        parentProps = nodeData.parentProps,
+        props = nodeData.props
+    )
+}
+
+
+class VWDummy(
+    refName: String?,
+    commonProps: CommonProps?,
+    parent: VirtualNode?,
+    parentProps: Props? = null,
+    props: Props
+) : VirtualLeafNode<Props>(
+    props = props,
+    commonProps = commonProps,
+    parent = parent,
+    refName = refName,
+    parentProps = parentProps
+) {
+
+    @Composable
+    override fun Render(payload: RenderPayload) {
+        Text(
+            text = "Dummy Widget Rendered",
+            modifier = Modifier.buildModifier(payload)
+        )
+    }
 }

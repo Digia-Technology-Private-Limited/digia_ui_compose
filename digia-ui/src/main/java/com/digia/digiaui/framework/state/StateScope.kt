@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 val LocalStateTree = compositionLocalOf { StateTree() }
 
@@ -32,6 +33,10 @@ fun StateScope(
     CompositionLocalProvider(
         LocalStateContextProvider provides stateContext,
     ) {
-        content(stateContext)
+        val version = stateContext.Version()
+
+        key( version) {
+            content(stateContext)
+        }
     }
 }

@@ -43,6 +43,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -69,6 +70,9 @@ import com.digia.digiaui.framework.utils.JsonLike
 import com.digia.digiaui.framework.utils.NumUtil
 import com.digia.digiaui.framework.utils.ToUtils
 import com.digia.digiaui.framework.utils.applyIf
+import com.digia.digiaui.framework.widgets.textfield.CommonDecorationBox
+import com.digia.digiaui.framework.widgets.textfield.DigiaTextFieldColors
+import com.digia.digiaui.framework.widgets.textfield.TextFieldContainer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -797,13 +801,7 @@ fun InternalTextFormField(
         }
     }
 
-    val currentBorder = when {
-        !enabled -> disabledBorder
-        errorText != null && isFocused -> focusedErrorBorder
-        errorText != null -> errorBorder
-        isFocused -> focusedBorder
-        else -> enabledBorder
-    }
+
 
     val padding = contentPadding ?: PaddingValues(
         horizontal = 12.dp,
@@ -849,7 +847,7 @@ fun InternalTextFormField(
                     if (obscureText) PasswordVisualTransformation()
                     else VisualTransformation.None,
                 decorationBox = { inner ->
-                    OutlinedTextFieldDefaults.DecorationBox(
+                    CommonDecorationBox(
                         value = controller.text,
                         innerTextField = inner,
                         enabled = enabled,
@@ -870,15 +868,76 @@ fun InternalTextFormField(
                                 )
                             }
                         } else null,
-                        label = if (labelText != null) {
-                            {
+                        label = {
+                            if (labelText != null) {
                                 Text(
                                     labelText,
                                     style = labelStyle
                                 )
                             }
-                        } else null
+                        },
+                        prefix = {
+                            if (prefixWidget != null) {
+                                prefixWidget()
+                            }
+                        },
+                        suffix = {
+                            if (suffixWidget != null) {
+                                suffixWidget()
+                            }
+                        },
+
+                        container = {
+                            TextFieldContainer(
+                                enabled = enabled,
+interactionSource= interactionSource,
+                                focusedBorder = VWInputBorder.Underline(
+                                    strokeWidth = 2.dp,
+                                    dashed = false
+                                ),
+                                disabledBorder = VWInputBorder.Underline(
+                                    strokeWidth = 1.dp,
+                                    dashed = false
+                                ),
+                                focusedErrorBorder = VWInputBorder.Underline(
+                                    strokeWidth = 2.dp,),
+                                enabledBorder = enabledBorder,
+                                errorBorder = errorBorder,
+                                isError = false,
+                            )
+                        },
+
                     )
+//                    OutlinedTextFieldDefaults.DecorationBox(
+//                        value = controller.text,
+//                        innerTextField = inner,
+//                        enabled = enabled,
+//                        singleLine = (maxLines ?: 1) == 1,
+//                        isError = errorText != null,
+//                        visualTransformation =
+//                            if (obscureText) PasswordVisualTransformation()
+//                            else VisualTransformation.None,
+//                        interactionSource = interactionSource,
+//                        contentPadding = padding,
+//                        leadingIcon = prefixWidget,
+//                        trailingIcon = suffixWidget,
+//                        placeholder = if (controller.text.isEmpty() && hintText != null) {
+//                            {
+//                                Text(
+//                                    hintText,
+//                                    style = hintStyle
+//                                )
+//                            }
+//                        } else null,
+//                        label = if (labelText != null) {
+//                            {
+//                                Text(
+//                                    labelText,
+//                                    style = labelStyle
+//                                )
+//                            }
+//                        } else null
+//                    )
 //                    Row(verticalAlignment = Alignment.CenterVertically) {
 //                        prefixWidget?.invoke()
 //                        Box(Modifier.weight(1f)) {
@@ -935,11 +994,15 @@ sealed class VWInputBorder {
     data class Outline(
         val strokeWidth: Dp = 1.dp,
         val radius: Dp = 4.dp,
-        val dashed: Boolean = false
+       val color: Color = Color.Black,
+        val dashed: Boolean = false,
+        val strokeCap: StrokeCap= StrokeCap.Butt,
+        val dashPattern: List<Float>? = null
     ) : VWInputBorder()
 
     data class Underline(
         val strokeWidth: Dp = 1.dp,
+      val  color:Color = Color.Black,
         val dashed: Boolean = false
     ) : VWInputBorder()
 

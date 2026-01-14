@@ -69,7 +69,7 @@ class VWFlex(
 ) : VirtualCompositeNode<FlexProps>(
     props = props,
     commonProps = commonProps,
-    parentProps= parentProps,
+    parentProps = parentProps,
     parent = parent,
     refName = refName,
     slots = slots
@@ -80,7 +80,6 @@ class VWFlex(
 
     @Composable
     override fun Render(payload: RenderPayload) {
-        // Return empty if no children
         if (children.isEmpty()) {
             Empty()
             return
@@ -92,33 +91,131 @@ class VWFlex(
             buildStaticFlex(payload)
         }
 
-        // Wrap in scroll view if needed
-        wrapWithScrollViewIfNeeded({ flexWidget })
+        wrapWithScrollViewIfNeeded { flexWidget }
     }
 
     @Composable
     private fun buildRepeatingFlex(payload: RenderPayload) {
-        val childToRepeat = children?.firstOrNull() ?: return
+        val childToRepeat = children.firstOrNull() ?: return
         val dataItems = payload.eval<List<Any>>(props.dataSource) ?: emptyList()
 
-        buildFlex(payload) {
-            dataItems.forEachIndexed { index, item ->
-                val scopedPayload = payload.copyWithChainedContext(
-                    createExprContext(item, index)
-                )
-                childToRepeat.ToWidget(scopedPayload)
+        when (props.direction) {
+            FlexDirection.VERTICAL -> {
+                Column(
+                    modifier = buildColumnModifier(payload),
+                    verticalArrangement = toMainAxisAlignmentVertical(props.mainAxisAlignment),
+                    horizontalAlignment = toHorizontalAlignment(props.crossAxisAlignment)
+                ) {
+                    dataItems.forEachIndexed { index, item ->
+                        val scopedPayload = payload.copyWithChainedContext(
+                            createExprContext(item, index)
+                        )
+                        childToRepeat.ToWidget(scopedPayload)
+                    }
+                }
+            }
+            FlexDirection.HORIZONTAL -> {
+                Row(
+                    modifier = buildRowModifier(payload),
+                    horizontalArrangement = toMainAxisAlignmentHorizontal(props.mainAxisAlignment),
+                    verticalAlignment = toVerticalAlignment(props.crossAxisAlignment)
+                ) {
+                    dataItems.forEachIndexed { index, item ->
+                        val scopedPayload = payload.copyWithChainedContext(
+                            createExprContext(item, index)
+                        )
+                        childToRepeat.ToWidget(scopedPayload)
+                    }
+                }
             }
         }
     }
 
     @Composable
     private fun buildStaticFlex(payload: RenderPayload) {
-        buildFlex(payload) {
-            children?.forEach { child ->
-                child.ToWidget(payload)
+        when (props.direction) {
+            FlexDirection.VERTICAL -> {
+                Column(
+                    modifier = buildColumnModifier(payload),
+                    verticalArrangement = toMainAxisAlignmentVertical(props.mainAxisAlignment),
+                    horizontalAlignment = toHorizontalAlignment(props.crossAxisAlignment)
+                ) {
+                    // Inside ColumnScope - Modifier.weight() is available
+                    children.forEach { child ->
+                        val parentProps = child.parentProps
+                        val flexFit = parentProps?.getString("flexFit")
+                        val flexValue = parentProps?.getDouble("flex") ?: 1.0
+
+                        if (flexFit != null) {
+                            val fillMaxSize = when (flexFit.lowercase()) {
+                                "tight", "expanded" -> true
+                                "loose", "flexible" -> false
+                                else -> true
+                            }
+
+                            // This works because we're inside RowScope or ColumnScope
+                            Box(modifier = Modifier.weight(flexValue.toFloat(), fill = fillMaxSize)) {
+                                child.ToWidget(payload)
+                            }
+                        } else {
+                            child.ToWidget(payload)
+                        }
+                    }
+                }
+            }
+            FlexDirection.HORIZONTAL -> {
+                Row(
+                    modifier = buildRowModifier(payload),
+                    horizontalArrangement = toMainAxisAlignmentHorizontal(props.mainAxisAlignment),
+                    verticalAlignment = toVerticalAlignment(props.crossAxisAlignment)
+                ) {
+                    // Inside RowScope - Modifier.weight() is available
+                    children.forEach { child ->
+                        val parentProps = child.parentProps
+                        val flexFit = parentProps?.getString("flexFit")
+                        val flexValue = parentProps?.getDouble("flex") ?: 1.0
+
+                        if (flexFit != null) {
+                            val fillMaxSize = when (flexFit.lowercase()) {
+                                "tight", "expanded" -> true
+                                "loose", "flexible" -> false
+                                else -> true
+                            }
+
+                            // This works because we're inside RowScope or ColumnScope
+                            Box(modifier = Modifier.weight(flexValue.toFloat(), fill = fillMaxSize)) {
+                                child.ToWidget(payload)
+                            }
+                        } else {
+                            child.ToWidget(payload)
+                        }
+                    }
+                }
             }
         }
     }
+
+//    @Composable
+//    private fun applyFlexFit(child: VirtualNode, payload: RenderPayload) {
+//        val parentProps = child.parentProps
+//        val flexFit = parentProps?.getString("flexFit")
+//        val flexValue = parentProps?.getDouble("flex") ?: 1.0
+//
+//        if (flexFit != null) {
+//            val fillMaxSize = when (flexFit.lowercase()) {
+//                "tight", "expanded" -> true
+//                "loose", "flexible" -> false
+//                else -> true
+//            }
+//
+//            // This works because we're inside RowScope or ColumnScope
+//            Box(modifier = Modifier.weight(flexValue.toFloat(), fill = fillMaxSize)) {
+//                child.ToWidget(payload)
+//            }
+//        } else {
+//            child.ToWidget(payload)
+//        }
+//    }
 
     @Composable
     private fun wrapWithScrollViewIfNeeded(content: @Composable () -> Unit) {
@@ -141,44 +238,21 @@ class VWFlex(
     }
 
     @Composable
-    private fun buildFlex(payload: RenderPayload,content: @Composable () -> Unit,) {
-        val spacing = (props.spacing ?: 0.0).dp
+    private fun buildColumnModifier(payload: RenderPayload): Modifier {
         val startSpacing = (props.startSpacing ?: 0.0).dp
         val endSpacing = (props.endSpacing ?: 0.0).dp
-        val mainAxisSize = props.mainAxisSize ?: "min"
+        return Modifier
+            .padding(top = startSpacing, bottom = endSpacing)
+            .buildModifier(payload)
+    }
 
-        val mainAxisAlignment = when (props.direction) {
-            FlexDirection.VERTICAL -> toMainAxisAlignmentVertical(props.mainAxisAlignment)
-            FlexDirection.HORIZONTAL -> toMainAxisAlignmentHorizontal(props.mainAxisAlignment)
-        }
-        
-        val crossAxisAlignment = when (props.direction) {
-            FlexDirection.VERTICAL -> toHorizontalAlignment(props.crossAxisAlignment)
-            FlexDirection.HORIZONTAL -> toVerticalAlignment(props.crossAxisAlignment)
-        }
-
-        when (props.direction) {
-            FlexDirection.VERTICAL -> {
-                Column(
-                    modifier = Modifier
-                        .padding(top = startSpacing, bottom = endSpacing).buildModifier( payload),
-                    verticalArrangement = mainAxisAlignment as Arrangement.Vertical,
-                    horizontalAlignment = crossAxisAlignment as Alignment.Horizontal
-                ) {
-                    content()
-                }
-            }
-            FlexDirection.HORIZONTAL -> {
-                Row(
-                    modifier = Modifier
-                        .padding(start = startSpacing, end = endSpacing).buildModifier(payload),
-                    horizontalArrangement = mainAxisAlignment as Arrangement.Horizontal,
-                    verticalAlignment = crossAxisAlignment as Alignment.Vertical
-                ) {
-                    content()
-                }
-            }
-        }
+    @Composable
+    private fun buildRowModifier(payload: RenderPayload): Modifier {
+        val startSpacing = (props.startSpacing ?: 0.0).dp
+        val endSpacing = (props.endSpacing ?: 0.0).dp
+        return Modifier
+            .padding(start = startSpacing, end = endSpacing)
+            .buildModifier(payload)
     }
 
     private fun toMainAxisAlignmentVertical(value: String?): Arrangement.Vertical {
@@ -231,8 +305,7 @@ class VWFlex(
 
         val variables = mutableMapOf<String, Any?>()
         variables.putAll(flexObj)
-        
-        // Add named reference if refName is provided
+
         refName?.let { name ->
             variables[name] = flexObj
         }
@@ -278,3 +351,5 @@ fun rowBuilder(data: VWNodeData, parent: VirtualNode?, registry: VirtualWidgetRe
 
     )
 }
+
+

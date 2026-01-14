@@ -5,6 +5,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
@@ -62,6 +63,9 @@ fun DUIPage(
         )
     }
 
+    val didLoad = remember { mutableStateOf(false) }
+
+
     RootStateTreeProvider {
         StateScope(
             namespace = pageId,
@@ -91,20 +95,23 @@ fun DUIPage(
              * ON PAGE LOAD (runs once)
              * ---------------------------------------- */
             LaunchedEffect(pageId) {
-                pageDef.onPageLoad?.let { actionFlow ->
-                    try {
-                        val executor = actionContext.execute(
-                            context = context,
-                            actionFlow = actionFlow,
-                            scopeContext = scopeContext,
-                            stateContext = stateContext,
-                            resourceProvider = resources,
-                            scope = this
-                        )
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                    }
-                }
+               if(!didLoad.value){
+                   didLoad.value = true
+                   pageDef.onPageLoad?.let { actionFlow ->
+                       try {
+                           val executor = actionContext.execute(
+                               context = context,
+                               actionFlow = actionFlow,
+                               scopeContext = scopeContext,
+                               stateContext = stateContext,
+                               resourceProvider = resources,
+                               scope = this
+                           )
+                       } catch (e: Exception) {
+                           e.printStackTrace()
+                       }
+                   }
+               }
             }
 
             /* ----------------------------------------

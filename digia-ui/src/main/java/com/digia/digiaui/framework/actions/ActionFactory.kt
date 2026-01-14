@@ -49,7 +49,10 @@ class ActionFactory {
                 ActionType.SET_APP_STATE -> SetAppStateAction.fromJson(actionData)
 //
                 // Other action types will be implemented later
-                else -> null
+                else -> ShowToastAction(
+                    message = ExprOr.fromValue("Unsupported action type: $typeStr")
+
+                )
             }
 
             // Set disableActionIf on the created action

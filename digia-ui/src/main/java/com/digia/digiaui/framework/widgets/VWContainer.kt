@@ -43,6 +43,7 @@ import com.digia.digiaui.framework.utils.NumUtil
 import com.digia.digiaui.framework.utils.ToUtils
 import com.digia.digiaui.framework.utils.applyIf
 import com.digia.digiaui.framework.utils.toDp
+import com.digia.digiaui.framework.utils.toPercentFraction
 
 /**
  * Container widget - uses commonProps for most styling, adds gradient/elevation/alignment
@@ -112,6 +113,8 @@ class VWContainer(
             }
         }
 
+        val widthPercent = containerProps.width.toPercentFraction()
+        val heightPercent = containerProps.height.toPercentFraction()
         // Apply sizing constraints
         modifier = modifier
             .applyIf(containerProps.width != null) { size(width = containerProps.width.toDp()!!, height = Dp.Unspecified) }
