@@ -108,6 +108,7 @@ dependencies {
 
     // Image Loading
     implementation("io.coil-kt:coil-compose:2.5.0")
+    implementation("io.coil-kt:coil-svg:2.5.0") 
     implementation(libs.androidx.compose.runtime)
     implementation(libs.compose.material3)
     implementation(libs.androidx.compose.foundation.layout)
