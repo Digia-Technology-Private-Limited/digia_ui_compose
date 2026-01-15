@@ -1,18 +1,13 @@
 package com.digia.digiaui.framework.widgets
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.Layout
-import androidx.compose.ui.layout.Measurable
-import androidx.compose.ui.layout.Placeable
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.Constraints
-import androidx.compose.ui.unit.Density
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.digia.digiaui.framework.RenderPayload
 import com.digia.digiaui.framework.VirtualWidgetRegistry
@@ -23,12 +18,10 @@ import com.digia.digiaui.framework.models.Props
 import com.digia.digiaui.framework.models.VWNodeData
 import com.digia.digiaui.framework.registerAllChildern
 import com.digia.digiaui.framework.utils.JsonLike
-import kotlin.math.max
-import kotlin.math.roundToInt
 
 /**
  * Stack widget properties
- * 
+ *
  * Maps to Flutter Stack widget with properties from schema:
  * - childAlignment: alignment for non-positioned children (topStart, center, etc.)
  * - fit: how stack sizes itself relative to children (expand, loose, passthrough)
@@ -49,12 +42,6 @@ data class StackProps(
 
 /**
  * Positioning data extracted from parentProps
- * 
- * Mirrors Flutter's Positioned widget:
- * - left: distance from left edge of Stack (in dp)
- * - top: distance from top edge of Stack (in dp)
- * - right: distance from right edge of Stack (in dp)
- * - bottom: distance from bottom edge of Stack (in dp)
  */
 data class PositionData(
     val left: Double? = null,
@@ -62,18 +49,6 @@ data class PositionData(
     val right: Double? = null,
     val bottom: Double? = null
 ) {
-    fun hasAnyPositioning(): Boolean {
-        return left != null || top != null || right != null || bottom != null
-    }
-    
-    /**
-     * Convert dp value to pixels using the provided density
-     */
-    fun leftPx(density: Density): Int? = left?.let { with(density) { it.dp.roundToPx() } }
-    fun topPx(density: Density): Int? = top?.let { with(density) { it.dp.roundToPx() } }
-    fun rightPx(density: Density): Int? = right?.let { with(density) { it.dp.roundToPx() } }
-    fun bottomPx(density: Density): Int? = bottom?.let { with(density) { it.dp.roundToPx() } }
-    
     companion object {
         /**
          * Parses position string in format "left,top,right,bottom"
@@ -81,12 +56,12 @@ data class PositionData(
          */
         fun fromString(positionStr: String): PositionData {
             val parts = positionStr.split(',').map { it.trim() }
-            
+
             fun parse(value: String): Double? {
-                return if (value.isEmpty() || value == "-") null 
+                return if (value.isEmpty() || value == "-") null
                 else value.toDoubleOrNull()
             }
-            
+
             return PositionData(
                 left = if (parts.isNotEmpty()) parse(parts[0]) else null,
                 top = if (parts.size > 1) parse(parts[1]) else null,
@@ -94,7 +69,7 @@ data class PositionData(
                 bottom = if (parts.size > 3) parse(parts[3]) else null
             )
         }
-        
+
         fun fromJson(json: JsonLike): PositionData {
             return PositionData(
                 left = (json["left"] as? Number)?.toDouble(),
@@ -109,18 +84,10 @@ data class PositionData(
 /**
  * Virtual Stack widget
  *
- * Renders children in a stack layout similar to Flutter's Stack widget.
+ * Renders children in a stack layout using Compose Box.
  * Children are laid out on top of each other with optional positioning.
  *
- * Flutter's Stack/Positioned behavior:
- * 1. Non-positioned children are aligned using the `alignment` property and sized loosely
- * 2. Positioned children are placed absolutely from specified edges
- * 3. If both left and right are specified, child width is constrained
- * 4. If both top and bottom are specified, child height is constrained
- * 5. Stack sizes itself based on `fit`:
- *    - loose: wraps the largest non-positioned child
- *    - expand: fills parent
- *    - passthrough: passes constraints through
+ * Equivalent to Flutter's Stack widget.
  */
 class VWStack(
     refName: String? = null,
@@ -148,40 +115,62 @@ class VWStack(
 
         val alignment = toAlignment(props.childAlignment)
         val stackFit = props.fit ?: "loose"
-        
+
         // Build base modifier with common props
         val baseModifier = Modifier.buildModifier(payload)
-        
+
         // Apply fit modifier based on fit type
+        // In Flutter Stack:
+        // - expand: Stack fills parent, non-positioned children also fill
+        // - loose: Stack sizes to largest child (default)
+        // - passthrough: Stack passes parent constraints to children
         val boxModifier = when (stackFit.lowercase()) {
             "expand" -> baseModifier.fillMaxSize()
             "passthrough" -> baseModifier.wrapContentSize(unbounded = true)
             else -> baseModifier // loose (default) - wrap content
         }
 
-        // Collect position data for each child
-        val childPositions = children.map { extractPosition(it) }
-        
-        // Get density for dp to pixel conversion
-        val density = LocalDensity.current
-
-        // Debug log position data
-        childPositions.forEachIndexed { index, pos ->
-            android.util.Log.d("VWStack", "Child[$index] position: left=${pos?.left}, top=${pos?.top}, right=${pos?.right}, bottom=${pos?.bottom}")
-        }
-
-        // Use custom layout to properly position children like Flutter's Stack
-        StackLayout(
+        Box(
             modifier = boxModifier,
-            alignment = alignment,
-            stackFit = stackFit,
-            childPositions = childPositions,
-            density = density
+            contentAlignment = alignment
         ) {
+            // In Flutter Stack, children are rendered in order and overlap.
+            // The first child is at the bottom, last child is on top.
+            // Non-positioned children are aligned according to `alignment`.
+            // Positioned children are placed at absolute positions.
             children.forEach { child ->
-                Box {
-                    child.ToWidget(payload)
-                }
+                RenderStackChild(child, payload, alignment, stackFit)
+            }
+        }
+    }
+
+    @Composable
+    private fun BoxScope.RenderStackChild(
+        child: VirtualNode,
+        payload: RenderPayload,
+        stackAlignment: Alignment,
+        stackFit: String
+    ) {
+        val position = extractPosition(child)
+
+        if (position != null && hasAnyPositioning(position)) {
+            // Child has explicit positioning - apply offset from edges
+            Box(modifier = buildPositionedModifier(position)) {
+                child.ToWidget(payload)
+            }
+        } else {
+            // No positioning - child should be aligned according to stack's alignment
+            // and overlap with other non-positioned children
+            //
+            // In Flutter with fit: expand, non-positioned children fill the stack
+            // In Flutter with fit: loose, non-positioned children use their natural size
+            val childModifier = when (stackFit.lowercase()) {
+                "expand" -> Modifier.align(stackAlignment).fillMaxSize()
+                else -> Modifier.align(stackAlignment)
+            }
+
+            Box(modifier = childModifier) {
+                child.ToWidget(payload)
             }
         }
     }
@@ -190,15 +179,10 @@ class VWStack(
      * Extracts position data from child's parentProps
      */
     private fun extractPosition(child: VirtualNode): PositionData? {
-        val parentProps = child.parentProps
-        val positionValue = parentProps?.value?.get("position")
-        
-        // Debug logging
-        android.util.Log.d("VWStack", "extractPosition - Child: ${child.refName}, parentProps: ${parentProps?.value}, position: $positionValue")
-        
-        if (parentProps == null || positionValue == null) return null
-        
-        val result = when (positionValue) {
+        val parentProps = child.parentProps ?: return null
+        val positionValue = parentProps.value["position"] ?: return null
+
+        return when (positionValue) {
             is String -> PositionData.fromString(positionValue)
             is Map<*, *> -> {
                 @Suppress("UNCHECKED_CAST")
@@ -206,9 +190,55 @@ class VWStack(
             }
             else -> null
         }
-        
-        android.util.Log.d("VWStack", "extractPosition - Parsed: left=${result?.left}, top=${result?.top}, right=${result?.right}, bottom=${result?.bottom}")
-        return result
+    }
+
+    /**
+     * Checks if position has any non-null values
+     */
+    private fun hasAnyPositioning(position: PositionData): Boolean {
+        return position.left != null || position.top != null ||
+                position.right != null || position.bottom != null
+    }
+
+    /**
+     * Builds a modifier for absolute positioning from edges
+     *
+     * This mimics Flutter's Positioned widget behavior:
+     * - left: distance from left edge
+     * - top: distance from top edge
+     * - right: distance from right edge
+     * - bottom: distance from bottom edge
+     */
+    private fun BoxScope.buildPositionedModifier(position: PositionData): Modifier {
+        // Determine which corner/edge to align to based on specified positions
+        val alignment = when {
+            position.left != null && position.top != null -> Alignment.TopStart
+            position.right != null && position.top != null -> Alignment.TopEnd
+            position.left != null && position.bottom != null -> Alignment.BottomStart
+            position.right != null && position.bottom != null -> Alignment.BottomEnd
+            position.left != null -> Alignment.CenterStart
+            position.right != null -> Alignment.CenterEnd
+            position.top != null -> Alignment.TopCenter
+            position.bottom != null -> Alignment.BottomCenter
+            else -> Alignment.TopStart
+        }
+
+        // Calculate offset based on specified positions
+        val offsetX = when {
+            position.left != null -> position.left.dp
+            position.right != null -> -(position.right.dp)
+            else -> 0.dp
+        }
+
+        val offsetY = when {
+            position.top != null -> position.top.dp
+            position.bottom != null -> -(position.bottom.dp)
+            else -> 0.dp
+        }
+
+        return Modifier
+            .align(alignment)
+            .offset(x = offsetX, y = offsetY)
     }
 
     /**
@@ -230,215 +260,17 @@ class VWStack(
     }
 }
 
-/**
- * Custom Layout composable that mimics Flutter's Stack positioning behavior.
- * 
- * This properly handles:
- * 1. Non-positioned children: aligned using alignment property
- * 2. Positioned children: absolute positioning from edges
- * 3. Width/height constraints when both left+right or top+bottom are specified
- */
-@Composable
-private fun StackLayout(
-    modifier: Modifier,
-    alignment: Alignment,
-    stackFit: String,
-    childPositions: List<PositionData?>,
-    density: Density,
-    content: @Composable () -> Unit
-) {
-    Layout(
-        content = content,
-        modifier = modifier
-    ) { measurables, constraints ->
-        // For loose fit, we need to first measure non-positioned children to determine stack size
-        // For expand fit, we use parent constraints
-        
-        val looseConstraints = constraints.copy(minWidth = 0, minHeight = 0)
-        
-        // Pre-measure non-positioned children to determine stack size for loose fit
-        val nonPositionedMeasurements = mutableMapOf<Int, Placeable>()
-        var maxNonPositionedWidth = 0
-        var maxNonPositionedHeight = 0
-        
-        if (stackFit.lowercase() != "expand") {
-            measurables.forEachIndexed { index, measurable ->
-                val position = childPositions.getOrNull(index)
-                val isPositioned = position?.hasAnyPositioning() == true
-                
-                if (!isPositioned) {
-                    val placeable = measurable.measure(looseConstraints)
-                    nonPositionedMeasurements[index] = placeable
-                    maxNonPositionedWidth = max(maxNonPositionedWidth, placeable.width)
-                    maxNonPositionedHeight = max(maxNonPositionedHeight, placeable.height)
-                }
-            }
-        }
-        
-        // Determine Stack size based on fit
-        val stackWidth = when (stackFit.lowercase()) {
-            "expand" -> constraints.maxWidth
-            else -> if (constraints.hasBoundedWidth) {
-                max(maxNonPositionedWidth, constraints.minWidth).coerceAtMost(constraints.maxWidth)
-            } else {
-                max(maxNonPositionedWidth, constraints.minWidth)
-            }
-        }
-        
-        val stackHeight = when (stackFit.lowercase()) {
-            "expand" -> constraints.maxHeight
-            else -> if (constraints.hasBoundedHeight) {
-                max(maxNonPositionedHeight, constraints.minHeight).coerceAtMost(constraints.maxHeight)
-            } else {
-                max(maxNonPositionedHeight, constraints.minHeight)
-            }
-        }
-        
-        android.util.Log.d("VWStack", "StackLayout - stackWidth=$stackWidth, stackHeight=$stackHeight, fit=$stackFit")
-        
-        // Measure all children with final stack size known
-        val placeables = measurables.mapIndexed { index, measurable ->
-            val position = childPositions.getOrNull(index)
-            val isPositioned = position?.hasAnyPositioning() == true
-            
-            if (!isPositioned) {
-                // Use pre-measured value if available (loose fit), otherwise measure now (expand fit)
-                nonPositionedMeasurements[index] ?: measurable.measure(
-                    if (stackFit.lowercase() == "expand") constraints else looseConstraints
-                )
-            } else {
-                // Measure positioned child with appropriate constraints
-                measurePositionedChild(measurable, position, stackWidth, stackHeight, constraints, density)
-            }
-        }
-        
-        layout(stackWidth, stackHeight) {
-            placeables.forEachIndexed { index, placeable ->
-                val position = childPositions.getOrNull(index)
-                
-                if (position?.hasAnyPositioning() == true) {
-                    // Positioned child: calculate position from edges using density for dp->px conversion
-                    val (x, y) = calculatePositionedOffset(position, placeable, stackWidth, stackHeight, density)
-                    android.util.Log.d("VWStack", "Placing child[$index] at x=$x, y=$y (placeable: ${placeable.width}x${placeable.height})")
-                    placeable.placeRelative(x, y)
-                } else {
-                    // Non-positioned child: use alignment
-                    val alignmentOffset = alignment.align(
-                        size = androidx.compose.ui.unit.IntSize(placeable.width, placeable.height),
-                        space = androidx.compose.ui.unit.IntSize(stackWidth, stackHeight),
-                        layoutDirection = layoutDirection
-                    )
-                    android.util.Log.d("VWStack", "Aligning child[$index] at x=${alignmentOffset.x}, y=${alignmentOffset.y}")
-                    placeable.placeRelative(alignmentOffset.x, alignmentOffset.y)
-                }
-            }
-        }
-    }
-}
-
-/**
- * Measures a positioned child with appropriate constraints based on position data.
- * 
- * Flutter's Positioned behavior:
- * - If both left and right are specified: width = stackWidth - left - right
- * - If both top and bottom are specified: height = stackHeight - top - bottom
- * - Otherwise: use natural size
- */
-private fun measurePositionedChild(
-    measurable: Measurable,
-    position: PositionData?,
-    stackWidth: Int,
-    stackHeight: Int,
-    parentConstraints: Constraints,
-    density: Density
-): Placeable {
-    // Convert dp values to pixels using density
-    val leftPx = position?.leftPx(density) ?: 0
-    val topPx = position?.topPx(density) ?: 0
-    val rightPx = position?.rightPx(density) ?: 0
-    val bottomPx = position?.bottomPx(density) ?: 0
-    
-    val hasLeft = position?.left != null
-    val hasRight = position?.right != null
-    val hasTop = position?.top != null
-    val hasBottom = position?.bottom != null
-    
-    // Calculate constrained width if both left and right are specified
-    val constrainedWidth = if (hasLeft && hasRight) {
-        (stackWidth - leftPx - rightPx).coerceAtLeast(0)
-    } else {
-        null
-    }
-    
-    // Calculate constrained height if both top and bottom are specified
-    val constrainedHeight = if (hasTop && hasBottom) {
-        (stackHeight - topPx - bottomPx).coerceAtLeast(0)
-    } else {
-        null
-    }
-    
-    val childConstraints = Constraints(
-        minWidth = constrainedWidth ?: 0,
-        maxWidth = constrainedWidth ?: parentConstraints.maxWidth,
-        minHeight = constrainedHeight ?: 0,
-        maxHeight = constrainedHeight ?: parentConstraints.maxHeight
-    )
-    
-    android.util.Log.d("VWStack", "measurePositionedChild - hasLeft=$hasLeft, hasRight=$hasRight, hasTop=$hasTop, hasBottom=$hasBottom, constrainedWidth=$constrainedWidth, constrainedHeight=$constrainedHeight")
-    
-    return measurable.measure(childConstraints)
-}
-
-/**
- * Calculates the x, y offset for a positioned child.
- * 
- * Flutter's Positioned positioning:
- * - left: x = left
- * - right (no left): x = stackWidth - right - childWidth
- * - top: y = top
- * - bottom (no top): y = stackHeight - bottom - childHeight
- * - both left and right: x = left (width is already constrained)
- * - both top and bottom: y = top (height is already constrained)
- */
-private fun calculatePositionedOffset(
-    position: PositionData,
-    placeable: Placeable,
-    stackWidth: Int,
-    stackHeight: Int,
-    density: Density
-): Pair<Int, Int> {
-    // Convert dp values to pixels using density
-    val leftPx = position.leftPx(density)
-    val topPx = position.topPx(density)
-    val rightPx = position.rightPx(density)
-    val bottomPx = position.bottomPx(density)
-    
-    // Calculate X position
-    val x = when {
-        leftPx != null -> leftPx
-        rightPx != null -> stackWidth - rightPx - placeable.width
-        else -> 0
-    }
-    
-    // Calculate Y position
-    val y = when {
-        topPx != null -> topPx
-        bottomPx != null -> stackHeight - bottomPx - placeable.height
-        else -> 0
-    }
-    
-    android.util.Log.d("VWStack", "calculatePositionedOffset - leftPx=$leftPx, topPx=$topPx, rightPx=$rightPx, bottomPx=$bottomPx -> x=$x, y=$y")
-    
-    return Pair(x, y)
-}
-
 /** Builder function for Stack widget */
 fun stackBuilder(
     data: VWNodeData,
     parent: VirtualNode?,
     registry: VirtualWidgetRegistry
 ): VirtualNode {
-
+    val childrenData = data.childGroups?.mapValues { (_, childrenData) ->
+        childrenData.map { childData ->
+            registry.createWidget(childData, parent)
+        }
+    }
     return VWStack(
         refName = data.refName,
         commonProps = data.commonProps,

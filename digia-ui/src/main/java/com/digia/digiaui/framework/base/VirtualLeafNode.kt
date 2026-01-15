@@ -28,7 +28,6 @@ abstract class VirtualLeafNode<T>(
 
         if (!isVisible) return
 
-        val align = commonProps?.align
 
 //        if (align != null) {
 //            Box(

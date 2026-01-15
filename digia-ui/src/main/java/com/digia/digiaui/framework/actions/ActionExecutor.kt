@@ -45,7 +45,7 @@ class ActionExecutor(
             stateContext: com.digia.digiaui.framework.state.StateContext?,
             scope: CoroutineScope = CoroutineScope(Dispatchers.Main)
     ) {
-        scope.launch {
+//        scope.launch {
 
             
             // Execute each action sequentially
@@ -77,5 +77,5 @@ class ActionExecutor(
                 }
             }
         }
-    }
+//    }
 }

@@ -45,7 +45,9 @@ class VWStateContainer(
             namespace = refName,
             initialState = resolvedState,
         ) { stateContext ->
-                 child.ToWidget(payload.copyWithChainedContext(_createExprContext(stateContext = stateContext)))
+            key (stateContext){
+                child.ToWidget(payload.copyWithChainedContext(_createExprContext(stateContext = stateContext)))
+            }
         }
 
     }

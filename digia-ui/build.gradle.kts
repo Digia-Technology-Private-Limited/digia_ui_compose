@@ -64,7 +64,6 @@ android {
 }
 
 dependencies {
-    implementation(libs.digiaexpr)
     implementation("androidx.core:core-ktx:1.12.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.2")
     implementation("androidx.activity:activity-compose:1.7.2")
@@ -92,6 +91,7 @@ dependencies {
 
     // Networking
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
+        implementation(libs.digia.expr.kt)
 
     // DataStore for preferences
     implementation("androidx.datastore:datastore-preferences:1.0.0")

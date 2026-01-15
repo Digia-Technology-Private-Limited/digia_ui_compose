@@ -205,7 +205,6 @@ class VWAsyncBuilder(
         ) { asyncState ->
 
             // ✅ gate to block UI until actions complete
-            var readyToShow by remember { mutableStateOf(false) }
             val futureType = getFutureType(props, payload)
             val updatedPayload = payload.copyWithChainedContext(
                 createExprContext(asyncState, futureType, refName)
