@@ -21,7 +21,7 @@ fun DefaultVirtualWidgetRegistry.registerBuiltInWidgets() {
     // Register layout widgets
     register("digia/column", ::columnBuilder)
     register("digia/row", ::rowBuilder)
-    register("digia/stack", ::stackBuilder)
+//    register("digia/stack", ::stackBuilder)
     
     // Register list widget
     register("digia/listView", ::listViewBuilder)

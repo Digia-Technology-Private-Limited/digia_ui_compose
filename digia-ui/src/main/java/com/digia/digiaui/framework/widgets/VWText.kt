@@ -104,7 +104,7 @@ fun textBuilder(data: VWNodeData, parent: VirtualNode?,registry: VirtualWidgetRe
         refName = data.refName,
         commonProps = data.commonProps,
         parent = parent,
-        parentProps = data.props,
+        parentProps = data.parentProps,
         props = TextProps.fromJson(data.props.value)
     )
 }

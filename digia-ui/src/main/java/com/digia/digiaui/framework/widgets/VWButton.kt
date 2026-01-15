@@ -547,7 +547,7 @@ fun buttonBuilder(
         refName = data.refName,
         commonProps = data.commonProps,
         parent = parent,
-        parentProps = data.props,
+        parentProps = data.parentProps,
         props = ButtonProps.fromJson(data.props.value)
     )
 }
