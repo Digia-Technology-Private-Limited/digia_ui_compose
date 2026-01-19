@@ -15,6 +15,7 @@ import com.digia.digiaui.framework.VirtualWidgetRegistry
 import com.digia.digiaui.framework.actions.LocalActionExecutor
 import com.digia.digiaui.framework.appstate.AppStateScopeContext
 import com.digia.digiaui.framework.appstate.DUIAppState
+import com.digia.digiaui.framework.datatype.DataTypeCreator
 import com.digia.digiaui.framework.expr.DefaultScopeContext
 import com.digia.digiaui.framework.expr.ScopeContext
 import com.digia.digiaui.framework.models.PageDefinition
@@ -34,24 +35,6 @@ fun DUIPage(
     pageDef: PageDefinition,
     registry: VirtualWidgetRegistry
 ) {
-    /* ----------------------------------------
-     * Resolve arguments
-     * ---------------------------------------- */
-    val resolvedPageArgs =
-        pageDef.pageArgDefs?.mapValues { (key, variable) ->
-            pageArgs?.get(key) ?: variable.defaultValue
-        } ?: emptyMap()
-
-    val resolvedState =
-        pageDef.initStateDefs?.mapValues { (_, variable) ->
-            variable.defaultValue
-        } ?: emptyMap()
-
-    val rootNode = pageDef.layout?.root ?: return
-
-    val virtualWidget = remember(rootNode) {
-        registry.createWidget(rootNode, null)
-    }
 
     val appStateContext = remember {
         AppStateScopeContext(
@@ -62,6 +45,26 @@ fun DUIPage(
             }
         )
     }
+    /* ----------------------------------------
+     * Resolve arguments
+     * ---------------------------------------- */
+    val resolvedPageArgs =
+        pageDef.pageArgDefs?.mapValues { (key, variable) ->
+            pageArgs?.get(key) ?: variable.defaultValue
+        } ?: emptyMap()
+
+    val resolvedState =
+        pageDef.initStateDefs?.mapValues { (_, variable) ->
+            DataTypeCreator.create(variable,_createExprContext(resolvedPageArgs,null,appStateContext))
+        } ?: emptyMap()
+
+    val rootNode = pageDef.layout?.root ?: return
+
+    val virtualWidget = remember(rootNode) {
+        registry.createWidget(rootNode, null)
+    }
+
+
 
     val didLoad = remember { mutableStateOf(false) }
 
@@ -79,7 +82,7 @@ fun DUIPage(
 
 
             
-            val scopeContext = remember(resolvedPageArgs, stateContext) {
+            val scopeContext = remember(resolvedPageArgs, stateContext,stateContext.Version()) {
                 _createExprContext(
                     params = resolvedPageArgs,
                     stateContext = stateContext,

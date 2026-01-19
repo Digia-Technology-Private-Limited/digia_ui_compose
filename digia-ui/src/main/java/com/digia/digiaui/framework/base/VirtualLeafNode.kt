@@ -28,7 +28,8 @@ abstract class VirtualLeafNode<T>(
 
         if (!isVisible) return
 
-            Render(extendedPayload)
+
+        Render(extendedPayload)
 
     }
 

@@ -3,6 +3,7 @@ package com.digia.digiaui.framework.actions
 //import com.digia.digiaui.framework.actions.appstate.GetAppStateProcessor
 //import com.digia.digiaui.framework.actions.appstate.ResetAppStateProcessor
 //import com.digia.digiaui.framework.actions.appstate.SetAppStateProcessor
+import com.digia.digiaui.framework.actions.ControlObject.ControlObjectProcessor
 import com.digia.digiaui.framework.actions.appstate.SetAppStateProcessor
 import com.digia.digiaui.framework.actions.base.Action
 import com.digia.digiaui.framework.actions.base.ActionProcessor
@@ -16,10 +17,11 @@ import com.digia.digiaui.framework.actions.rebuildState.RebuildStateProcessor
 import com.digia.digiaui.framework.actions.setState.SetStateProcessor
 //import com.digia.digiaui.framework.actions.showBottomSheet.ShowBottomSheetProcessor
 import com.digia.digiaui.framework.actions.showToast.ShowToastProcessor
+import com.digia.digiaui.framework.datatype.methodbinding.MethodBindingRegistry
 
 /** Action processor factory - routes actions to their processors */
 class ActionProcessorFactory {
-    fun getProcessor(action: Action): ActionProcessor<*> {
+    fun getProcessor(action: Action, methodBindingRegistry: MethodBindingRegistry): ActionProcessor<*> {
         return when (action.actionType) {
             ActionType.SHOW_TOAST -> ShowToastProcessor()
             ActionType.SET_STATE -> SetStateProcessor()
@@ -28,6 +30,7 @@ class ActionProcessorFactory {
             ActionType.NAVIGATE_BACK -> PopPageProcessor()
             ActionType.OPEN_URL -> OpenUrlProcessor()
             ActionType.CALL_REST_API -> CallRestApiProcessor()
+            ActionType.CONTROL_OBJECT -> ControlObjectProcessor(methodBindingRegistry )
 //            ActionType.SHOW_BOTTOM_SHEET -> ShowBottomSheetProcessor()
             ActionType.SET_APP_STATE -> SetAppStateProcessor()
 

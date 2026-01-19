@@ -397,42 +397,8 @@ class DUIFactory private constructor() {
         Logger.log("Set ${variables.size} environment variables")
     }
 
-    /**
-     * Gets an environment variable value.
-     *
-     * @param key The variable name
-     * @return The variable value or null if not found
-     *
-     * @throws IllegalStateException if DigiaUIManager is not initialized
-     */
-    fun getEnvironmentVariable(key: String): Any? {
-        val digiaUIInstance = DigiaUIManager.getInstance().safeInstance
-        if (digiaUIInstance == null) {
-            throw IllegalStateException(
-                "DigiaUIManager is not initialized. Make sure to call DigiaUI.initialize() " +
-                        "and await its completion before calling getEnvironmentVariable()."
-            )
-        }
-        return digiaUIInstance.dslConfig.getEnvVariable(key)
-    }
 
-    /**
-     * Gets all environment variables.
-     *
-     * @return Map of all environment variables
-     *
-     * @throws IllegalStateException if DigiaUIManager is not initialized
-     */
-    fun getAllEnvironmentVariables(): Map<String, Any?> {
-        val digiaUIInstance = DigiaUIManager.getInstance().safeInstance
-        if (digiaUIInstance == null) {
-            throw IllegalStateException(
-                "DigiaUIManager is not initialized. Make sure to call DigiaUI.initialize() " +
-                        "and await its completion before calling getAllEnvironmentVariables()."
-            )
-        }
-        return digiaUIInstance.dslConfig.getAllEnvVariables()
-    }
+
 
     /**
      * Clears a single environment variable value at runtime.

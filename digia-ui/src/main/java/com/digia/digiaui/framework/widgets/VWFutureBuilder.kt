@@ -65,6 +65,11 @@ class AsyncController<T>(
 
     private var isDirty = true
 
+
+    fun  isDirty() : Boolean {
+        return isDirty
+    }
+
     fun setFutureCreator(creator: suspend () -> T) {
         futureCreator = creator
         invalidate()
@@ -101,7 +106,7 @@ class AsyncController<T>(
 @Composable
 fun <T> AsyncBuilder(
     initialData: T? = null,
-    controller: AsyncController<T> ,
+    controller: AsyncController<T>,
     contentBuilder: @Composable (AsyncState<T>) -> Unit
 ) {
     val scope = rememberCoroutineScope()
@@ -111,8 +116,8 @@ fun <T> AsyncBuilder(
         controller
     }
 
-    // Trigger load once (or when controller changes)
-    LaunchedEffect(asyncController) {
+    // Trigger load when controller changes
+    LaunchedEffect(asyncController,asyncController.isDirty()) {
         asyncController.load(scope)
     }
 
@@ -198,6 +203,12 @@ class VWAsyncBuilder(
             )
         }
 
+        // Invalidate controller when state version changes
+        val stateVersion = stateContext?.version
+        LaunchedEffect(stateVersion) {
+            controller.invalidate()
+        }
+
         // 👇 gate to control UI rendering
         AsyncBuilder(
             controller = controller,
@@ -205,7 +216,59 @@ class VWAsyncBuilder(
         ) { asyncState ->
 
             // ✅ gate to block UI until actions complete
+            var readyToShow by remember { mutableStateOf(false) }
+
+            LaunchedEffect(asyncState) {
+                readyToShow = false  // block UI
+
+                when (asyncState) {
+                    is AsyncState.Success -> {
+                        props.onSuccess?.let { action ->
+                            payload.executeAction(
+                                context,
+                                action,
+                                actionExecutor,
+                                stateContext,
+                                resourceProvider,
+                                incomingScopeContext = DefaultScopeContext(
+                                    variables = mapOf("response" to asyncState.data)
+                                ),
+                            )
+                        }
+                    }
+
+                    is AsyncState.Error -> {
+                        props.onError?.let { action ->
+                            payload.executeAction(
+                                context,
+                                action,
+                                actionExecutor,
+                                stateContext,
+                                resourceProvider,
+                                incomingScopeContext = DefaultScopeContext(
+                                    variables = mapOf(
+                                        "response" to mapOf("error" to asyncState.throwable.message)
+                                    )
+                                ),
+                            )
+                        }
+                    }
+
+                    else -> Unit
+                }
+
+                readyToShow = true // allow UI after actions complete
+            }
+
+            // 🚫 Block child rendering until actions complete
+            if (!readyToShow) {
+                // optionally show a loading widget
+                LoadingWidget()
+                return@AsyncBuilder
+            }
+
             val futureType = getFutureType(props, payload)
+
             val updatedPayload = payload.copyWithChainedContext(
                 createExprContext(asyncState, futureType, refName)
             )
@@ -214,6 +277,12 @@ class VWAsyncBuilder(
         }
 
     }
+
+    @Composable
+    fun LoadingWidget() {
+        Text("Loading...")
+    }
+
 }
 
 

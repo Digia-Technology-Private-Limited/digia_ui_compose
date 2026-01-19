@@ -5,8 +5,9 @@ import androidx.compose.runtime.key
 import androidx.compose.ui.Modifier
 import com.digia.digiaui.framework.RenderPayload
 import com.digia.digiaui.framework.base.VirtualNode
+import com.digia.digiaui.framework.datatype.DataTypeCreator
+import com.digia.digiaui.framework.datatype.Variable
 import com.digia.digiaui.framework.models.Props
-import com.digia.digiaui.framework.models.Variable
 
 
 /**
@@ -36,7 +37,10 @@ class VWStateContainer(
 
         // ✅ Evaluate initial state ONCE
         val resolvedState = initStateDefs.mapValues {
-            payload.eval<Any>(it.value.defaultValue)
+            DataTypeCreator.create(
+          it.value,
+              payload.scopeContext
+            )
         }
 
         StateScope(

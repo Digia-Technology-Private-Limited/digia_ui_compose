@@ -3,11 +3,11 @@ package com.digia.digiaui.framework.actions
 //import com.digia.digiaui.framework.actions.appstate.GetAppStateAction
 //import com.digia.digiaui.framework.actions.appstate.ResetAppStateAction
 //import com.digia.digiaui.framework.actions.appstate.SetAppStateAction
-import com.digia.digiaui.framework.actions.appstate.SetAppStateAction
 import com.digia.digiaui.framework.actions.base.Action
 import com.digia.digiaui.framework.actions.base.ActionType
 import com.digia.digiaui.framework.actions.callRestApi.CallRestApiAction
 //import com.digia.digiaui.framework.actions.callRestApi.CallRestApiAction
+import com.digia.digiaui.framework.actions.ControlObject.ControlObjectAction
 import com.digia.digiaui.framework.actions.navigation.GotoPageAction
 import com.digia.digiaui.framework.actions.navigation.PopPageAction
 import com.digia.digiaui.framework.actions.openUrl.OpenUrlAction
@@ -46,13 +46,12 @@ class ActionFactory {
                 ActionType.OPEN_URL -> OpenUrlAction.fromJson(actionData)
                ActionType.CALL_REST_API -> CallRestApiAction.fromJson(actionData)
 //                ActionType.SHOW_BOTTOM_SHEET -> ShowBottomSheetAction.fromJson(actionData)
-                ActionType.SET_APP_STATE -> SetAppStateAction.fromJson(actionData)
-//
+                ActionType.CONTROL_OBJECT -> ControlObjectAction.fromJson(actionData)
+//                ActionType.SET_APP_STATE -> SetAppStateAction.fromJson(actionData)
+//                ActionType.GET_APP_STATE -> GetAppStateAction.fromJson(actionData)
+//                ActionType.RESET_APP_STATE -> ResetAppStateAction.fromJson(actionData)
                 // Other action types will be implemented later
-                else -> ShowToastAction(
-                    message = ExprOr.fromValue("Unsupported action type: $typeStr")
-
-                )
+                else -> null
             }
 
             // Set disableActionIf on the created action

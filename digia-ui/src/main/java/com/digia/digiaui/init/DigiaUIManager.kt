@@ -4,8 +4,8 @@ import com.digia.digiaexpr.callable.ExprCallableImpl
 import com.digia.digiaexpr.callable.ExprClass
 import com.digia.digiaexpr.callable.ExprClassInstance
 import com.digia.digiaui.config.model.DUIConfig
+import com.digia.digiaui.framework.datatype.Variable
 import com.digia.digiaui.framework.logging.Logger
-import com.digia.digiaui.framework.models.Variable
 import com.digia.digiaui.network.NetworkClient
 import com.digia.digiaui.utils.DigiaInspector
 import com.digia.digiaui.utils.DigiaUIHost

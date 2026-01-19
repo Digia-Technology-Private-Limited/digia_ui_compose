@@ -49,10 +49,7 @@ fun Modifier.applyCommonProps(
     val style = commonProps.style
     var modifier = this
 
-    var align = commonProps.align
-
     if (style != null) {
-
         val margin = ToUtils.edgeInsets(style.margin)
         val padding = ToUtils.edgeInsets(style.padding)
 
@@ -74,26 +71,49 @@ fun Modifier.applyCommonProps(
                 ?.get("borderPattern") as? String
 
         /* ------------------------------------------------------ */
-        /* 1️⃣ Margin (outer spacing)                               */
+        /* 1️⃣ Margin (outer spacing - OUTSIDE clickable area)    */
         /* ------------------------------------------------------ */
         modifier = modifier.applyIf(margin != PaddingValuesZero) {
             padding(margin)
         }
+        /* ------------------------------------------------------ */
+        /* 6️⃣ Clip (before inner padding for ripple correctness) */
+        /* ------------------------------------------------------ */
+        if (borderRadius != RoundedCornerShape(0.dp)) {
+            modifier = modifier.clip(borderRadius)
+        }
+
 
         /* ------------------------------------------------------ */
-        /* 2️⃣ Size constraints                                   */
+        /* 2️⃣ Click / Gesture (covers everything except margin)  */
+        /* ------------------------------------------------------ */
+        val actionFlow = commonProps.onClick
+        if (actionFlow != null && actionFlow.actions.isNotEmpty()) {
+            modifier = modifier.clickable {
+                payload.executeAction(
+                    context = context,
+                    actionFlow = actionFlow,
+                    stateContext = stateContext,
+                    resourceProvider = resources,
+                    actionExecutor = actionExecutor
+                )
+            }
+        }
+
+        /* ------------------------------------------------------ */
+        /* 3️⃣ Size constraints                                   */
         /* ------------------------------------------------------ */
         modifier = modifier.applySizing(style)
 
         /* ------------------------------------------------------ */
-        /* 3️⃣ Background                                         */
+        /* 4️⃣ Background                                         */
         /* ------------------------------------------------------ */
         if (bgColor != null) {
             modifier = modifier.background(bgColor, borderRadius)
         }
 
         /* ------------------------------------------------------ */
-        /* 4️⃣ Border                                             */
+        /* 5️⃣ Border                                             */
         /* ------------------------------------------------------ */
         if (
             borderPattern == "solid" &&
@@ -107,46 +127,33 @@ fun Modifier.applyCommonProps(
             )
         }
 
-        /* ------------------------------------------------------ */
-        /* 5️⃣ Clip (before click for ripple correctness)         */
-        /* ------------------------------------------------------ */
-        if (borderRadius != RoundedCornerShape(0.dp)) {
-            modifier = modifier.clip(borderRadius)
-        }
 
         /* ------------------------------------------------------ */
-        /* 6️⃣ Inner padding                                      */
+        /* 7️⃣ Inner padding                                      */
         /* ------------------------------------------------------ */
         modifier = modifier.applyIf(padding != PaddingValuesZero) {
             padding(padding)
         }
-    }
-
-    /* ------------------------------------------------------ */
-    /* 7️⃣ Click / Gesture (after clip)                        */
-    /* ------------------------------------------------------ */
-    val actionFlow = commonProps.onClick
-    if (actionFlow != null && actionFlow.actions.isNotEmpty()) {
-        modifier = modifier.clickable {
-            payload.executeAction(
-                context = context,
-                actionFlow = actionFlow,
-                stateContext = stateContext,
-                resourceProvider = resources,
-                actionExecutor = actionExecutor
-            )
+    } else {
+        /* ------------------------------------------------------ */
+        /* Click / Gesture (when no style)                       */
+        /* ------------------------------------------------------ */
+        val actionFlow = commonProps.onClick
+        if (actionFlow != null && actionFlow.actions.isNotEmpty()) {
+            modifier = modifier.clickable {
+                payload.executeAction(
+                    context = context,
+                    actionFlow = actionFlow,
+                    stateContext = stateContext,
+                    resourceProvider = resources,
+                    actionExecutor = actionExecutor
+                )
+            }
         }
     }
 
-
-//    if(align != null){
-//        modifier = modifier.align(align)
-//    }
-
     return modifier
 }
-
-
 
 //@Composable
 //fun Modifier.applyCommonProps(

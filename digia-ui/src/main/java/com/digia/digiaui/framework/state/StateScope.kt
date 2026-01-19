@@ -34,9 +34,8 @@ fun StateScope(
     CompositionLocalProvider(
         LocalStateContextProvider provides stateContext,
     ) {
-//        val version = stateContext.Version()
+        // Read version to trigger recomposition, but don't use key() to avoid full rebuild
         stateContext.Version()
-//        key( version) {
-            content(stateContext) }
-//    }
+        content(stateContext)
+    }
 }
