@@ -1,4 +1,4 @@
-gitpackage com.digia.digiaui.framework.widgets.story
+package com.digia.digiaui.framework.widgets.story
 
 import LocalUIResources
 import androidx.compose.runtime.Composable

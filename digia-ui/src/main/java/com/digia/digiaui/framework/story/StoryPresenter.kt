@@ -1,6 +1,5 @@
 package com.digia.digiaui.framework.story
 
-import android.util.Log
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
@@ -33,8 +32,6 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-
-private const val TAG = "StoryPresenter"
 
 /**
  * Main Story presenter composable. Mirrors Flutter's FlutterStoryPresenterWidgets from
@@ -81,14 +78,9 @@ fun StoryPresenter(
     val progressAnimation = remember { Animatable(0f) }
     var animationJob by remember { mutableStateOf<Job?>(null) }
 
-    Log.d(
-            TAG,
-            "StoryPresenter recompose: currentIndex=$currentIndex, isWaitingForVideo=$isWaitingForVideo"
-    )
-
     // Functions to control animation
     fun startCountdown(duration: Duration) {
-        Log.d(TAG, "startCountdown: duration=${duration.inWholeMilliseconds}ms")
+
         animationJob?.cancel()
         animationJob =
                 scope.launch {
@@ -102,7 +94,7 @@ fun StoryPresenter(
                                     )
                     )
                     // Animation completed - go to next
-                    Log.d(TAG, "Animation completed, going to next")
+
                     if (currentIndex < contents.size - 1) {
                         currentIndex++
                         onStoryChanged?.invoke(currentIndex)
@@ -117,13 +109,13 @@ fun StoryPresenter(
     }
 
     fun pauseAnimation() {
-        Log.d(TAG, "pauseAnimation")
+
         animationJob?.cancel()
         currentVideoPlayer?.pause()
     }
 
     fun resumeAnimation() {
-        Log.d(TAG, "resumeAnimation")
+
         currentVideoPlayer?.play()
         // Resume from current progress
         val remainingProgress = 1f - progressAnimation.value
@@ -144,7 +136,7 @@ fun StoryPresenter(
     }
 
     fun goToNext() {
-        Log.d(TAG, "goToNext: currentIndex=$currentIndex, total=${contents.size}")
+
         animationJob?.cancel()
         currentVideoPlayer?.stop()
         currentVideoPlayer = null
@@ -163,7 +155,7 @@ fun StoryPresenter(
     }
 
     fun goToPrevious() {
-        Log.d(TAG, "goToPrevious: currentIndex=$currentIndex")
+
         animationJob?.cancel()
         currentVideoPlayer?.stop()
         currentVideoPlayer = null
@@ -183,7 +175,6 @@ fun StoryPresenter(
     val onVideoLoad: OnVideoLoad =
             remember(currentIndex) {
                 { player: ExoPlayer? ->
-                    Log.d(TAG, "onVideoLoad: player=${player != null}, currentIndex=$currentIndex")
                     if (player == null) {
                         // Video is loading
                         isWaitingForVideo = true
@@ -195,10 +186,7 @@ fun StoryPresenter(
                         currentVideoPlayer = player
                         isWaitingForVideo = false
                         val duration = player.duration.milliseconds
-                        Log.d(
-                                TAG,
-                                "Video ready! Duration=${duration.inWholeMilliseconds}ms, starting countdown"
-                        )
+
                         startCountdown(duration)
                     }
                 }
@@ -206,7 +194,6 @@ fun StoryPresenter(
 
     // Handle index changes - reset state for new story
     LaunchedEffect(currentIndex) {
-        Log.d(TAG, "LaunchedEffect(currentIndex=$currentIndex): resetting state")
         animationJob?.cancel()
         progressAnimation.snapTo(0f)
         currentVideoPlayer = null
@@ -216,7 +203,7 @@ fun StoryPresenter(
         kotlinx.coroutines.delay(500)
 
         if (isWaitingForVideo && currentVideoPlayer == null) {
-            Log.d(TAG, "No video detected after 500ms, using default duration")
+
             isWaitingForVideo = false
             startCountdown(defaultDuration)
         }
@@ -283,10 +270,7 @@ fun StoryPresenter(
     CompositionLocalProvider(LocalStoryVideoCallback provides onVideoLoad) {
         Box(modifier = modifier.fillMaxSize()) {
             // Current story content - KEY BY INDEX to force recomposition
-            key(currentIndex) {
-                Log.d(TAG, "Rendering content for index $currentIndex")
-                contents[currentIndex]()
-            }
+            key(currentIndex) { contents[currentIndex]() }
 
             // Progress indicator
             StoryIndicator(
@@ -361,12 +345,7 @@ private fun NavigationOverlay(
         Box(
                 modifier =
                         Modifier.weight(0.4f).fillMaxHeight().pointerInput(Unit) {
-                            detectTapGestures(
-                                    onTap = {
-                                        Log.d(TAG, "Left tap detected")
-                                        onLeftTap()
-                                    }
-                            )
+                            detectTapGestures(onTap = { onLeftTap() })
                         }
         )
 
@@ -376,24 +355,18 @@ private fun NavigationOverlay(
                         Modifier.weight(0.2f)
                                 .fillMaxHeight()
                                 .pointerInput(Unit) {
-                                    detectTapGestures(
-                                            onLongPress = {
-                                                Log.d(TAG, "Long press detected")
-                                                onLongPressStart()
-                                            }
-                                    )
+                                    detectTapGestures(onLongPress = { onLongPressStart() })
                                 }
                                 .pointerInput(Unit) {
                                     detectDragGestures(
                                             onDragStart = { offset ->
-                                                Log.d(TAG, "Slide start: $offset")
                                                 onSlideStart?.invoke(offset)
                                             },
                                             onDrag = { change, dragAmount ->
                                                 change.consume()
                                                 // Only trigger slide down for downward movement
                                                 if (dragAmount.y > 0) {
-                                                    Log.d(TAG, "Slide down: $dragAmount")
+
                                                     onSlideDown?.invoke(
                                                             Offset(dragAmount.x, dragAmount.y)
                                                     )
@@ -407,12 +380,7 @@ private fun NavigationOverlay(
         Box(
                 modifier =
                         Modifier.weight(0.4f).fillMaxHeight().pointerInput(Unit) {
-                            detectTapGestures(
-                                    onTap = {
-                                        Log.d(TAG, "Right tap detected")
-                                        onRightTap()
-                                    }
-                            )
+                            detectTapGestures(onTap = { onRightTap() })
                         }
         )
     }
