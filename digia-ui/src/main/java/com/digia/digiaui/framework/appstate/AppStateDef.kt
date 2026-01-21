@@ -1,8 +1,5 @@
 package com.digia.digiaui.framework.appstate
 
-import com.digia.digiaui.framework.models.Variable
-import com.digia.digiaui.framework.utils.JsonLike
-
 class StateDescriptor<T>(
     val key: String,
     val initialValue: T,

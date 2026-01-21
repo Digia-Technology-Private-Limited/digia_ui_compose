@@ -19,6 +19,7 @@ import com.digia.digiaui.framework.state.StateContext
 import com.digia.digiaui.framework.state.StateScopeContext
 import com.digia.digiaui.network.APIModel
 import defaultTextStyle
+import kotlinx.coroutines.runBlocking
 import makeTextStyle
 import resourceApiModel
 import resourceColor
@@ -98,7 +99,7 @@ stateContext?.startTracking()
      * Executes an ActionFlow (sequence of actions).
      * This matches the Dart executeAction implementation.
      */
-    fun executeAction(
+     fun executeAction(
         context: Context,
         actionFlow: ActionFlow?,
         actionExecutor: ActionExecutor,
@@ -111,15 +112,16 @@ stateContext?.startTracking()
         // Chaining context ensures the action can see variables from the
         // current widget/row and the global state.
         val combinedContext = chainExprContext(incomingScopeContext)
-
-        return actionExecutor?.execute(
-            context = context,
-            actionFlow = actionFlow,
-            scopeContext = combinedContext,
-            resourceProvider = resourceProvider,
-            stateContext =stateContext,
-//            id = com.android.identity.util.UUID.randomUUID().toString()
-        )
+    return    runBlocking {
+             actionExecutor.execute(
+                context = context,
+                actionFlow = actionFlow,
+                scopeContext = combinedContext,
+                resourceProvider = resourceProvider,
+                stateContext = stateContext,
+        //            id = com.android.identity.util.UUID.randomUUID().toString()
+            )
+        }
     }
 
 

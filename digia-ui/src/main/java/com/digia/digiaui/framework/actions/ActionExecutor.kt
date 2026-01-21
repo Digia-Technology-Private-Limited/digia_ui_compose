@@ -12,6 +12,7 @@ import com.digia.digiaui.framework.actions.base.Action
 import com.digia.digiaui.framework.actions.base.ActionFlow
 import com.digia.digiaui.framework.actions.base.ActionId
 import com.digia.digiaui.framework.actions.base.ActionProcessor
+import com.digia.digiaui.framework.datatype.methodbinding.MethodBindingRegistry
 import com.digia.digiaui.framework.expr.ScopeContext
 import com.digia.digiaui.network.APIModel
 import kotlinx.coroutines.CoroutineScope
@@ -34,10 +35,11 @@ fun ActionProvider(
 
 /** Action executor - executes action flows */
 class ActionExecutor(
-        private val processorFactory: ActionProcessorFactory = ActionProcessorFactory()
+        private val processorFactory: ActionProcessorFactory = ActionProcessorFactory(),
+        private val methodBindingRegistry: MethodBindingRegistry = MethodBindingRegistry()
 ) {
     /** Execute an action flow */
-    fun execute(
+    suspend fun execute(
             context: Context,
             actionFlow: ActionFlow,
             scopeContext: ScopeContext?,
@@ -62,14 +64,14 @@ class ActionExecutor(
                 // Get processor and execute
                 try {
                     @Suppress("UNCHECKED_CAST")
-                    val processor = processorFactory.getProcessor(action) as ActionProcessor<Action>
+                    val processor = processorFactory.getProcessor(action, methodBindingRegistry) as ActionProcessor<Action>
                     processor.execute(
                             context = context,
                             action = action,
                             scopeContext = scopeContext,
                             stateContext = stateContext,
                             id = action.actionId!!.id,
-                        resourceProvider = resourceProvider
+                            resourcesProvider = resourceProvider
                     )
                 } catch (e: Exception) {
                     // Log error (in production, use proper logging)

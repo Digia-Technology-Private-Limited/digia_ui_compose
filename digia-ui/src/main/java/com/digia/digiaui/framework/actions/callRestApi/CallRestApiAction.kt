@@ -1,7 +1,6 @@
 package com.digia.digiaui.framework.actions.callRestApi
 
 import android.content.Context
-import com.digia.digiaui.framework.RenderPayload
 import com.digia.digiaui.framework.UIResources
 import com.digia.digiaui.framework.actions.ActionExecutor
 import com.digia.digiaui.framework.actions.base.Action
@@ -12,14 +11,11 @@ import com.digia.digiaui.framework.actions.base.ActionType
 import com.digia.digiaui.framework.expr.DefaultScopeContext
 import com.digia.digiaui.framework.expr.ScopeContext
 import com.digia.digiaui.framework.models.ExprOr
-import com.digia.digiaui.framework.state.StateContext
 import com.digia.digiaui.framework.utils.JsonLike
 import com.digia.digiaui.framework.utils.executeApiAction
 import com.digia.digiaui.init.DigiaUIManager
 import com.digia.digiaui.utils.asSafe
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
@@ -67,28 +63,29 @@ data class CallRestApiAction(
 /** Processor for call REST API action */
 class CallRestApiProcessor : ActionProcessor<CallRestApiAction>() {
     private val actionExecutor = ActionExecutor()
-    override fun execute(
+    override suspend fun execute(
         context: Context,
         action: CallRestApiAction,
         scopeContext: ScopeContext?,
-        stateContext: StateContext?,
-        resourceProvider: UIResources?,
+        stateContext: com.digia.digiaui.framework.state.StateContext?,
+        resourcesProvider: UIResources?,
+
         id: String
-    ): Any? {
-        // Launch coroutine for network call
-        CoroutineScope(Dispatchers.IO).launch {
+    ) {
+        // Execute API call on IO dispatcher and suspend until complete
+        withContext(Dispatchers.IO) {
             try {
                 // Evaluate dataSource
                 val dataSource: JsonLike? = action.dataSource?.evaluate(scopeContext)
                 if (dataSource == null) {
                     println("CallRestApiAction: dataSource is null")
-                    return@launch
+                    return@withContext
                 }
 
                 val apiModelId = dataSource["id"] as? String ?: ""
                 if (apiModelId.isEmpty()) {
                     println("CallRestApiAction: apiModelId is empty")
-                    return@launch
+                    return@withContext
                 }
 
                 // Get the APIModel from DigiaUIManager config
@@ -109,7 +106,7 @@ class CallRestApiProcessor : ActionProcessor<CallRestApiAction>() {
                     },
                     onSuccess = { response ->
                         println("CallRestApiAction: API call successful")
-
+                        
                         if (action.onSuccess != null) {
                             withContext(Dispatchers.Main) {
                                 actionExecutor.execute(
@@ -119,15 +116,15 @@ class CallRestApiProcessor : ActionProcessor<CallRestApiAction>() {
                                         variables = mapOf("response" to response),
                                         enclosing = scopeContext
                                     ),
-                                    resourceProvider = resourceProvider,
-                                    stateContext = stateContext
+                                    stateContext = stateContext,
+                                    resourceProvider = resourcesProvider
                                 )
                             }
                         }
                     },
                     onError = { response ->
                         println("CallRestApiAction: API call error")
-
+                        
                         if (action.onError != null) {
                             withContext(Dispatchers.Main) {
                                 actionExecutor.execute(
@@ -137,8 +134,10 @@ class CallRestApiProcessor : ActionProcessor<CallRestApiAction>() {
                                         variables = mapOf("response" to response),
                                         enclosing = scopeContext
                                     ),
-                                  resourceProvider= resourceProvider,
-                                    stateContext,
+
+                                    resourcesProvider,
+                                    stateContext
+
                                 )
                             }
                         }
@@ -152,6 +151,5 @@ class CallRestApiProcessor : ActionProcessor<CallRestApiAction>() {
                 throw e
             }
         }
-        return null
     }
 }

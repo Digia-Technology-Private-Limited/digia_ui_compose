@@ -16,6 +16,7 @@ fun StateScope(
 ) {
     // Use existing tree or create a new one
     val tree = LocalStateTree.current
+    val state=LocalStateContextProvider.current?.Version()
 
 
     val stateContext = remember {
@@ -33,10 +34,8 @@ fun StateScope(
     CompositionLocalProvider(
         LocalStateContextProvider provides stateContext,
     ) {
-        val version = stateContext.Version()
-
-        key( version) {
-            content(stateContext)
-        }
+        // Read version to trigger recomposition, but don't use key() to avoid full rebuild
+        stateContext.Version()
+        content(stateContext)
     }
 }

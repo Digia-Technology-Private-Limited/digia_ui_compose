@@ -1,7 +1,7 @@
 package com.digia.digiaui.framework.actions.setState
 
 import android.content.Context
-import com.digia.digiaui.framework.RenderPayload
+import android.content.res.loader.ResourcesProvider
 import com.digia.digiaui.framework.UIResources
 import com.digia.digiaui.framework.actions.base.Action
 import com.digia.digiaui.framework.actions.base.ActionId
@@ -9,7 +9,6 @@ import com.digia.digiaui.framework.actions.base.ActionProcessor
 import com.digia.digiaui.framework.actions.base.ActionType
 import com.digia.digiaui.framework.expr.ScopeContext
 import com.digia.digiaui.framework.models.ExprOr
-import com.digia.digiaui.framework.state.StateContext
 import com.digia.digiaui.framework.state.StateScopeContext
 import com.digia.digiaui.framework.utils.JsonLike
 
@@ -81,12 +80,12 @@ data class SetStateAction(
 
 /** SetState Action Processor */
 class SetStateProcessor : ActionProcessor<SetStateAction>() {
-    override fun execute(
+    override suspend fun execute(
         context: Context,
         action: SetStateAction,
         scopeContext: ScopeContext?,
-        stateContext: StateContext?,
-        resourceProvider: UIResources?,
+        stateContext: com.digia.digiaui.framework.state.StateContext?,
+        resourcesProvider: UIResources?,
         id: String
     ): Any? {
         if (stateContext == null) {

@@ -14,11 +14,21 @@ enum class ActionType(val value: String) {
     SHOW_BOTTOM_SHEET("Action.showBottomSheet"),
     CALL_REST_API("Action.callRestApi"),
     OPEN_URL("Action.openUrl"),
-    SET_APP_STATE("Action.setAppState");
+    SET_APP_STATE("Action.setAppState"),
+    CONTROL_OBJECT("Action.controlObject"),
+    SHARE_CONTENT("Action.share"),
+    DELAY("Action.delay"),
+    COPY_TO_CLIPBOARD("Action.copyToClipboard"),
+    POST_MESSAGE("Action.handleDigiaMessage"),
+    FIRE_EVENT("Action.fireEvent"),
+    EXECUTE_CALLBACK("Action.executeCallback"),
+    CALL_EXTERNAL_METHOD("Action.handleDigiaMessage");
 
     companion object {
         fun fromString(value: String): ActionType {
-            return values().firstOrNull { it.value == value }?: SHOW_TOAST
+            return ActionType.entries.firstOrNull {
+                it.value.equals(value, ignoreCase = true)
+            }?: SHOW_TOAST
 //                    ?: throw IllegalArgumentException("Unknown action type: $value")
         }
     }

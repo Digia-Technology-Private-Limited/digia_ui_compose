@@ -64,10 +64,10 @@ class ExprOr<T : Any> private constructor(
     /**
      * Evaluates the value, returning a result of type T
      */
-     inline fun <reified R : Any> evaluate(
+     inline fun <reified T : Any>  evaluate(
         scopeContext: ScopeContext?,
-        noinline decoder: ((Any) -> R?)? = null
-    ): R? {
+        noinline decoder: ((Any) -> T?)? = null
+    ): T? {
          try {
 
 
@@ -87,10 +87,10 @@ class ExprOr<T : Any> private constructor(
                  }
 
                  // Evaluate the expression using the expression utility
-                 return evaluateExpression<R>(expressionString, scopeContext)
+                 return evaluateExpression<T>(expressionString, scopeContext)
              } else {
                  // If it's not an expression, use decoder or cast it to R
-                 return decoder?.invoke(value) ?: value.to<R>()
+                 return decoder?.invoke(value) ?: value.to<T>()
              }
          } catch (e: Exception) {
              e.printStackTrace()
@@ -117,11 +117,9 @@ class ExprOr<T : Any> private constructor(
             }
 
 
-            // TODO: Implement nested expression evaluation
             // For now, return the value as-is
             return evaluateNestedExpressions(valueToEvaluate, scopeContext)
         } else {
-            // TODO: Implement nested expression evaluation for non-expr values
             return evaluateNestedExpressions(value, scopeContext)
         }
     }
