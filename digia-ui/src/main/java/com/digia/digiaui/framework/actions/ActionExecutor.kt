@@ -6,7 +6,6 @@ import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.compositionLocalOf
-import com.digia.digiaui.framework.RenderPayload
 import com.digia.digiaui.framework.UIResources
 import com.digia.digiaui.framework.actions.base.Action
 import com.digia.digiaui.framework.actions.base.ActionFlow
@@ -17,6 +16,7 @@ import com.digia.digiaui.framework.expr.ScopeContext
 import com.digia.digiaui.network.APIModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 
@@ -35,19 +35,18 @@ fun ActionProvider(
 
 /** Action executor - executes action flows */
 class ActionExecutor(
-        private val processorFactory: ActionProcessorFactory = ActionProcessorFactory(),
-        private val methodBindingRegistry: MethodBindingRegistry = MethodBindingRegistry()
+        private val processorFactory: ActionProcessorFactory = ActionProcessorFactory()
 ) {
     /** Execute an action flow */
-    suspend fun execute(
+    fun execute(
             context: Context,
             actionFlow: ActionFlow,
             scopeContext: ScopeContext?,
-            resourceProvider: UIResources?,
             stateContext: com.digia.digiaui.framework.state.StateContext?,
+        resourcesProvider: UIResources? = null,
             scope: CoroutineScope = CoroutineScope(Dispatchers.Main)
-    ) {
-//        scope.launch {
+    ): Job {
+    return scope.launch {
 
             
             // Execute each action sequentially
@@ -64,14 +63,14 @@ class ActionExecutor(
                 // Get processor and execute
                 try {
                     @Suppress("UNCHECKED_CAST")
-                    val processor = processorFactory.getProcessor(action, methodBindingRegistry) as ActionProcessor<Action>
+                    val processor = processorFactory.getProcessor(action, methodBindingRegistry = MethodBindingRegistry()) as ActionProcessor<Action>
                     processor.execute(
                             context = context,
                             action = action,
                             scopeContext = scopeContext,
                             stateContext = stateContext,
-                            id = action.actionId!!.id,
-                            resourcesProvider = resourceProvider
+                            resourcesProvider = resourcesProvider,
+                            id = action.actionId!!.id
                     )
                 } catch (e: Exception) {
                     // Log error (in production, use proper logging)
@@ -79,5 +78,5 @@ class ActionExecutor(
                 }
             }
         }
-//    }
+    }
 }

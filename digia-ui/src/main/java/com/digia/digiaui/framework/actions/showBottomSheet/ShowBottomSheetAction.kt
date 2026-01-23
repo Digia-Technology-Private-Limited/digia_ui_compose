@@ -116,7 +116,7 @@ class ShowBottomSheetProcessor : ActionProcessor<ShowBottomSheetAction>() {
                             actionFlow = action.onResult,
                             scopeContext = resultContext,
                             stateContext = stateContext,
-                            resourceProvider = resourceProvider
+                            resourcesProvider = resourceProvider
                         )
                     }
                 }

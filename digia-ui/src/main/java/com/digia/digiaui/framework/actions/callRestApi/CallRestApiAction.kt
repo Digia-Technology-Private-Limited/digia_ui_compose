@@ -53,8 +53,8 @@ data class CallRestApiAction(
             return CallRestApiAction(
                 dataSource = ExprOr.fromValue(json["dataSource"]),
                 successCondition = ExprOr.fromValue(json["successCondition"]),
-                onSuccess = json["onSuccess"]?.let { ActionFlow.fromJson(it as? JsonLike) },
-                onError = json["onError"]?.let { ActionFlow.fromJson(it as? JsonLike) }
+                onSuccess = ActionFlow.fromJson(asSafe<JsonLike>(json["onSuccess"])),
+                onError = ActionFlow.fromJson(asSafe<JsonLike>(json["onError"]))
             )
         }
     }
@@ -110,14 +110,14 @@ class CallRestApiProcessor : ActionProcessor<CallRestApiAction>() {
                         if (action.onSuccess != null) {
                             withContext(Dispatchers.Main) {
                                 actionExecutor.execute(
-                                    context,
-                                    action.onSuccess,
-                                    DefaultScopeContext(
+                                    context = context,
+                                    actionFlow = action.onSuccess,
+                                    scopeContext = DefaultScopeContext(
                                         variables = mapOf("response" to response),
                                         enclosing = scopeContext
                                     ),
                                     stateContext = stateContext,
-                                    resourceProvider = resourcesProvider
+                                    resourcesProvider = resourcesProvider
                                 )
                             }
                         }
@@ -128,15 +128,14 @@ class CallRestApiProcessor : ActionProcessor<CallRestApiAction>() {
                         if (action.onError != null) {
                             withContext(Dispatchers.Main) {
                                 actionExecutor.execute(
-                                    context,
-                                    action.onError,
-                                    DefaultScopeContext(
+                                    context = context,
+                                    actionFlow = action.onError,
+                                    scopeContext = DefaultScopeContext(
                                         variables = mapOf("response" to response),
                                         enclosing = scopeContext
                                     ),
-
-                                    resourcesProvider,
-                                    stateContext
+                                    stateContext = stateContext,
+                                    resourcesProvider = resourcesProvider
 
                                 )
                             }

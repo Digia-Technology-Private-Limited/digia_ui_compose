@@ -5,6 +5,7 @@ import com.digia.digiaui.framework.expr.ScopeContext
 import com.digia.digiaui.framework.expression.evaluate
 import com.digia.digiaui.framework.expression.evaluateNestedExpressions
 import com.digia.digiaui.framework.utils.NumUtil
+import com.digia.digiaui.framework.widgets.timer.TimerController
 import com.digia.digiaui.framework.widgets.AsyncController
 import com.digia.digiaui.framework.widgets.TextController
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -72,7 +73,7 @@ object DataTypeCreator {
             DataType.API_CANCEL_TOKEN -> CancelToken()
             
             // Page controller - needs implementation
-            DataType.PAGE_CONTROLLER -> null
+            DataType.PAGE_CONTROLLER -> AdaptedPageController()
             
             // Action - not instantiable, return null
             DataType.ACTION -> null
@@ -113,3 +114,4 @@ object DataTypeCreator {
     }
     
 }
+

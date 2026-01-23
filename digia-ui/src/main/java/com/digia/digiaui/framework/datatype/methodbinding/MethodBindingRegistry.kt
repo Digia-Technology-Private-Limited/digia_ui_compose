@@ -3,6 +3,7 @@ package com.digia.digiaui.framework.datatype.methodbinding
 import com.digia.digiaui.framework.datatype.methodbinding.adaptedFile.registerMethodCommandsForFile
 import com.digia.digiaui.framework.datatype.methodbinding.apiCancelToken.registerMethodCommandsForApiCancelToken
 import com.digia.digiaui.framework.datatype.methodbinding.asyncController.registerMethodCommandsForAsyncController
+import com.digia.digiaui.framework.datatype.methodbinding.pageController.registerMethodCommandsForPageController
 import com.digia.digiaui.framework.datatype.methodbinding.scrollController.registerMethodCommandsForScrollController
 import com.digia.digiaui.framework.datatype.methodbinding.streamController.registerMethodCommandsForStreamController
 import com.digia.digiaui.framework.datatype.methodbinding.textFieldController.registerMethodCommandsForTextFieldController
@@ -97,4 +98,5 @@ fun registerBindings(registry: MethodBindingRegistry) {
     registerMethodCommandsForApiCancelToken(registry)
     registerMethodCommandsForAsyncController(registry)
     registerMethodCommandsForScrollController(registry)
+    registerMethodCommandsForPageController(registry)
 }

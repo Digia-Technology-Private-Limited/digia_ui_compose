@@ -2,6 +2,7 @@ package com.digia.digiaui.framework.actions.base
 
 import com.digia.digiaui.framework.models.ExprOr
 import com.digia.digiaui.framework.utils.JsonLike
+import com.digia.digiaui.utils.asSafe
 
 /** Action types enum - defines all available actions */
 enum class ActionType(val value: String) {
@@ -69,7 +70,7 @@ data class ActionFlow(
             val actionsList = json["steps"] as? List<*> ?: emptyList<Any>()
 
             val actions = actionsList.mapNotNull { actionJson ->
-                val jsonMap = actionJson as? JsonLike ?: return@mapNotNull null
+                val jsonMap = asSafe<JsonLike>( actionJson) ?: return@mapNotNull null
                 com.digia.digiaui.framework.actions.ActionFactory.fromJson(jsonMap)
             }
 

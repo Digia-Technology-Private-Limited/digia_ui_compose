@@ -6,7 +6,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
-import asSafe
 import com.digia.digiaui.config.model.DUIConfig
 import com.digia.digiaui.framework.actions.ActionExecutor
 import com.digia.digiaui.framework.actions.ActionProvider
@@ -20,6 +19,7 @@ import com.digia.digiaui.framework.page.DUIPage
 import com.digia.digiaui.framework.utils.asSafe
 import com.digia.digiaui.framework.widgets.registerBuiltInWidgets
 import com.digia.digiaui.init.DigiaUIManager
+import com.digia.digiaui.utils.asSafe
 import convertToTextStyle
 
 /**

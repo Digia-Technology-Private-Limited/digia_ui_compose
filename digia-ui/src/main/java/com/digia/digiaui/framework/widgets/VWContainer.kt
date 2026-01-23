@@ -466,7 +466,7 @@ class VWContainer(
                         context = context,
                         actionFlow = actionFlow,
                         stateContext = stateContext,
-                        resourceProvider = resources,
+                        resourcesProvider = resources,
                         actionExecutor = actionExecutor
                     )
                 }

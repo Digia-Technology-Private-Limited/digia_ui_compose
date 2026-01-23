@@ -1,11 +1,11 @@
 package com.digia.digiaui.framework.analytics
 
 import android.content.Context
-import asSafe
 import com.digia.digiaui.framework.expr.ScopeContext
 import com.digia.digiaui.framework.expression.evaluateNestedExpressions
 import com.digia.digiaui.framework.logging.Logger
 import com.digia.digiaui.framework.utils.JsonLike
+import com.digia.digiaui.utils.asSafe
 
 /**
  * Singleton handler for processing and executing analytics events

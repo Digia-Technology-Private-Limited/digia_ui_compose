@@ -325,7 +325,7 @@ class VWButton(
                         actionFlow = props.onClick,
                         actionExecutor = actionExecutor,
                         stateContext = stateContext,
-                        resourceProvider = resources
+                        resourcesProvider = resources
                     )
                 }
             },

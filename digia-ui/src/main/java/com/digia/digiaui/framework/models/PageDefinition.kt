@@ -1,6 +1,6 @@
 package com.digia.digiaui.framework.models
 
-import asSafe
+import com.digia.digiaui.utils.asSafe
 import com.digia.digiaui.framework.actions.base.ActionFlow
 import com.digia.digiaui.framework.datatype.Variable
 import com.digia.digiaui.framework.datatype.VariableConverter

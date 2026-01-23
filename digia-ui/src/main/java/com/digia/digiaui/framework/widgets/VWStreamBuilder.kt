@@ -177,7 +177,7 @@ class VWStreamBuilder(
                         actionFlow = it,
                         actionExecutor = actionExecutor,
                         stateContext = stateContext,
-                        resourceProvider = resources,
+                            resourcesProvider = resources,
                         incomingScopeContext = successScope
                     )
                 }
@@ -190,7 +190,7 @@ class VWStreamBuilder(
                         actionFlow = it,
                         actionExecutor = actionExecutor,
                         stateContext = stateContext,
-                        resourceProvider = resources,
+                            resourcesProvider = resources,
                         incomingScopeContext = null
                     )
                 }
