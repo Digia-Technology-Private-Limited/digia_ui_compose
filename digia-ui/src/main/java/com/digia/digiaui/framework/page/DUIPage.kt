@@ -108,7 +108,7 @@ fun DUIPage(
                                actionFlow = actionFlow,
                                scopeContext = scopeContext,
                                stateContext = stateContext,
-                               resourceProvider = resources,
+                               resourcesProvider =  resources,
                                scope = this
                            )
                        } catch (e: Exception) {
@@ -130,7 +130,7 @@ fun DUIPage(
                                 actionFlow = actionFlow,
                                 scopeContext = scopeContext,
                                 stateContext = stateContext,
-                                resourceProvider = resources,
+                                resourcesProvider = resources,
                                 scope = this
                             )
                         } catch (e: Exception) {

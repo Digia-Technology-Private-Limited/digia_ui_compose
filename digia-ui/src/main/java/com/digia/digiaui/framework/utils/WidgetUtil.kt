@@ -99,7 +99,7 @@ fun Modifier.applyCommonProps(
                     context = context,
                     actionFlow = actionFlow,
                     stateContext = stateContext,
-                    resourceProvider = resources,
+                    resourcesProvider = resources,
                     actionExecutor = actionExecutor
                 )
                     }
@@ -151,7 +151,7 @@ fun Modifier.applyCommonProps(
                     context = context,
                     actionFlow = actionFlow,
                     stateContext = stateContext,
-                    resourceProvider = resources,
+                    resourcesProvider = resources,
                     actionExecutor = actionExecutor
                 )
             }
@@ -324,22 +324,34 @@ inline fun Modifier.applyIf(
 private fun Modifier.applySizing(style: CommonStyle): Modifier {
     var m = this
 
-    // Width logic
+    // Calculate width
     val wPercent = style.width.toPercentFraction()
-    if (wPercent != null) {
-        m = m.fillMaxWidth(wPercent)
-    } else {
-        style.width.toDp()?.let { m = m.width(it) }
-    }
+    val wDp = if (wPercent == null) style.width.toDp() else null
 
-    // Height logic
+    // Calculate height
     val hPercent = style.height.toPercentFraction()
-    if (hPercent != null) {
-        m = m.fillMaxHeight(hPercent)
+    val hDp = if (hPercent == null) style.height.toDp() else null
+
+    // Apply size() when both width and height are Dp values
+    if (wDp != null && hDp != null) {
+        m = m.size(width = wDp, height = hDp)
     } else {
-        style.height.toDp()?.let { m = m.height(it) }
+        // Width logic
+        if (wPercent != null) {
+            m = m.fillMaxWidth(wPercent)
+        } else if (wDp != null) {
+            m = m.width(wDp)
+        }
+
+        // Height logic
+        if (hPercent != null) {
+            m = m.fillMaxHeight(hPercent)
+        } else if (hDp != null) {
+            m = m.height(hDp)
+        }
     }
 
+    // Intrinsic sizing
     if (style.width.equals("intrinsic", true)) m = m.width(IntrinsicSize.Min)
     if (style.height.equals("intrinsic", true)) m = m.height(IntrinsicSize.Min)
 

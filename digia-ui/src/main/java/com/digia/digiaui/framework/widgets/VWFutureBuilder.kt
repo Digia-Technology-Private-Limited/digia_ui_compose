@@ -10,7 +10,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
-import asSafe
 import com.digia.digiaui.framework.RenderPayload
 import com.digia.digiaui.framework.UIResources
 import com.digia.digiaui.framework.VirtualWidgetRegistry
@@ -39,6 +38,7 @@ import resourceApiModel
 
 import androidx.compose.runtime.*
 import com.digia.digiaui.framework.registerAllChildern
+import com.digia.digiaui.utils.asSafe
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlin.coroutines.CoroutineContext
@@ -157,8 +157,8 @@ data class AsyncBuilderProps(
                 future = ExprOr.fromJson(json["future"]),
                 controller = ExprOr.fromJson(json["controller"]),
                 initialData = ExprOr.fromJson(json["initialData"]),
-                onSuccess = ActionFlow.fromJson(json["onSuccess"] as? JsonLike?),
-                onError = ActionFlow.fromJson(json["onError"] as? JsonLike?),
+                onSuccess = ActionFlow.fromJson(asSafe<JsonLike>(json["onSuccess"])),
+                onError = ActionFlow.fromJson(asSafe<JsonLike>(json["onError"])),
             )
         }
     }
@@ -445,7 +445,7 @@ private suspend fun makeApiFuture(
     resourceProvider: UIResources?
 ): ApiResponse<Any> {
 
-    val dataSource = futureProps["dataSource"] as? JsonLike
+        val dataSource =asSafe<JsonLike>( futureProps["dataSource"])
     val apiId = dataSource?.get("id") as? String
         ?: error("No API Selected")
 
@@ -470,7 +470,7 @@ private suspend fun makeApiFuture(
                   actionFlow = it,
                   actionExecutor = actionExecutor,
                   stateContext = stateContext,
-                  resourceProvider = resourceProvider,
+                  resourcesProvider = resourceProvider,
                   incomingScopeContext = DefaultScopeContext(
                       variables = mapOf("response" to response)
                   )
@@ -485,7 +485,7 @@ private suspend fun makeApiFuture(
                     actionFlow = it,
                     actionExecutor = actionExecutor,
                     stateContext = stateContext,
-                    resourceProvider = resourceProvider,
+                    resourcesProvider = resourceProvider,
                     incomingScopeContext = DefaultScopeContext(
                         variables = mapOf("response" to response)
                     )

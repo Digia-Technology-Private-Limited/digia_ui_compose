@@ -152,7 +152,7 @@ class VWAppBar(
                                     actionFlow = actionFlow,
                                     actionExecutor = actionExecutor,
                                     stateContext = stateContext,
-                                    resourceProvider = resources,
+                                        resourcesProvider = resources,
                                     incomingScopeContext = null
                                 )
                             }

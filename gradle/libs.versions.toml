@@ -17,6 +17,7 @@ ui = "1.10.0"
 browser = "1.9.0"
 media3Ui = "1.9.0"
 uiGraphics = "1.10.0"
+foundation = "1.10.1"
 #navigationRuntimeKtx = "2.9.6"
 
 [libraries]
@@ -78,6 +79,7 @@ androidx-ui = { group = "androidx.compose.ui", name = "ui", version.ref = "ui" }
 androidx-browser = { group = "androidx.browser", name = "browser", version.ref = "browser" }
 androidx-media3-ui = { group = "androidx.media3", name = "media3-ui", version.ref = "media3Ui" }
 androidx-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics", version.ref = "uiGraphics" }
+androidx-compose-foundation = { group = "androidx.compose.foundation", name = "foundation", version.ref = "foundation" }
 #androidx-navigation-runtime-ktx = { group = "androidx.navigation", name = "navigation-runtime-ktx", version.ref = "navigationRuntimeKtx" }
 
 [plugins]

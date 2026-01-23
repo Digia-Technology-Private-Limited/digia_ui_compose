@@ -104,7 +104,7 @@ class ShowDialogProcessor : ActionProcessor<ShowDialogAction>() {
                             actionFlow = action.onResult,
                             scopeContext = resultContext,
                             stateContext = stateContext,
-                            resourceProvider = resourceProvider
+                            resourcesProvider = resourceProvider
                         )
                     }
                 }

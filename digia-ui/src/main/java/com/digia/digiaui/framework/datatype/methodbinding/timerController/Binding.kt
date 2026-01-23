@@ -1,6 +1,6 @@
 package com.digia.digiaui.framework.datatype.methodbinding.timerController
 
-import com.digia.digiaui.framework.datatype.TimerController
+import com.digia.digiaui.framework.widgets.timer.TimerController
 import com.digia.digiaui.framework.datatype.methodbinding.MethodBindingRegistry
 import com.digia.digiaui.framework.datatype.methodbinding.MethodCommand
 

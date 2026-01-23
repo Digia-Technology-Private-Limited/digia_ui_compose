@@ -27,7 +27,7 @@ class ExecuteCallBackProcessor : ActionProcessor<ExecuteCallBackAction>() {
         action: ExecuteCallBackAction,
         scopeContext: ScopeContext?,
         stateContext: StateContext?,
-        resourceProvider: UIResources?,
+        resourcesProvider: UIResources?,
         id: String
     ): Any? {
         try {
@@ -57,7 +57,7 @@ class ExecuteCallBackProcessor : ActionProcessor<ExecuteCallBackAction>() {
                 actionFlow = actionFlow,
                 scopeContext = callbackContext,
                 stateContext = stateContext,
-                resourceProvider = resourceProvider,
+                resourcesProvider = resourcesProvider,
             )
 
             return null
@@ -121,7 +121,7 @@ private fun JSONObject.toMap(): Map<String, Any?> {
     val keys = this.keys()
     while (keys.hasNext()) {
         val key = keys.next()
-        var value = this.get(key)
+        var value: Any? = this.get(key)
 
         // Recursively convert nested JSONObjects and JSONArrays
         value = when (value) {
@@ -142,7 +142,7 @@ private fun JSONObject.toMap(): Map<String, Any?> {
 private fun JSONArray.toList(): List<Any?> {
     val list = mutableListOf<Any?>()
     for (i in 0 until this.length()) {
-        var value = this.get(i)
+        var value: Any? = this.get(i)
         
         value = when (value) {
             is JSONObject -> value.toMap()
