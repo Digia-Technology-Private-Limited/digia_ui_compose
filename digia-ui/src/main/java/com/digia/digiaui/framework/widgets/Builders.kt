@@ -105,6 +105,16 @@ fun DefaultVirtualWidgetRegistry.registerBuiltInWidgets() {
     register("digia/carousel", ::carouselBuilder)
     register("digia/wrap", ::wrapBuilder)
 
+    register("digia/stack", ::stackBuilder)
+    register("digia/styledHorizontalDivider", ::styledHorizontalDividerBuilder)
+
+    register("fw/sizedBox", ::sizedBoxBuilder)
+    register("fw/sized_box", ::sizedBoxBuilder)
+    register("digia/gridView", ::gridViewBuilder)
+    register("digia/masonryGridView", ::gridViewBuilder)
+    register("digia/calendar", ::dummyBuilder)
+
+
     register("digia/styledHorizontalDivider", ::styledHorizontalDividerBuilder)
 
     register("fw/sizedBox", ::sizedBoxBuilder)
@@ -122,14 +132,14 @@ fun DefaultVirtualWidgetRegistry.registerBuiltInWidgets() {
     register("digia/overlay", ::overlayBuilder)
     register("digia/styledHorizontalDivider",::dummyBuilder)
     register("digia/calendar",::dummyBuilder)
-}
+
 
         register("fw/sizedBox", ::sizedBoxBuilder)
         register("fw/sized_box", ::sizedBoxBuilder)
         register("digia/gridView", ::dummyBuilder)
         register("digia/richText", ::dummyBuilder)
         register("digia/calendar", ::dummyBuilder)
-}
+
 
     // Story widgets
     register("digia/story", ::storyBuilder)
