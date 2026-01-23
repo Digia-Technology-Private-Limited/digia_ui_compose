@@ -1,7 +1,6 @@
 package com.digia.digiaui.framework.actions.rebuildState
 
 import android.content.Context
-import com.digia.digiaui.framework.RenderPayload
 import com.digia.digiaui.framework.UIResources
 import com.digia.digiaui.framework.actions.base.Action
 import com.digia.digiaui.framework.actions.base.ActionId
@@ -9,7 +8,6 @@ import com.digia.digiaui.framework.actions.base.ActionProcessor
 import com.digia.digiaui.framework.actions.base.ActionType
 import com.digia.digiaui.framework.expr.ScopeContext
 import com.digia.digiaui.framework.models.ExprOr
-import com.digia.digiaui.framework.state.StateContext
 import com.digia.digiaui.framework.utils.JsonLike
 import com.digia.digiaui.framework.utils.JsonUtil.Companion.tryKeys
 
@@ -43,12 +41,13 @@ data class RebuildStateAction(
 
 /** RebuildState Action Processor */
 class RebuildStateProcessor : ActionProcessor<RebuildStateAction>() {
-    override fun execute(
+    override suspend fun execute(
         context: Context,
         action: RebuildStateAction,
         scopeContext: ScopeContext?,
-        stateContext: StateContext?,
-        resourceProvider: UIResources?,
+        stateContext: com.digia.digiaui.framework.state.StateContext?,
+        resourcesProvider: UIResources?,
+
         id: String
     ): Any? {
         if (stateContext == null) {
@@ -56,11 +55,9 @@ class RebuildStateProcessor : ActionProcessor<RebuildStateAction>() {
             return null
         }
 
-        action.stateContextName?.let { it ->
-            stateContext.findAncestorNamespace(it)?.flush()
-        }
-            return null
-        }
-    }
+         stateContext.flush()
 
+        return null
+    }
+}
 

@@ -85,7 +85,7 @@ class StateContext(
         }
         dirty = false
 
-        tree.childrenOf(this).forEach { it.flushFromParent() }
+       tree.childrenOf(this).forEach { it.flush() }
     }
 
     private fun flushFromParent() {

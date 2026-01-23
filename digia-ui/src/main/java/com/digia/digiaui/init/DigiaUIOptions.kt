@@ -1,7 +1,7 @@
 package com.digia.digiaui.init
 
 import android.content.Context
-import com.digia.digiaui.analytics.DUIAnalytics
+import com.digia.digiaui.framework.analytics.DUIAnalytics
 import com.digia.digiaui.network.NetworkConfiguration
 import com.digia.digiaui.utils.DeveloperConfig
 

@@ -1,7 +1,8 @@
 package com.digia.digiaui.config.model
 
 import com.digia.digiaui.core.functions.JSFunctions
-import com.digia.digiaui.framework.models.Variable
+import com.digia.digiaui.framework.datatype.Variable
+import com.digia.digiaui.framework.datatype.VariableConverter
 import com.digia.digiaui.network.APIModel
 import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
@@ -96,12 +97,7 @@ data class DUIConfig(
     fun getEnvironmentVariables(): Map<String, Variable> {
         val rawVariables = _environment?.get("variables") as? Map<String, Any> ?: return emptyMap()
 
-        return rawVariables.mapValues { (key, value) ->
-            // Assuming Variable has a fromJson or fromMap method that takes a Map or Any
-            // If value is a Map, cast it to Map<String, Any>
-            val varMap = value as? Map<String, Any> ?: emptyMap()
-            Variable.fromJson(varMap)
-        }
+        return VariableConverter.fromJson(rawVariables)
     }
 
 
@@ -118,48 +114,16 @@ data class DUIConfig(
      * @param value The new value to set for the variable
      */
     fun setEnvVariable(varName: String, value: Any?) {
-        val variables = getEnvironmentVariables()
-        if (!variables.containsKey(varName)) {
-            return
-        }
+        val variables = getEnvironmentVariables().toMutableMap()
+        val currentVar = variables[varName] ?: return
+
         // Update the variable value
-        val currentVar = variables[varName] as? Variable ?: return
-        val updatedVar = currentVar
+        variables[varName] = currentVar.copyWith(defaultValue = value)
 
-        _environment?.get("variables")?.let {
-            if (it is MutableMap<*, *>) {
-                (it as MutableMap<String, Any>)[varName] = mapOf(
-                        "type" to updatedVar.type,
-                        "defaultValue" to updatedVar.defaultValue
-                )
-            }
-        }
-
-        // Note: This doesn't persist the change in the immutable data class
-        // For actual persistence, implement state management or return new config
-    }
-
-    /**
-     * Gets a specific environment variable value.
-     *
-     * @param varName The name of the environment variable
-     * @return The value of the environment variable or null if not found
-     */
-    fun getEnvVariable(varName: String): Any? {
-        val variables = getEnvironmentVariables()
-        val variable = variables[varName] as? Map<String, Any> ?: return null
-        return variable["defaultValue"]
-    }
-
-    /**
-     * Gets all environment variables as a map of names to values.
-     *
-     * @return A map of environment variable names to their current values
-     */
-    fun getAllEnvVariables(): Map<String, Any?> {
-        val variables = getEnvironmentVariables()
-        return variables.mapValues { (_, value) ->
-            (value as? Map<String, Any>)?.get("defaultValue")
+        // Since _environment is a val Map, we need to cast it to MutableMap to update internal keys
+        // or ensure the class property is defined as a MutableMap.
+        (_environment as? MutableMap<String, Any>)?.let { env ->
+            env["variables"] = VariableConverter.toJson(variables)
         }
     }
 

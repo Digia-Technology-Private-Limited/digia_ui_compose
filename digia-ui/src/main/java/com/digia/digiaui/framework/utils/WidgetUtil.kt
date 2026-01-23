@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -30,6 +31,7 @@ import com.digia.digiaui.framework.color
 import com.digia.digiaui.framework.models.CommonProps
 import com.digia.digiaui.framework.models.CommonStyle
 import com.digia.digiaui.framework.state.LocalStateContextProvider
+import kotlinx.coroutines.launch
 
 val PaddingValuesZero = PaddingValues(0.dp)
 
@@ -45,12 +47,13 @@ fun Modifier.applyCommonProps(
     val context = LocalContext.current.applicationContext
     val resources = LocalUIResources.current
     val stateContext = LocalStateContextProvider.current
+    val scope = rememberCoroutineScope()
+
 
     val style = commonProps.style
     var modifier = this
 
     if (style != null) {
-
         val margin = ToUtils.edgeInsets(style.margin)
         val padding = ToUtils.edgeInsets(style.padding)
 
@@ -72,26 +75,51 @@ fun Modifier.applyCommonProps(
                 ?.get("borderPattern") as? String
 
         /* ------------------------------------------------------ */
-        /* 1️⃣ Margin (outer spacing)                               */
+        /* 1️⃣ Margin (outer spacing - OUTSIDE clickable area)    */
         /* ------------------------------------------------------ */
         modifier = modifier.applyIf(margin != PaddingValuesZero) {
             padding(margin)
         }
+        /* ------------------------------------------------------ */
+        /* 6️⃣ Clip (before inner padding for ripple correctness) */
+        /* ------------------------------------------------------ */
+        if (borderRadius != RoundedCornerShape(0.dp)) {
+            modifier = modifier.clip(borderRadius)
+        }
+
 
         /* ------------------------------------------------------ */
-        /* 2️⃣ Size constraints                                   */
+        /* 2️⃣ Click / Gesture (covers everything except margin)  */
+        /* ------------------------------------------------------ */
+        val actionFlow = commonProps.onClick
+        if (actionFlow != null && actionFlow.actions.isNotEmpty()) {
+            modifier = modifier.clickable {
+                scope.launch {
+                payload.executeAction(
+                    context = context,
+                    actionFlow = actionFlow,
+                    stateContext = stateContext,
+                    resourcesProvider = resources,
+                    actionExecutor = actionExecutor
+                )
+                    }
+            }
+        }
+
+        /* ------------------------------------------------------ */
+        /* 3️⃣ Size constraints                                   */
         /* ------------------------------------------------------ */
         modifier = modifier.applySizing(style)
 
         /* ------------------------------------------------------ */
-        /* 3️⃣ Background                                         */
+        /* 4️⃣ Background                                         */
         /* ------------------------------------------------------ */
         if (bgColor != null) {
             modifier = modifier.background(bgColor, borderRadius)
         }
 
         /* ------------------------------------------------------ */
-        /* 4️⃣ Border                                             */
+        /* 5️⃣ Border                                             */
         /* ------------------------------------------------------ */
         if (
             borderPattern == "solid" &&
@@ -105,41 +133,33 @@ fun Modifier.applyCommonProps(
             )
         }
 
-        /* ------------------------------------------------------ */
-        /* 5️⃣ Clip (before click for ripple correctness)         */
-        /* ------------------------------------------------------ */
-        if (borderRadius != RoundedCornerShape(0.dp)) {
-            modifier = modifier.clip(borderRadius)
-        }
 
         /* ------------------------------------------------------ */
-        /* 6️⃣ Inner padding                                      */
+        /* 7️⃣ Inner padding                                      */
         /* ------------------------------------------------------ */
         modifier = modifier.applyIf(padding != PaddingValuesZero) {
             padding(padding)
         }
-    }
-
-    /* ------------------------------------------------------ */
-    /* 7️⃣ Click / Gesture (after clip)                        */
-    /* ------------------------------------------------------ */
-    val actionFlow = commonProps.onClick
-    if (actionFlow != null && actionFlow.actions.isNotEmpty()) {
-        modifier = modifier.clickable {
-            payload.executeAction(
-                context = context,
-                actionFlow = actionFlow,
-                stateContext = stateContext,
-                resourceProvider = resources,
-                actionExecutor = actionExecutor
-            )
+    } else {
+        /* ------------------------------------------------------ */
+        /* Click / Gesture (when no style)                       */
+        /* ------------------------------------------------------ */
+        val actionFlow = commonProps.onClick
+        if (actionFlow != null && actionFlow.actions.isNotEmpty()) {
+            modifier = modifier.clickable {
+                payload.executeAction(
+                    context = context,
+                    actionFlow = actionFlow,
+                    stateContext = stateContext,
+                    resourcesProvider = resources,
+                    actionExecutor = actionExecutor
+                )
+            }
         }
     }
 
     return modifier
 }
-
-
 
 //@Composable
 //fun Modifier.applyCommonProps(
@@ -304,22 +324,34 @@ inline fun Modifier.applyIf(
 private fun Modifier.applySizing(style: CommonStyle): Modifier {
     var m = this
 
-    // Width logic
+    // Calculate width
     val wPercent = style.width.toPercentFraction()
-    if (wPercent != null) {
-        m = m.fillMaxWidth(wPercent)
-    } else {
-        style.width.toDp()?.let { m = m.width(it) }
-    }
+    val wDp = if (wPercent == null) style.width.toDp() else null
 
-    // Height logic
+    // Calculate height
     val hPercent = style.height.toPercentFraction()
-    if (hPercent != null) {
-        m = m.fillMaxHeight(hPercent)
+    val hDp = if (hPercent == null) style.height.toDp() else null
+
+    // Apply size() when both width and height are Dp values
+    if (wDp != null && hDp != null) {
+        m = m.size(width = wDp, height = hDp)
     } else {
-        style.height.toDp()?.let { m = m.height(it) }
+        // Width logic
+        if (wPercent != null) {
+            m = m.fillMaxWidth(wPercent)
+        } else if (wDp != null) {
+            m = m.width(wDp)
+        }
+
+        // Height logic
+        if (hPercent != null) {
+            m = m.fillMaxHeight(hPercent)
+        } else if (hDp != null) {
+            m = m.height(hDp)
+        }
     }
 
+    // Intrinsic sizing
     if (style.width.equals("intrinsic", true)) m = m.width(IntrinsicSize.Min)
     if (style.height.equals("intrinsic", true)) m = m.height(IntrinsicSize.Min)
 

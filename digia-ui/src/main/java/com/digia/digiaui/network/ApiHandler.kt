@@ -1,13 +1,10 @@
 package com.digia.digiaui.network
 
 import android.webkit.MimeTypeMap
-import com.digia.digiaui.framework.expr.ScopeContext
-import com.digia.digiaui.framework.models.Variable
+import com.digia.digiaui.framework.datatype.Variable
+import com.digia.digiaui.framework.datatype.adaptedfile.AdaptedFile
 import com.digia.digiaui.init.DigiaUIManager
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import java.io.File
-import java.net.URLEncoder
 
 /**
  * Singleton API Handler for executing API requests with template variable hydration
@@ -141,6 +138,9 @@ object ApiHandler {
             val value = entry.value
 
             when (value) {
+                is AdaptedFile -> {
+                    formData.addFile(key, createMultipartFileFromAdaptedFile(value))
+                }
                 is File -> {
                     formData.addFile(key, createMultipartFile(value))
                 }
@@ -168,7 +168,14 @@ object ApiHandler {
             return
         }
 
-        when (val first = values.first()) {
+        when (values.first()) {
+            is AdaptedFile -> {
+                values.forEach { value ->
+                    if (value is AdaptedFile) {
+                        formData.addFile(key, createMultipartFileFromAdaptedFile(value))
+                    }
+                }
+            }
             is File -> {
                 values.forEach { value ->
                     if (value is File) {
@@ -196,6 +203,28 @@ object ApiHandler {
         val fileName = file.name
         val mimeType = getMimeType(fileName)
         return FormFile.LocalFile(file, fileName, mimeType)
+    }
+
+    /**
+     * Create multipart file from AdaptedFile
+     */
+    private fun createMultipartFileFromAdaptedFile(adaptedFile: AdaptedFile): FormFile {
+        val fileName = adaptedFile.name ?: "file"
+        val mimeType = adaptedFile.mimeType ?: getMimeType(fileName)
+        
+        // If AdaptedFile has a File object, use it
+        adaptedFile.file?.let {
+            return FormFile.LocalFile(it, fileName, mimeType)
+        }
+        
+        // If AdaptedFile has bytes, use them
+        adaptedFile.bytes?.let {
+            return FormFile.BytesFile(it, fileName, mimeType)
+        }
+        
+        // Try to read bytes from AdaptedFile (may require context)
+        // This is a fallback - ideally bytes should be preloaded
+        throw IllegalStateException("AdaptedFile must have either file or bytes available for upload")
     }
 
     /**

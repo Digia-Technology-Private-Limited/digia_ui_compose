@@ -191,7 +191,7 @@ class VWCarousel(
                         actionFlow = actionFlow,
                         actionExecutor = actionExecutor,
                         stateContext = stateContext,
-                        resourceProvider = resources,
+                        resourcesProvider = resources,
                         incomingScopeContext = DefaultScopeContext(variables = mapOf("index" to realPage))
                     )
                 }

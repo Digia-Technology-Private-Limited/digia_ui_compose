@@ -59,11 +59,11 @@ data class RenderPayload(
         scopeContext: ScopeContext? = null,
         noinline decoder: ((Any?) -> T?)? = null
     ): T? {
-        val stateContext= LocalStateContextProvider.current
-stateContext?.startTracking()
-        val data =evaluate(expression, chainExprContext(scopeContext), decoder)
-        val trackList=   stateContext?.stopTracking()
-        trackList?.forEach { e -> stateContext.observe(e) }
+        val stateContext = LocalStateContextProvider.current
+        stateContext?.startTracking()
+        val data = evaluate(expression, chainExprContext(scopeContext), decoder)
+        val trackList = stateContext?.stopTracking()
+        trackList?.forEach { e -> stateContext?.observe(e) }
         return data
     }
 
@@ -83,7 +83,7 @@ stateContext?.startTracking()
 
                 // 🔥 READ ALL DEPENDENCY VERSIONS HERE
                 deps.forEach { name ->
-                    stateContext?.observe(name)
+                    stateContext.observe(name)
                 }
 
                 result
@@ -103,22 +103,23 @@ stateContext?.startTracking()
         actionFlow: ActionFlow?,
         actionExecutor: ActionExecutor,
         stateContext: StateContext?,
-        resourceProvider: UIResources?,
+        resourcesProvider: UIResources?,
         incomingScopeContext: ScopeContext? = null,
-    ): Any? {
-        if (actionFlow == null) return null
+    ) {
+        if (actionFlow == null) return
 
         // Chaining context ensures the action can see variables from the
         // current widget/row and the global state.
         val combinedContext = chainExprContext(incomingScopeContext)
 
-        return actionExecutor?.execute(
+        // Do NOT block the calling thread (often the UI thread).
+        // Action execution is asynchronous and internally uses coroutines.
+        actionExecutor.execute(
             context = context,
             actionFlow = actionFlow,
             scopeContext = combinedContext,
-            resourceProvider = resourceProvider,
-            stateContext =stateContext,
-//            id = com.android.identity.util.UUID.randomUUID().toString()
+            stateContext = stateContext,
+            resourcesProvider = resourcesProvider,
         )
     }
 
