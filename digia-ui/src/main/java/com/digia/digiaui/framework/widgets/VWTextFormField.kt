@@ -460,7 +460,7 @@ class VWTextFormField(
             }
 
 
-//      ClearFocusOnTapOutside {
+      ClearFocusOnTapOutside {
           InternalTextFormField(
               controller = TextController(initialText = textValue),
               autoFocus = autoFocus,
@@ -498,7 +498,7 @@ class VWTextFormField(
               suffixWidget = suffixWidget
           )
 
-//      }
+      }
         // Cleanup debouncer on dispose
         DisposableEffect(Unit) { onDispose { debouncer?.cancel() } }
     }
@@ -512,17 +512,21 @@ fun textFormFieldBuilder(
     parent: VirtualNode?,
     registry: VirtualWidgetRegistry
 ): VirtualNode {
+    val childrenData =
+        data.childGroups?.mapValues { (_, childrenData) ->
+            childrenData.map { childData -> registry.createWidget(childData, parent) }
+        }
 
     return VWTextFormField(
         refName = data.refName,
         commonProps = data.commonProps,
         parent = parent,
-        parentProps = data.parentProps,
+        parentProps = data.props,
         props = TextFormFieldProps.fromJson(data.props.value),
         slots = {
                 self ->
             registerAllChildern(data.childGroups, self, registry)
-        },
+        }
     )
 }
 
@@ -807,72 +811,8 @@ fun InternalTextFormField(
         horizontal = 12.dp,
         vertical = 14.dp
     )
-//
-//    Column(
-//                 modifier = Modifier
-//                .fillMaxWidth().height(80.dp)
-//               .focusRequester(focusRequester),
-//    ) {
 
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    // .height(80.dp) // Suggestion: remove fixed height to allow for error text/multiline
-                    .focusRequester(focusRequester),
-            ) {
-                OutlinedTextField(
-                    value = controller.text,
-                    onValueChange = { newValue ->
-                        if (maxLength == null || newValue.length <= maxLength) {
-                            controller.text = newValue
-                            onValueChange(newValue)
-                            if (showError) errorText = validateNow(newValue)
-                        }
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .focusRequester(focusRequester),
-                    enabled = enabled,
-                    readOnly = readOnly,
-                    textStyle = textStyle.copy(textAlign = textAlign),
-                    singleLine = (maxLines ?: 1) == 1,
-                    maxLines = maxLines ?: Int.MAX_VALUE,
-                    minLines = minLines ?: 1,
-                    // REMOVED: cursorBrush = SolidColor(cursorColor), // This was the error
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = keyboardType,
-                        imeAction = imeAction
-                    ),
-                    keyboardActions = KeyboardActions(
-                        onDone = { onSubmit(controller.text) }
-                    ),
-                    interactionSource = interactionSource,
-                    isError = errorText != null,
-                    label = labelText?.let { { Text(it, style = labelStyle) } },
-                    placeholder = hintText?.let { { Text(it, style = hintStyle) } },
-                    leadingIcon = prefixWidget,
-                    trailingIcon = suffixWidget,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        cursorColor = cursorColor, // Set cursor color here
-                        focusedContainerColor = fillColor ?: Color.Transparent,
-                        unfocusedContainerColor = fillColor ?: Color.Transparent,
-                        errorContainerColor = fillColor ?: Color.Transparent,
-                        focusedBorderColor = focusColor ?: MaterialTheme.colorScheme.primary,
-                    ),
-                    visualTransformation = if (obscureText) PasswordVisualTransformation() else VisualTransformation.None,
-                    shape = RoundedCornerShape(4.dp),
-                )
-
-//                if (errorText != null) {
-//                    Text(
-//                        text = errorText!!,
-//                        color = MaterialTheme.colorScheme.error,
-//                        style = MaterialTheme.typography.bodySmall,
-//                        modifier = Modifier.padding(start = 16.dp, top = 4.dp)
-//                    )
-//                }
-//            }
-
+    Column {
 //        TextFieldDecoration(
 //            modifier = Modifier
 //                .fillMaxWidth()
@@ -886,92 +826,92 @@ fun InternalTextFormField(
 //            focusColor = focusColor,
 //        ) {
 
-//            BasicTextField(
-//                value = controller.text,
-//                onValueChange = {
-//                    if (maxLength == null || it.length <= maxLength) {
-//                        controller.text=it
-//                        onValueChange(it)
-//                        if (showError) errorText = validateNow(it)
-//                    }
-//                },
-//                enabled = enabled,
-//                readOnly = readOnly,
-//                textStyle = textStyle.copy(textAlign = textAlign),
-//                cursorBrush = SolidColor(cursorColor),
-//                keyboardOptions = KeyboardOptions(
-//                    keyboardType = keyboardType,
-//                    imeAction = imeAction
-//                ),
-//                keyboardActions = KeyboardActions(
-//                    onDone = { onSubmit(controller.text) }
-//                ),
-//                interactionSource = interactionSource,
-//                visualTransformation =
-//                    if (obscureText) PasswordVisualTransformation()
-//                    else VisualTransformation.None,
-//                decorationBox = { inner ->
-////                    CommonDecorationBox(
-////                        value = controller.text,
-////                        innerTextField = inner,
-////                        enabled = enabled,
-////                        singleLine = (maxLines ?: 1) == 1,
-////                        isError = errorText != null,
-////                        visualTransformation =
-////                            if (obscureText) PasswordVisualTransformation()
-////                            else VisualTransformation.None,
-////                        interactionSource = interactionSource,
-////                        contentPadding = padding,
-////                        leadingIcon = prefixWidget,
-////                        trailingIcon = suffixWidget,
-////                        placeholder = if (controller.text.isEmpty() && hintText != null) {
-////                            {
-////                                Text(
-////                                    hintText,
-////                                    style = hintStyle
-////                                )
-////                            }
-////                        } else null,
-////                        label = {
-////                            if (labelText != null) {
-////                                Text(
-////                                    labelText,
-////                                    style = labelStyle
-////                                )
-////                            }
-////                        },
-////                        prefix = {
-////                            if (prefixWidget != null) {
-////                                prefixWidget()
-////                            }
-////                        },
-////                        suffix = {
-////                            if (suffixWidget != null) {
-////                                suffixWidget()
-////                            }
-////                        },
-////
-////                        container = {
-////                            TextFieldContainer(
-////                                enabled = enabled,
-////interactionSource= interactionSource,
-////                                focusedBorder = VWInputBorder.Underline(
-////                                    strokeWidth = 2.dp,
-////                                    dashed = false
-////                                ),
-////                                disabledBorder = VWInputBorder.Underline(
-////                                    strokeWidth = 1.dp,
-////                                    dashed = false
-////                                ),
-////                                focusedErrorBorder = VWInputBorder.Underline(
-////                                    strokeWidth = 2.dp,),
-////                                enabledBorder = enabledBorder,
-////                                errorBorder = errorBorder,
-////                                isError = false,
-////                            )
-////                        },
-////
-////                    )
+            BasicTextField(
+                value = controller.text,
+                onValueChange = {
+                    if (maxLength == null || it.length <= maxLength) {
+                        controller.text=it
+                        onValueChange(it)
+                        if (showError) errorText = validateNow(it)
+                    }
+                },
+                enabled = enabled,
+                readOnly = readOnly,
+                textStyle = textStyle.copy(textAlign = textAlign),
+                cursorBrush = SolidColor(cursorColor),
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = keyboardType,
+                    imeAction = imeAction
+                ),
+                keyboardActions = KeyboardActions(
+                    onDone = { onSubmit(controller.text) }
+                ),
+                interactionSource = interactionSource,
+                visualTransformation =
+                    if (obscureText) PasswordVisualTransformation()
+                    else VisualTransformation.None,
+                decorationBox = { inner ->
+                    CommonDecorationBox(
+                        value = controller.text,
+                        innerTextField = inner,
+                        enabled = enabled,
+                        singleLine = (maxLines ?: 1) == 1,
+                        isError = errorText != null,
+                        visualTransformation =
+                            if (obscureText) PasswordVisualTransformation()
+                            else VisualTransformation.None,
+                        interactionSource = interactionSource,
+                        contentPadding = padding,
+                        leadingIcon = prefixWidget,
+                        trailingIcon = suffixWidget,
+                        placeholder = if (controller.text.isEmpty() && hintText != null) {
+                            {
+                                Text(
+                                    hintText,
+                                    style = hintStyle
+                                )
+                            }
+                        } else null,
+                        label = {
+                            if (labelText != null) {
+                                Text(
+                                    labelText,
+                                    style = labelStyle
+                                )
+                            }
+                        },
+                        prefix = {
+                            if (prefixWidget != null) {
+                                prefixWidget()
+                            }
+                        },
+                        suffix = {
+                            if (suffixWidget != null) {
+                                suffixWidget()
+                            }
+                        },
+
+                        container = {
+                            TextFieldContainer(
+                                enabled = enabled,
+interactionSource= interactionSource,
+                                focusedBorder = VWInputBorder.Underline(
+                                    strokeWidth = 2.dp,
+                                    dashed = false
+                                ),
+                                disabledBorder = VWInputBorder.Underline(
+                                    strokeWidth = 1.dp,
+                                    dashed = false
+                                ),
+                                focusedErrorBorder = VWInputBorder.Underline(
+                                    strokeWidth = 2.dp,),
+                                enabledBorder = enabledBorder,
+                                errorBorder = errorBorder,
+                                isError = false,
+                            )
+                        },
+
+                    )
 //                    OutlinedTextFieldDefaults.DecorationBox(
 //                        value = controller.text,
 //                        innerTextField = inner,
@@ -1002,19 +942,9 @@ fun InternalTextFormField(
 //                            }
 //                        } else null
 //                    )
-////                    Row(verticalAlignment = Alignment.CenterVertically) {
-////                        prefixWidget?.invoke()
-////                        Box(Modifier.weight(1f)) {
-////                            if (controller.text.isEmpty() && hintText != null) {
-////                                Text(hintText, style = hintStyle)
-////                            }
-////                            inner()
-////                        }
-////                        suffixWidget?.invoke()
-////                    }
-//                }
-//            )
-////        }
+
+                }
+            )
 
         if (errorText != null) {
             Spacer(Modifier.height(4.dp))

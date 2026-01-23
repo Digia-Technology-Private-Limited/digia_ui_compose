@@ -3,8 +3,6 @@ package com.digia.digiaui.framework.actions.openUrl
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import androidx.browser.customtabs.CustomTabsIntent
-import androidx.compose.ui.platform.LocalUriHandler
 import com.digia.digiaui.framework.actions.base.Action
 import com.digia.digiaui.framework.actions.base.ActionId
 import com.digia.digiaui.framework.actions.base.ActionProcessor
@@ -13,9 +11,7 @@ import com.digia.digiaui.framework.expr.ScopeContext
 import com.digia.digiaui.framework.models.ExprOr
 import com.digia.digiaui.framework.utils.JsonLike
 import androidx.core.net.toUri
-import com.digia.digiaui.framework.RenderPayload
 import com.digia.digiaui.framework.UIResources
-import com.digia.digiaui.framework.state.StateContext
 
 
 enum class LaunchMode {
@@ -74,75 +70,67 @@ data class OpenUrlAction(
 }
 
 /** Processor for open URL action */
-class OpenUrlProcessor(
-    private val urlLauncher: UrlLauncher = AndroidUrlLauncher()
-) : ActionProcessor<OpenUrlAction>() {
-
-    override fun execute(
+class OpenUrlProcessor : ActionProcessor<OpenUrlAction>() {
+    override suspend fun execute(
         context: Context,
         action: OpenUrlAction,
         scopeContext: ScopeContext?,
-        stateContext: StateContext?,
-        resourceProvider: UIResources?,
+        stateContext: com.digia.digiaui.framework.state.StateContext?,
+        resourcesProvider: UIResources?,
         id: String
-    ): Any? {
-        val url = action.url?.evaluate<String>(scopeContext).orEmpty()
-        if (url.isBlank()) return false
+    ) {
+        // Evaluate URL
+        val url = action.url?.evaluate(scopeContext) ?: ""
+        if (url.isEmpty()) {
+            println("OpenUrlAction: URL is empty")
+            return
+        }
 
-        val launchMode = uriLaunchMode(action.launchMode)
+        // Evaluate launch mode
+        val launchModeStr = action.launchMode ?: "externalApplication"
+        val launchMode = uriLaunchMode(launchModeStr)
 
         try {
-            urlLauncher.open(context, url, launchMode)
-            return  true
+            when (launchMode) {
+                LaunchMode.IN_APP_WEBVIEW -> {
+                    // TODO: Open in custom WebView activity
+                    println("OpenUrlAction: IN_APP_WEBVIEW not yet implemented, using external browser")
+                    openExternal(context, url)
+                }
+                LaunchMode.EXTERNAL_APPLICATION -> {
+                    openExternal(context, url)
+                }
+                LaunchMode.EXTERNAL_NON_BROWSER_APPLICATION -> {
+                    openExternalNonBrowser(context, url)
+                }
+                LaunchMode.PLATFORM_DEFAULT -> {
+                    openPlatformDefault(context, url)
+                }
+            }
+            println("OpenUrlAction: Opened URL: $url with mode: $launchMode")
         } catch (e: Exception) {
+            println("OpenUrlAction: Failed to open URL: $url - ${e.message}")
             e.printStackTrace()
-            return false
         }
     }
-}
-
-
-
-interface UrlLauncher {
-    fun open(
-        context: Context,
-        url: String,
-        mode: LaunchMode
-    )
-}
-
-class AndroidUrlLauncher : UrlLauncher {
-
-    override fun open(context: Context, url: String, mode: LaunchMode) {
-        when (mode) {
-            LaunchMode.IN_APP_WEBVIEW -> openCustomTab(context, url)
-            LaunchMode.EXTERNAL_APPLICATION -> openExternal(context, url)
-            LaunchMode.EXTERNAL_NON_BROWSER_APPLICATION -> openNonBrowser(context, url)
-            LaunchMode.PLATFORM_DEFAULT -> openExternal(context, url)
-        }
-    }
-
+    
     private fun openExternal(context: Context, url: String) {
-        val intent = Intent(Intent.ACTION_VIEW, url.toUri()).apply {
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        }
+        val intent = Intent(Intent.ACTION_VIEW, url.toUri())
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         context.startActivity(intent)
     }
-
-    private fun openNonBrowser(context: Context, url: String) {
-        val intent = Intent(Intent.ACTION_VIEW, url.toUri()).apply {
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            addCategory(Intent.CATEGORY_BROWSABLE)
-        }
+    
+    private fun openExternalNonBrowser(context: Context, url: String) {
+        val intent = Intent(Intent.ACTION_VIEW, url.toUri())
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        // Exclude browser apps
+        intent.addCategory(Intent.CATEGORY_BROWSABLE)
         context.startActivity(intent)
     }
-
-    private fun openCustomTab(context: Context, url: String) {
-        val customTabsIntent = CustomTabsIntent.Builder()
-            .setShowTitle(true)
-            .build()
-
-        customTabsIntent.launchUrl(context, url.toUri())
+    
+    private fun openPlatformDefault(context: Context, url: String) {
+        val intent = Intent(Intent.ACTION_VIEW, url.toUri())
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        context.startActivity(intent)
     }
 }
-

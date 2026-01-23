@@ -1,16 +1,11 @@
 package com.digia.digiaui.framework.actions.showToast
 
 import android.content.Context
-import android.widget.Toast
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarDuration
@@ -27,8 +22,6 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.digia.digiaui.framework.DUIFactory
-import com.digia.digiaui.framework.RenderPayload
 import com.digia.digiaui.framework.UIResources
 import com.digia.digiaui.framework.actions.base.Action
 import com.digia.digiaui.framework.actions.base.ActionId
@@ -36,7 +29,6 @@ import com.digia.digiaui.framework.actions.base.ActionProcessor
 import com.digia.digiaui.framework.actions.base.ActionType
 import com.digia.digiaui.framework.expr.ScopeContext
 import com.digia.digiaui.framework.models.ExprOr
-import com.digia.digiaui.framework.textStyle
 import com.digia.digiaui.framework.utils.JsonLike
 import com.digia.digiaui.framework.utils.NumUtil
 import com.digia.digiaui.framework.utils.ToUtils
@@ -44,8 +36,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import makeTextStyle
-import resourceTextStyle
 
 /** Show toast action */
 data class ShowToastAction(
@@ -80,13 +70,13 @@ data class ShowToastAction(
 
 /** Processor for show toast action */
 class ShowToastProcessor : ActionProcessor<ShowToastAction>() {
-    override fun execute(
-            context: Context,
-            action: ShowToastAction,
-            scopeContext: ScopeContext?,
-            stateContext: com.digia.digiaui.framework.state.StateContext?,
-            resourceProvider: UIResources?,
-            id: String
+    override suspend fun execute(
+        context: Context,
+        action: ShowToastAction,
+        scopeContext: ScopeContext?,
+        stateContext: com.digia.digiaui.framework.state.StateContext?,
+        resourcesProvider: UIResources?,
+        id: String
     ) {
 
         // Evaluate message
@@ -140,7 +130,7 @@ class ShowToastProcessor : ActionProcessor<ShowToastAction>() {
                         if (duration <= 0) SnackbarDuration.Indefinite
                         else SnackbarDuration.Short,
                     scopeContext = scopeContext,
-                    resourceProvider = resourceProvider
+                    resourceProvider = resourcesProvider
                 ),
                 autoDismissMs =
                     if (duration <= 0) null else duration * 1000L

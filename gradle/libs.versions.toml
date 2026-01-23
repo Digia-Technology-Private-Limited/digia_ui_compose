@@ -1,7 +1,5 @@
 [versions]
 digia_expr_kt = "v1.0.0-beta.2"
-digiaui = "1.0.0"
-digiaexpr = "1.0.0"
 kotlin = "1.9.0"
 compose = "1.4.3"
 lottieCompose = "6.7.1"
@@ -19,6 +17,7 @@ ui = "1.10.0"
 browser = "1.9.0"
 media3Ui = "1.9.0"
 uiGraphics = "1.10.0"
+foundation = "1.10.1"
 #navigationRuntimeKtx = "2.9.6"
 
 [libraries]
@@ -27,7 +26,6 @@ androidx-media3-exoplayer = { module = "androidx.media3:media3-exoplayer", versi
 androidx-media3-ui-compose = { module = "androidx.media3:media3-ui-compose", version.ref = "media3UiCompose" }
 androidx-media3-ui-compose-material3 = { module = "androidx.media3:media3-ui-compose-material3", version.ref = "media3UiComposeMaterial3" }
 digia_expr_kt = { module = "com.github.Digia-Technology-Private-Limited:digia_expr_kt", version.ref = "digia_expr_kt" }
-digiaexpr = { module = "com.digia:digiaexpr", version.ref = "digiaexpr" }
 
 # AndroidX Core
 androidx-core-ktx = "androidx.core:core-ktx:1.12.0"
@@ -81,6 +79,7 @@ androidx-ui = { group = "androidx.compose.ui", name = "ui", version.ref = "ui" }
 androidx-browser = { group = "androidx.browser", name = "browser", version.ref = "browser" }
 androidx-media3-ui = { group = "androidx.media3", name = "media3-ui", version.ref = "media3Ui" }
 androidx-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics", version.ref = "uiGraphics" }
+androidx-compose-foundation = { group = "androidx.compose.foundation", name = "foundation", version.ref = "foundation" }
 #androidx-navigation-runtime-ktx = { group = "androidx.navigation", name = "navigation-runtime-ktx", version.ref = "navigationRuntimeKtx" }
 
 [plugins]

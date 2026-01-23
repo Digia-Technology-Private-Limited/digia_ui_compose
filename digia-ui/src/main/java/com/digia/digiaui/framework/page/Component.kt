@@ -77,11 +77,10 @@ fun DUIComponent(
             initialState = resolvedState
         ) { stateContext ->
 
+            // Depend on version to recreate scopeContext when state changes
+            val version = stateContext.version
 
-
-
-
-            val scopeContext = remember(resolvedPageArgs, stateContext) {
+            val scopeContext = remember(resolvedPageArgs, stateContext, version) {
                 _createExprContext(
                     params = resolvedPageArgs,
                     stateContext = stateContext,

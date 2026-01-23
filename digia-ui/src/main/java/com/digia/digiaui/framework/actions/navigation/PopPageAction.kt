@@ -44,7 +44,7 @@ data class PopPageAction(
 
 /** PopPage Action Processor */
 class PopPageProcessor : ActionProcessor<PopPageAction>() {
-    override fun execute(
+    override suspend fun execute(
         context: Context,
         action: PopPageAction,
         scopeContext: ScopeContext?,

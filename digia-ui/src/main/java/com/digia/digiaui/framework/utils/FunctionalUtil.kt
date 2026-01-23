@@ -105,17 +105,17 @@ inline fun <reified T> asType(
 /// This function is particularly useful in scenarios where you want to
 /// attempt a cast without the risk of runtime exceptions, such as when
 /// working with dynamic data or when graceful degradation is preferred.
-inline fun <reified T> asSafe(x: Any?): T? {
-    if (x is T) {
-        return x
-    }
-    // Log error in debug mode
-    if (x != null) {
-        Logger.error(
-                "CastError when trying to cast $x to ${T::class}",
-                tag = "FunctionalUtil",
-                error = TypeCastException()
-        )
-    }
-    return null
-}
+//inline fun <reified T> asSafe(x: Any?): T? {
+//    if (x is T) {
+//        return x
+//    }
+//    // Log error in debug mode
+//    if (x != null) {
+//        Logger.error(
+//                "CastError when trying to cast $x to ${T::class}",
+//                tag = "FunctionalUtil",
+//                error = TypeCastException()
+//        )
+//    }
+//    return null
+//}

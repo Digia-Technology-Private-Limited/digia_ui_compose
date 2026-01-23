@@ -6,7 +6,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
-import asSafe
 import com.digia.digiaui.config.model.DUIConfig
 import com.digia.digiaui.framework.actions.ActionExecutor
 import com.digia.digiaui.framework.actions.ActionProvider
@@ -20,6 +19,7 @@ import com.digia.digiaui.framework.page.DUIPage
 import com.digia.digiaui.framework.utils.asSafe
 import com.digia.digiaui.framework.widgets.registerBuiltInWidgets
 import com.digia.digiaui.init.DigiaUIManager
+import com.digia.digiaui.utils.asSafe
 import convertToTextStyle
 
 /**
@@ -397,42 +397,8 @@ class DUIFactory private constructor() {
         Logger.log("Set ${variables.size} environment variables")
     }
 
-    /**
-     * Gets an environment variable value.
-     *
-     * @param key The variable name
-     * @return The variable value or null if not found
-     *
-     * @throws IllegalStateException if DigiaUIManager is not initialized
-     */
-    fun getEnvironmentVariable(key: String): Any? {
-        val digiaUIInstance = DigiaUIManager.getInstance().safeInstance
-        if (digiaUIInstance == null) {
-            throw IllegalStateException(
-                "DigiaUIManager is not initialized. Make sure to call DigiaUI.initialize() " +
-                        "and await its completion before calling getEnvironmentVariable()."
-            )
-        }
-        return digiaUIInstance.dslConfig.getEnvVariable(key)
-    }
 
-    /**
-     * Gets all environment variables.
-     *
-     * @return Map of all environment variables
-     *
-     * @throws IllegalStateException if DigiaUIManager is not initialized
-     */
-    fun getAllEnvironmentVariables(): Map<String, Any?> {
-        val digiaUIInstance = DigiaUIManager.getInstance().safeInstance
-        if (digiaUIInstance == null) {
-            throw IllegalStateException(
-                "DigiaUIManager is not initialized. Make sure to call DigiaUI.initialize() " +
-                        "and await its completion before calling getAllEnvironmentVariables()."
-            )
-        }
-        return digiaUIInstance.dslConfig.getAllEnvVariables()
-    }
+
 
     /**
      * Clears a single environment variable value at runtime.
@@ -488,6 +454,28 @@ class DUIFactory private constructor() {
             isInitialized = false
             Logger.log("DUIFactory destroyed")
         }
+    }
+
+    /**
+     * Gets the widget registry.
+     * 
+     * @return The widget registry instance
+     * @throws IllegalStateException if factory is not initialized
+     */
+    fun getRegistry(): DefaultVirtualWidgetRegistry {
+        checkInitialized()
+        return widgetRegistry
+    }
+
+    /**
+     * Gets the UI resources.
+     * 
+     * @return The UI resources instance
+     * @throws IllegalStateException if factory is not initialized
+     */
+    fun getResources(): UIResources {
+        checkInitialized()
+        return resources
     }
 
     /**

@@ -1,7 +1,6 @@
 package com.digia.digiaui.framework.actions.navigation
 
 import android.content.Context
-import com.digia.digiaui.framework.RenderPayload
 import com.digia.digiaui.framework.UIResources
 import com.digia.digiaui.framework.actions.base.Action
 import com.digia.digiaui.framework.actions.base.ActionFlow
@@ -11,7 +10,6 @@ import com.digia.digiaui.framework.actions.base.ActionType
 import com.digia.digiaui.framework.expr.ScopeContext
 import com.digia.digiaui.framework.models.ExprOr
 import com.digia.digiaui.framework.navigation.NavigationManager
-import com.digia.digiaui.framework.state.StateContext
 import com.digia.digiaui.framework.utils.JsonLike
 
 /**
@@ -57,17 +55,18 @@ data class GotoPageAction(
 
 /** GotoPage Action Processor */
 class GotoPageProcessor : ActionProcessor<GotoPageAction>() {
-    override fun execute(
+    override suspend fun execute(
         context: Context,
         action: GotoPageAction,
         scopeContext: ScopeContext?,
-        stateContext: StateContext?,
-        resourceProvider: UIResources?,
+        stateContext: com.digia.digiaui.framework.state.StateContext?,
+        resourcesProvider: UIResources?,
+
         id: String
     ): Any? {
         try {
             // Evaluate page data - matches Flutter's deepEvaluate
-            val pageData = action.pageData?.deepEvaluate(scopeContext) as? JsonLike
+            val pageData = action.pageData?.evaluate<JsonLike>(scopeContext)
             if (pageData == null) {
                 println("GotoPageAction: No pageData provided")
                 return null

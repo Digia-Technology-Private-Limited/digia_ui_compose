@@ -36,7 +36,8 @@ data class ListViewProps(
     val reverse: Boolean? = null,
     val shrinkWrap: Boolean? = null,
     val allowScroll: Boolean? = null,
-    val initialScrollPosition: String? = null
+    val initialScrollPosition: String? = null,
+    val scrollController: Any? = null
 ) {
     companion object {
         fun fromJson(json: JsonLike): ListViewProps {
@@ -46,7 +47,8 @@ data class ListViewProps(
                 reverse = json["reverse"] as? Boolean,
                 shrinkWrap = json["shrinkWrap"] as? Boolean,
                 allowScroll = json["allowScroll"] as? Boolean,
-                initialScrollPosition = json["initialScrollPosition"] as? String
+                initialScrollPosition = json["initialScrollPosition"] as? String,
+                scrollController = json["controller"]
             )
         }
     }
@@ -91,6 +93,12 @@ class VWListView(
         val shrinkWrap = props.shrinkWrap ?: false
 
         val listState = rememberLazyListState()
+        
+        // Attach scroll controller if provided
+        val scrollController = payload.eval<com.digia.digiaui.framework.datatype.AdaptedScrollController>(props.scrollController)
+        LaunchedEffect(scrollController, listState) {
+            scrollController?.attachLazyListState(listState)
+        }
 
         // Handle initial scroll position
         props.initialScrollPosition?.let { initial ->

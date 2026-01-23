@@ -1,6 +1,9 @@
 package com.digia.digiaui.network
 
-import com.digia.digiaui.framework.models.Variable
+import com.digia.digiaui.utils.asSafe
+import com.digia.digiaui.framework.datatype.Variable
+import com.digia.digiaui.framework.datatype.VariableConverter
+import com.digia.digiaui.framework.utils.JsonLike
 
 
 /**
@@ -42,8 +45,8 @@ data class APIModel(
     val name: String? = null,
     val url: String,
     val method: HttpMethod,
-    val headers: Map<String, Any>? = null,
-    val body: Map<String, Any>? = null,
+    val headers: Map<String, Any?>? = null,
+    val body: Map<String, Any?>? = null,
     val bodyType: BodyType? = null,
     val variables: Map<String, Variable>? = null
 ) {
@@ -62,32 +65,22 @@ data class APIModel(
             val url = json["url"] as? String
                 ?: throw IllegalArgumentException("APIModel 'url' is required")
             
-            val methodStr = json["method"] as? String
+            val methodStr =asSafe<String>( json["method"] )
                 ?: throw IllegalArgumentException("APIModel 'method' is required")
             
             val method = HttpMethod.valueOf(methodStr)
             
-            val name = json["name"] as? String
+            val name = asSafe<String>(json["name"])
             
-            @Suppress("UNCHECKED_CAST")
-            val headers = json["headers"] as? Map<String, Any>
+            val headers =asSafe<JsonLike>( json["headers"] )
             
-            @Suppress("UNCHECKED_CAST")
-            val body = json["body"] as? Map<String, Any>
+            val body = asSafe<JsonLike>(json["body"] )
             
-            val bodyTypeStr: String = (json["bodyType"] as? String)?:"JSON"
+            val bodyTypeStr: String = asSafe<String>(json["bodyType"] )?:"JSON"
             val bodyType = BodyType.valueOf(bodyTypeStr)
             
-            @Suppress("UNCHECKED_CAST")
-            val variablesJson = json["variables"] as? Map<String, Any>
-            val variables = variablesJson?.mapValues { (_, value) ->
-                if (value is Map<*, *>) {
-                    @Suppress("UNCHECKED_CAST")
-                    Variable.fromJson(value as Map<String, Any>)
-                } else {
-                    throw IllegalArgumentException("Invalid variable format")
-                }
-            }
+            val variablesJson =asSafe<JsonLike>(json["variables"] )
+            val variables = VariableConverter.fromJson(variablesJson)
             
             return APIModel(
                 id = id,
@@ -116,15 +109,7 @@ data class APIModel(
             headers?.let { put("headers", it) }
             body?.let { put("body", it) }
             bodyType?.let { put("bodyType", it.name) }
-            variables?.let { vars ->
-                put("variables", vars.mapValues { (_, variable) ->
-                    variable.toJson()
-                })
-            }
+            VariableConverter.toJson(variables)
         }
-    }
-
-    private fun Variable.toJson() {
-        TODO("Not yet implemented")
     }
 }
