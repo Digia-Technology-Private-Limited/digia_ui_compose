@@ -8,12 +8,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
-import com.digia.digiaui.analytics.DUIAnalytics
-import com.digia.digiaui.core.DigiaUIScope
+//import com.digia.digiaui.core.DigiaUIScope
 import com.digia.digiaui.framework.DUIFactory
 import com.digia.digiaui.framework.DUIFontFactory
 import com.digia.digiaui.framework.actions.showToast.DUISnackbarHost
 import com.digia.digiaui.framework.actions.showToast.DUISnackbarManager
+import com.digia.digiaui.framework.analytics.AnalyticsHandler
+import com.digia.digiaui.framework.analytics.DUIAnalytics
 import com.digia.digiaui.framework.appstate.DUIAppState
 import com.digia.digiaui.framework.logging.Logger
 import com.digia.digiaui.framework.message.MessageBus
@@ -80,6 +81,18 @@ fun DigiaUIApp(
      */
     LaunchedEffect(digiaUI) {
         DigiaUIManager.initialize(digiaUI)
+        DigiaUIManager.getInstance().messageBus = messageBus
+        
+        // Initialize managers
+        DigiaUIManager.getInstance().bottomSheetManager = 
+            com.digia.digiaui.framework.bottomsheet.BottomSheetManager()
+        DigiaUIManager.getInstance().dialogManager = 
+            com.digia.digiaui.framework.dialog.DialogManager()
+        
+        // Set analytics provider
+        analytics?.let {
+            AnalyticsHandler.analyticsProvider = it
+        }
 
         DUIAppState.instance.init(
             digiaUI.dslConfig.appState ?: emptyList()
@@ -117,14 +130,29 @@ fun DigiaUIApp(
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        DigiaUIScope(
-            messageBus = messageBus,
-            analytics = analytics
-        ) {
+//        DigiaUIScope(
+//            messageBus = messageBus,
+//            analytics = analytics
+//        ) {
             content()
+//        }
+        
+        // Dialog Host
+        DigiaUIManager.getInstance().dialogManager?.let { manager ->
+            com.digia.digiaui.framework.dialog.DialogHost(
+                dialogManager = manager,
+                registry = DUIFactory.getInstance().getRegistry(),
+                resources = DUIFactory.getInstance().getResources()
+            )
         }
-
-        // Global Snackbar Host for showing toasts
-        DUISnackbarHost()
+        
+        // Bottom Sheet Host
+        DigiaUIManager.getInstance().bottomSheetManager?.let { manager ->
+            com.digia.digiaui.framework.bottomsheet.BottomSheetHost(
+                bottomSheetManager = manager,
+                registry = DUIFactory.getInstance().getRegistry(),
+                resources = DUIFactory.getInstance().getResources()
+            )
+        }
     }
 }

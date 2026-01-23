@@ -22,8 +22,10 @@ import com.digia.digiaui.framework.state.LocalStateContextProvider
 import com.digia.digiaui.framework.utils.JsonLike
 import androidx.compose.ui.platform.LocalContext
 import LocalUIResources
+import androidx.compose.runtime.rememberCoroutineScope
 import com.digia.digiaui.framework.evalColor
 import com.digia.digiaui.framework.registerAllChildern
+import kotlinx.coroutines.launch
 
 /**
  * AppBar widget properties
@@ -91,6 +93,7 @@ class VWAppBar(
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     override fun Render(payload: RenderPayload) {
+        val scope = rememberCoroutineScope()
         val context = LocalContext.current
         val actionExecutor = LocalActionExecutor.current
         val stateContext = LocalStateContextProvider.current
@@ -143,14 +146,16 @@ class VWAppBar(
                 IconButton(
                     onClick = {
                         props.onTapLeadingIcon?.let { actionFlow ->
-                            payload.executeAction(
-                                context = context,
-                                actionFlow = actionFlow,
-                                actionExecutor = actionExecutor,
-                                stateContext = stateContext,
-                                resourceProvider = resources,
-                                incomingScopeContext = null
-                            )
+                            scope.launch {
+                                payload.executeAction(
+                                    context = context,
+                                    actionFlow = actionFlow,
+                                    actionExecutor = actionExecutor,
+                                    stateContext = stateContext,
+                                        resourcesProvider = resources,
+                                    incomingScopeContext = null
+                                )
+                            }
                         }
                     }
                 ) {

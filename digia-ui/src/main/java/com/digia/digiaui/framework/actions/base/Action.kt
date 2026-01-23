@@ -2,6 +2,7 @@ package com.digia.digiaui.framework.actions.base
 
 import com.digia.digiaui.framework.models.ExprOr
 import com.digia.digiaui.framework.utils.JsonLike
+import com.digia.digiaui.utils.asSafe
 
 /** Action types enum - defines all available actions */
 enum class ActionType(val value: String) {
@@ -14,11 +15,21 @@ enum class ActionType(val value: String) {
     SHOW_BOTTOM_SHEET("Action.showBottomSheet"),
     CALL_REST_API("Action.callRestApi"),
     OPEN_URL("Action.openUrl"),
-    SET_APP_STATE("Action.setAppState");
+    SET_APP_STATE("Action.setAppState"),
+    CONTROL_OBJECT("Action.controlObject"),
+    SHARE_CONTENT("Action.share"),
+    DELAY("Action.delay"),
+    COPY_TO_CLIPBOARD("Action.copyToClipboard"),
+    POST_MESSAGE("Action.handleDigiaMessage"),
+    FIRE_EVENT("Action.fireEvent"),
+    EXECUTE_CALLBACK("Action.executeCallback"),
+    CALL_EXTERNAL_METHOD("Action.handleDigiaMessage");
 
     companion object {
         fun fromString(value: String): ActionType {
-            return values().firstOrNull { it.value == value }?: SHOW_TOAST
+            return ActionType.entries.firstOrNull {
+                it.value.equals(value, ignoreCase = true)
+            }?: SHOW_TOAST
 //                    ?: throw IllegalArgumentException("Unknown action type: $value")
         }
     }
@@ -59,7 +70,7 @@ data class ActionFlow(
             val actionsList = json["steps"] as? List<*> ?: emptyList<Any>()
 
             val actions = actionsList.mapNotNull { actionJson ->
-                val jsonMap = actionJson as? JsonLike ?: return@mapNotNull null
+                val jsonMap = asSafe<JsonLike>( actionJson) ?: return@mapNotNull null
                 com.digia.digiaui.framework.actions.ActionFactory.fromJson(jsonMap)
             }
 

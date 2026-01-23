@@ -1,15 +1,19 @@
 package com.digia.digiaui.framework.models
+
+import com.digia.digiaui.utils.asSafe
+import com.digia.digiaui.framework.datatype.Variable
+import com.digia.digiaui.framework.datatype.VariableConverter
 import com.digia.digiaui.framework.utils.JsonLike
 import com.digia.digiaui.framework.utils.JsonUtil.Companion.tryKeys
 
 enum class NodeType {
-    widget,
-    state,
-    component;
+    Widget,
+    State,
+    Component;
 
     companion object {
         fun fromString(value: String): NodeType? {
-            return values().firstOrNull { it.name == value }
+            return NodeType.entries.firstOrNull { it.name.equals(value, ignoreCase = true) }
         }
     }
 }
@@ -23,12 +27,14 @@ sealed class VWData {
 
     companion object {
         fun fromJson(json: JsonLike): VWData {
-            val nodeType = NodeType.fromString(tryKeys(json,listOf("category","nodeType"))?: "widget") ?: NodeType.widget
+            val nodeType =
+                NodeType.fromString(asSafe<String>(tryKeys(json, listOf("category", "nodeType")))?:"widget")
+                    ?: NodeType.Widget
 
             return when (nodeType) {
-                NodeType.widget -> VWNodeData.fromJson(json)
-                NodeType.component -> VWComponentData.fromJson(json)
-                NodeType.state -> VWStateData.fromJson(json)
+                NodeType.Widget -> VWNodeData.fromJson(json)
+                NodeType.Component -> VWComponentData.fromJson(json)
+                NodeType.State -> VWStateData.fromJson(json)
             }
         }
     }
@@ -47,14 +53,18 @@ data class VWNodeData(
     companion object {
         fun fromJson(json: JsonLike): VWNodeData {
             return VWNodeData(
-                    refName = tryKeys<String>(json, listOf("varName", "refName")),
-                    type = json["type"] as? String ?: "",
-                    props  = (json["props"] as? JsonLike)?.let(::Props) ?: Props.empty(),
-                    commonProps  = (json["containerProps"] as? JsonLike)?.let {
-                        CommonProps.fromJson(it)
-                    },
-                    parentProps  = (json["parentProps"] as? JsonLike)?.let(::Props) ?: Props.empty(),
-                childGroups = tryKeys(json, listOf("childGroups", "children"), VWNodeData::parseChildGroups),
+                refName = tryKeys<String>(json, listOf("varName", "refName")),
+                type = json["type"] as? String ?: "",
+                props = asSafe<JsonLike>(json["props"])?.let(::Props) ?: Props.empty(),
+                commonProps = asSafe<JsonLike>(json["containerProps"])?.let {
+                    CommonProps.fromJson(it)
+                },
+                parentProps = asSafe<JsonLike>(json["parentProps"])?.let(::Props) ?: Props.empty(),
+                childGroups = tryKeys(
+                    json,
+                    listOf("childGroups", "children", "composites"),
+                    VWNodeData::parseChildGroups
+                ),
             )
         }
 
@@ -63,11 +73,18 @@ data class VWNodeData(
 
             return value.entries.associate { (key, children) ->
                 val childList =
-                        when (children) {
-                            is List<*> ->
-                                    children.mapNotNull { (it as? JsonLike)?.let { VWData.fromJson(it) } }
-                            else -> emptyList()
-                        }
+                    when (children) {
+                        is List<*> ->
+                            children.mapNotNull { it ->
+                                asSafe<JsonLike>(it)?.let {
+                                    VWData.fromJson(
+                                        it
+                                    )
+                                }
+                            }
+
+                        else -> emptyList()
+                    }
                 (key as String) to childList
             }
         }
@@ -76,23 +93,23 @@ data class VWNodeData(
 
 /** Component reference node */
 data class VWComponentData(
-        override val refName: String? = null,
-        val id: String, // Component ID
-        val args: Map<String, ExprOr<Any>?>? = null, // Arguments to pass
-        val commonProps: CommonProps? = null,
-        val parentProps: Props? = null
+    override val refName: String? = null,
+    val id: String, // Component ID
+    val args: Map<String, ExprOr<Any>?>? = null, // Arguments to pass
+    val commonProps: CommonProps? = null,
+    val parentProps: Props? = null
 ) : VWData() {
     companion object {
         fun fromJson(json: JsonLike): VWComponentData {
             return VWComponentData(
-                    refName = tryKeys(json, listOf("varName", "refName")),
-                    id = json["componentId"] as? String ?: "",
-                    args =
-                            (json["componentArgs"] as? JsonLike)?.mapValues {
-                                ExprOr.fromValue<Any>(it.value)
-                            },
-                    commonProps = CommonProps.fromJson(json["containerProps"] as? JsonLike),
-                    parentProps = (json["parentProps"] as? JsonLike)?.let(::Props) ?: Props.empty()
+                refName = tryKeys(json, listOf("varName", "refName")),
+                id = json["componentId"] as? String ?: "",
+                args =
+                    asSafe<JsonLike>(json["componentArgs"])?.mapValues {
+                        ExprOr.fromValue<Any>(it.value)
+                    },
+                commonProps = CommonProps.fromJson(asSafe<JsonLike>(json["containerProps"])),
+                parentProps = asSafe<JsonLike>(json["parentProps"])?.let(::Props) ?: Props.empty()
             )
         }
     }
@@ -100,39 +117,29 @@ data class VWComponentData(
 
 /** State container node */
 data class VWStateData(
-        override val refName: String? = null,
-        val initStateDefs: Map<String, Variable>, // State variables
-        val childGroups: Map<String, List<VWData>>? = null,
-        val parentProps: Props? = null
+    override val refName: String? = null,
+    val initStateDefs: Map<String, Variable>, // State variables
+    val childGroups: Map<String, List<VWData>>? = null,
+    val parentProps: Props? = null
 ) : VWData() {
     companion object {
         fun fromJson(json: JsonLike): VWStateData {
             return VWStateData(
-                    refName = tryKeys(json, listOf("varName", "refName")),
-                    initStateDefs = parseVariables(json["initStateDefs"]),
-                    childGroups = VWNodeData.parseChildGroups(tryKeys(json, listOf("childGroups", "children","composites"))),
-                    parentProps = (json["parentProps"] as? JsonLike)?.let(::Props) ?: Props.empty( )
+                refName = tryKeys(json, listOf("varName", "refName")),
+                initStateDefs = tryKeys(json, listOf("initStateDefs"), parse = { it ->
+                    asSafe<JsonLike>(it).let { VariableConverter.fromJson(it) }
+                }) ?: emptyMap(),
+                childGroups = VWNodeData.parseChildGroups(
+                    tryKeys(
+                        json,
+                        listOf("childGroups", "children", "composites")
+                    )
+                ),
+                parentProps = asSafe<JsonLike>(json["parentProps"])?.let(::Props) ?: Props.empty()
             )
         }
 
-        private fun parseVariables(value: Any?): Map<String, Variable> {
-            if (value !is Map<*, *>) return emptyMap()
-            return value.entries.associate { (key, varDef) ->
-                (key as String) to Variable.fromJson(varDef as? JsonLike ?: emptyMap())
-            }
-        }
+
     }
 }
 
-/** Variable definition for state and arguments */
-data class Variable(val name: String, val type: String, val defaultValue: Any? = null) {
-    companion object {
-        fun fromJson(json: Map<String, Any?>): Variable {
-            return Variable(
-                    name = json["name"] as? String ?: "",
-                    type = json["type"] as? String ?: "any",
-                    defaultValue = tryKeys(json, listOf("defaultValue", "default"))
-            )
-        }
-    }
-}

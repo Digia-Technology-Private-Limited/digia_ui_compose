@@ -56,7 +56,7 @@ data class SetAppStateAction(
  * SetAppState Action Processor
  */
 class SetAppStateProcessor : ActionProcessor<SetAppStateAction>() {
-    override fun execute(
+    override suspend fun execute(
         context: Context,
         action: SetAppStateAction,
         scopeContext: ScopeContext?,
