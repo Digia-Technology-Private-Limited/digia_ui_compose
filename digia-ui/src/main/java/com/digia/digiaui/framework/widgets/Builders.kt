@@ -1,8 +1,14 @@
 package com.digia.digiaui.framework.widgets
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import com.digia.digiaui.framework.DefaultVirtualWidgetRegistry
 import com.digia.digiaui.framework.RenderPayload
 import com.digia.digiaui.framework.VirtualWidgetRegistry
@@ -55,7 +61,7 @@ fun DefaultVirtualWidgetRegistry.registerBuiltInWidgets() {
         register("digia/animatedSwitcher", ::animatedSwitcherBuilder)
         register("digia/avatar", ::avatarBuilder)
         register("digia/slider", ::sliderBuilder)
-        register("fw/sized_Box", ::sizedBoxBuilder)
+        register("fw/sized_box", ::sizedBoxBuilder)
         register("digia/safeArea", ::safeAreaBuilder)
         register("digia/gridView", ::gridViewBuilder)
         register("digia/richText",::richTextBuilder)
@@ -103,6 +109,11 @@ class VWDummy(
 
         @Composable
         override fun Render(payload: RenderPayload) {
-                Text(text = "Dummy Widget Rendered", modifier = Modifier.buildModifier(payload))
+                Icon(
+                        imageVector = androidx.compose.material.icons.Icons.Default.Close,
+                        tint = Color.Red,
+                        contentDescription = "Dummy Widget",
+                        modifier = Modifier.buildModifier(payload).padding(4.dp).background(color = Color.DarkGray, shape = androidx.compose.foundation.shape.RoundedCornerShape(4.dp)),
+                )
         }
 }

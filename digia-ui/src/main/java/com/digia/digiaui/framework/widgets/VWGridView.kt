@@ -1,18 +1,33 @@
 package com.digia.digiaui.framework.widgets
 
+import androidx.compose.foundation.gestures.ScrollableDefaults
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyGridState
+import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.digia.digiaui.framework.RenderPayload
 import com.digia.digiaui.framework.VirtualWidgetRegistry
 import com.digia.digiaui.framework.base.VirtualCompositeNode
 import com.digia.digiaui.framework.base.VirtualNode
+import com.digia.digiaui.framework.datatype.AdaptedScrollController
 import com.digia.digiaui.framework.expr.DefaultScopeContext
 import com.digia.digiaui.framework.models.CommonProps
 import com.digia.digiaui.framework.models.Props
@@ -81,35 +96,85 @@ class VWGridView(
         }
 
         val items = payload.eval<List<Any>>(props.dataSource) ?: emptyList()
+        val controller = payload.eval<AdaptedScrollController>(props.controller)
         val shrinkWrap = props.shrinkWrap ?: false
         val crossAxisCount = props.crossAxisCount ?: 2
         val mainAxisSpacing = props.mainAxisSpacing ?: 0f
         val crossAxisSpacing = props.crossAxisSpacing ?: 0f
-        // Note: Flutter GridView usually supports vertical scroll by default.
-        // Horizontal grid view is less common with standard GridView constructor, but supported.
-        // Keeping it simple for now, assuming Vertical as primary use case for grids usually.
-        // If scrollDirection is horizontal, LazyVerticalGrid doesn't support it directly, would
-        // need LazyHorizontalGrid.
-        // Checking schema, defualt is vertical.
+        val scrollDirection = props.scrollDirection ?: "vertical"
+        val allowScroll = props.allowScroll ?: true
 
-        val gridState = rememberLazyGridState()
+        if (shrinkWrap) {
+            // When shrinkWrap is true, render all items non-lazily to avoid unbounded constraints
+            // This matches Flutter's behavior where shrinkWrap loads all items
+            val baseModifier = Modifier.buildModifier(payload)
+           FixedGrid(
+               child = { item, index ->
+                   val scopedPayload =
+                       payload.copyWithChainedContext(
+                           createExprContext(item, index)
+                       )
+                   // ✅ Safe composable call
+                   child?.ToWidget(scopedPayload)
+               },
+               items = items,
+               crossAxisCount = crossAxisCount,
+               modifier = baseModifier,
+               mainAxisSpacing = mainAxisSpacing.dp,
+               crossAxisSpacing = crossAxisSpacing.dp
+           )
+        } else {
 
-        val listModifier = if (shrinkWrap) Modifier else Modifier.fillMaxWidth()
 
-        // TODO: Handle Horizontal Scroll Direction if strictly required.
-        // For now implementing Vertical as it's the standard for LazyVerticalGrid.
 
-        LazyVerticalGrid(
-                columns = GridCells.Fixed(crossAxisCount),
-                state = gridState,
-                modifier = listModifier,
-                verticalArrangement = Arrangement.spacedBy(mainAxisSpacing.dp),
-                horizontalArrangement = Arrangement.spacedBy(crossAxisSpacing.dp),
-                userScrollEnabled = props.allowScroll ?: true
-        ) {
-            itemsIndexed(items) { index, item ->
-                val scopedPayload = payload.copyWithChainedContext(createExprContext(item, index))
-                child?.ToWidget(scopedPayload)
+            // Use lazy components for better performance when shrinkWrap is false
+            val gridState = rememberLazyGridState()
+            val listModifier = Modifier.buildModifier(payload).then(
+                when (scrollDirection.lowercase()) {
+                    "horizontal" -> Modifier.fillMaxWidth()
+                    else -> Modifier.fillMaxHeight()
+                }
+            )
+
+            LaunchedEffect(controller, gridState) {
+                controller?.attachLazyGridState(gridState)
+            }
+
+            when (scrollDirection.lowercase()) {
+                "horizontal" -> {
+                    LazyHorizontalGrid(
+                        rows = GridCells.Fixed(crossAxisCount),
+                        state = gridState,
+                        modifier = listModifier,
+                        contentPadding = PaddingValues(0.dp),
+                        horizontalArrangement = Arrangement.spacedBy(mainAxisSpacing.dp),
+                        verticalArrangement = Arrangement.spacedBy(crossAxisSpacing.dp),
+                        userScrollEnabled = allowScroll,
+
+                    ) {
+                        itemsIndexed(items) { index, item ->
+                            val scopedPayload = payload.copyWithChainedContext(createExprContext(item, index))
+                            child?.ToWidget(scopedPayload)
+                        }
+                    }
+                }
+                else -> {
+                    // Default to vertical
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(crossAxisCount),
+                        state = gridState,
+                        modifier = listModifier,
+                        contentPadding = PaddingValues(0.dp),
+                        verticalArrangement = Arrangement.spacedBy(mainAxisSpacing.dp),
+                        horizontalArrangement = Arrangement.spacedBy(crossAxisSpacing.dp),
+                        userScrollEnabled = allowScroll,
+                    ) {
+                        itemsIndexed(items) { index, item ->
+                            val scopedPayload = payload.copyWithChainedContext(createExprContext(item, index))
+                            child?.ToWidget(scopedPayload)
+                        }
+                    }
+                }
             }
         }
     }
@@ -141,4 +206,52 @@ fun gridViewBuilder(
             props = GridViewProps.fromJson(data.props.value),
             slots = { self -> registerAllChildern(data.childGroups, self, registry) },
     )
+}
+
+
+
+
+
+@Composable
+fun FixedGrid(
+    items: List<Any>,
+    crossAxisCount: Int,
+    child: @Composable (item: Any?, index: Int) -> Unit,
+    modifier: Modifier = Modifier,
+    mainAxisSpacing: Dp = 0.dp,
+    crossAxisSpacing: Dp = 0.dp,
+) {
+    val rows = remember(items, crossAxisCount) {
+        items.chunked(crossAxisCount)
+    }
+
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(mainAxisSpacing)
+    ) {
+        rows.forEachIndexed { rowIndex, rowItems ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(crossAxisSpacing)
+            ) {
+                rowItems.forEachIndexed { colIndex, item ->
+                    val index = rowIndex * crossAxisCount + colIndex
+
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)      // 🔥 equal width
+                    ) {
+                        child(item, index)
+                    }
+                }
+
+                // 🔥 Fill empty columns in last row
+                repeat(crossAxisCount - rowItems.size) {
+                    Spacer(
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+        }
+    }
 }

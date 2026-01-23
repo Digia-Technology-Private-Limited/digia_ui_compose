@@ -1,7 +1,12 @@
 package com.digia.digiaui.framework.widgets
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -92,56 +97,89 @@ class VWListView(
         val scrollDirection = toScrollDirection(props.scrollDirection)
         val shrinkWrap = props.shrinkWrap ?: false
 
-        val listState = rememberLazyListState()
-        
-        // Attach scroll controller if provided
-        val scrollController = payload.eval<com.digia.digiaui.framework.datatype.AdaptedScrollController>(props.scrollController)
-        LaunchedEffect(scrollController, listState) {
-            scrollController?.attachLazyListState(listState)
-        }
-
-        // Handle initial scroll position
-        props.initialScrollPosition?.let { initial ->
-            LaunchedEffect(initial) {
-                when (initial.lowercase()) {
-                    "start" -> listState.scrollToItem(0)
-                    "end" -> if (items.isNotEmpty()) listState.scrollToItem(items.size - 1)
-                    else -> initial.toIntOrNull()?.takeIf { it in items.indices }?.let {
-                        listState.scrollToItem(it)
+        if (shrinkWrap) {
+            // When shrinkWrap is true, render all items non-lazily to avoid unbounded constraints
+            // This matches Flutter's behavior where shrinkWrap loads all items
+            val baseModifier = Modifier.buildModifier(payload)
+            val itemsList = if (reverse) items.reversed() else items
+            
+            when (scrollDirection) {
+                ScrollDirection.VERTICAL -> {
+                    Column(modifier = baseModifier) {
+                        itemsList.forEachIndexed { index, item ->
+                            val actualIndex = if (reverse) items.size - 1 - index else index
+                            val scopedPayload = payload.copyWithChainedContext(
+                                createExprContext(item, actualIndex)
+                            )
+                            child?.ToWidget(scopedPayload)
+                        }
+                    }
+                }
+                ScrollDirection.HORIZONTAL -> {
+                    Row(modifier = baseModifier) {
+                        itemsList.forEachIndexed { index, item ->
+                            val actualIndex = if (reverse) items.size - 1 - index else index
+                            val scopedPayload = payload.copyWithChainedContext(
+                                createExprContext(item, actualIndex)
+                            )
+                            child?.ToWidget(scopedPayload)
+                        }
                     }
                 }
             }
-        }
+        } else {
+            // Use lazy components for better performance when shrinkWrap is false
+            val listState = rememberLazyListState()
+            
+            // Attach scroll controller if provided
+            val scrollController = payload.eval<com.digia.digiaui.framework.datatype.AdaptedScrollController>(props.scrollController)
+            LaunchedEffect(scrollController, listState) {
+                scrollController?.attachLazyListState(listState)
+            }
 
-        val listModifier = if (shrinkWrap) Modifier else Modifier.fillMaxWidth()
-
-        when (scrollDirection) {
-            ScrollDirection.VERTICAL -> {
-                LazyColumn(
-                    state = listState,
-                    reverseLayout = reverse,
-                    modifier = listModifier
-                ) {
-                    itemsIndexed(items) { index, item ->
-                        val scopedPayload = payload.copyWithChainedContext(
-                            createExprContext(item, index)
-                        )
-                        child?.ToWidget(scopedPayload)
+            // Handle initial scroll position
+            props.initialScrollPosition?.let { initial ->
+                LaunchedEffect(initial) {
+                    when (initial.lowercase()) {
+                        "start" -> listState.scrollToItem(0)
+                        "end" -> if (items.isNotEmpty()) listState.scrollToItem(items.size - 1)
+                        else -> initial.toIntOrNull()?.takeIf { it in items.indices }?.let {
+                            listState.scrollToItem(it)
+                        }
                     }
                 }
             }
 
-            ScrollDirection.HORIZONTAL -> {
-                LazyRow(
-                    state = listState,
-                    reverseLayout = reverse,
-                    modifier = listModifier
-                ) {
-                    itemsIndexed(items) { index, item ->
-                        val scopedPayload = payload.copyWithChainedContext(
-                            createExprContext(item, index)
-                        )
-                        child?.ToWidget(scopedPayload)
+            val listModifier = Modifier.buildModifier(payload).fillMaxWidth()
+
+            when (scrollDirection) {
+                ScrollDirection.VERTICAL -> {
+                    LazyColumn(
+                        state = listState,
+                        reverseLayout = reverse,
+                        modifier = listModifier
+                    ) {
+                        itemsIndexed(items) { index, item ->
+                            val scopedPayload = payload.copyWithChainedContext(
+                                createExprContext(item, index)
+                            )
+                            child?.ToWidget(scopedPayload)
+                        }
+                    }
+                }
+
+                ScrollDirection.HORIZONTAL -> {
+                    LazyRow(
+                        state = listState,
+                        reverseLayout = reverse,
+                        modifier = listModifier
+                    ) {
+                        itemsIndexed(items) { index, item ->
+                            val scopedPayload = payload.copyWithChainedContext(
+                                createExprContext(item, index)
+                            )
+                            child?.ToWidget(scopedPayload)
+                        }
                     }
                 }
             }

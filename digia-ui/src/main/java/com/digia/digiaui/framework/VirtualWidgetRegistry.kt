@@ -1,6 +1,8 @@
 package com.digia.digiaui.framework
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import com.digia.digiaui.framework.base.VirtualLeafNode
 import com.digia.digiaui.framework.base.VirtualNode
 import com.digia.digiaui.framework.models.CommonProps
@@ -161,7 +163,9 @@ class VirtualBuilderWidget(
 
     @Composable
     override fun Render(payload: RenderPayload) {
-        builder(payload)
+        Box(modifier = Modifier.buildModifier(payload)){
+            builder(payload)
+        }
     }
 }
 

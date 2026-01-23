@@ -108,7 +108,34 @@ object ApiHandler {
         return when (bodyType) {
             BodyType.MULTIPART -> createFormData(body)
             BodyType.FORM_URLENCODED -> createUrlEncodedData(body)
+            BodyType.GRAPHQL -> createGraphQLData(body)
             else -> body
+        }
+    }
+
+    /**
+     * Create GraphQL request data
+     * Expects body to be a Map with "query", "variables", and optionally "operationName"
+     */
+    private fun createGraphQLData(body: Any?): Map<String, Any?> {
+        return when (body) {
+            is Map<*, *> -> {
+                val query = body["query"]?.toString() 
+                    ?: throw IllegalArgumentException("GraphQL request must contain 'query' field")
+                
+                buildMap {
+                    put("query", query)
+                    body["variables"]?.let { put("variables", it) }
+                    body["operationName"]?.let { put("operationName", it) }
+                }
+            }
+            is String -> {
+                // If body is just a string, treat it as the query
+                mapOf("query" to body)
+            }
+            else -> throw IllegalArgumentException(
+                "GraphQL body must be a Map with 'query' field or a String query"
+            )
         }
     }
 

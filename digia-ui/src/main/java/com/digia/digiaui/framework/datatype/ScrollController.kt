@@ -4,6 +4,7 @@ import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.runtime.Stable
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -14,11 +15,12 @@ import kotlinx.coroutines.launch
  * This class wraps Android Compose's scroll states and provides a unified interface
  * compatible with the Digia UI expression system.
  * 
- * In Android Compose, there are two main scroll state types:
+ * In Android Compose, there are three main scroll state types:
  * - ScrollState: For basic scrolling (used with Modifier.verticalScroll/horizontalScroll)
  * - LazyListState: For lazy lists (used with LazyColumn/LazyRow)
+ * - LazyGridState: For lazy grids (used with LazyVerticalGrid/LazyHorizontalGrid)
  * 
- * This controller can wrap either type and provides common operations.
+ * This controller can wrap any of these types and provides common operations.
  * 
  * Example usage:
  * ```kotlin
@@ -52,6 +54,11 @@ class AdaptedScrollController {
     private var lazyListState: LazyListState? = null
     
     /**
+     * The underlying LazyGridState (for lazy grids)
+     */
+    private var lazyGridState: LazyGridState? = null
+    
+    /**
      * Get the current scroll offset in pixels.
      * For expressions: @{controller.offset}
      */
@@ -65,6 +72,12 @@ class AdaptedScrollController {
                 // Note: This is approximate as we don't know actual item heights
                 (firstVisibleItemIndex * 100 + firstVisibleItemScrollOffset).toFloat()
             }
+            lazyGridState != null -> {
+                val firstVisibleItemIndex = lazyGridState!!.firstVisibleItemIndex
+                val firstVisibleItemScrollOffset = lazyGridState!!.firstVisibleItemScrollOffset
+                // Approximate offset: index * item height + scroll offset
+                (firstVisibleItemIndex * 100 + firstVisibleItemScrollOffset).toFloat()
+            }
             else -> 0f
         }
     
@@ -75,6 +88,7 @@ class AdaptedScrollController {
         get() = when {
             scrollState != null -> scrollState!!.maxValue.toFloat()
             lazyListState != null -> Float.MAX_VALUE // Lazy lists don't have a fixed max
+            lazyGridState != null -> Float.MAX_VALUE // Lazy grids don't have a fixed max
             else -> 0f
         }
     
@@ -85,6 +99,7 @@ class AdaptedScrollController {
         get() = when {
             scrollState != null -> scrollState!!.isScrollInProgress
             lazyListState != null -> lazyListState!!.isScrollInProgress
+            lazyGridState != null -> lazyGridState!!.isScrollInProgress
             else -> false
         }
     
@@ -95,6 +110,7 @@ class AdaptedScrollController {
         get() = when {
             scrollState != null -> scrollState!!.canScrollForward
             lazyListState != null -> lazyListState!!.canScrollForward
+            lazyGridState != null -> lazyGridState!!.canScrollForward
             else -> false
         }
     
@@ -105,20 +121,21 @@ class AdaptedScrollController {
         get() = when {
             scrollState != null -> scrollState!!.canScrollBackward
             lazyListState != null -> lazyListState!!.canScrollBackward
+            lazyGridState != null -> lazyGridState!!.canScrollBackward
             else -> false
         }
     
     /**
-     * Get the first visible item index (for LazyListState only).
+     * Get the first visible item index (for LazyListState and LazyGridState).
      */
     val firstVisibleItemIndex: Int
-        get() = lazyListState?.firstVisibleItemIndex ?: 0
+        get() = lazyListState?.firstVisibleItemIndex ?: lazyGridState?.firstVisibleItemIndex ?: 0
     
     /**
-     * Get the first visible item scroll offset (for LazyListState only).
+     * Get the first visible item scroll offset (for LazyListState and LazyGridState).
      */
     val firstVisibleItemScrollOffset: Int
-        get() = lazyListState?.firstVisibleItemScrollOffset ?: 0
+        get() = lazyListState?.firstVisibleItemScrollOffset ?: lazyGridState?.firstVisibleItemScrollOffset ?: 0
     
     /**
      * Attach a ScrollState to this controller.
@@ -126,6 +143,7 @@ class AdaptedScrollController {
     fun attachScrollState(state: ScrollState) {
         this.scrollState = state
         this.lazyListState = null
+        this.lazyGridState = null
     }
     
     /**
@@ -134,6 +152,16 @@ class AdaptedScrollController {
     fun attachLazyListState(state: LazyListState) {
         this.lazyListState = state
         this.scrollState = null
+        this.lazyGridState = null
+    }
+    
+    /**
+     * Attach a LazyGridState to this controller.
+     */
+    fun attachLazyGridState(state: LazyGridState) {
+        this.lazyGridState = state
+        this.scrollState = null
+        this.lazyListState = null
     }
     
     /**
@@ -148,6 +176,11 @@ class AdaptedScrollController {
                 // For LazyList, scroll to item index
                 val itemIndex = (value / 100).toInt() // Rough estimation
                 lazyListState!!.animateScrollToItem(itemIndex.coerceAtLeast(0))
+            }
+            lazyGridState != null -> {
+                // For LazyGrid, scroll to item index
+                val itemIndex = (value / 100).toInt() // Rough estimation
+                lazyGridState!!.animateScrollToItem(itemIndex.coerceAtLeast(0))
             }
         }
     }
@@ -164,6 +197,11 @@ class AdaptedScrollController {
                 // For LazyList, scroll to item index
                 val itemIndex = (value / 100).toInt() // Rough estimation
                 lazyListState!!.scrollToItem(itemIndex.coerceAtLeast(0))
+            }
+            lazyGridState != null -> {
+                // For LazyGrid, scroll to item index
+                val itemIndex = (value / 100).toInt() // Rough estimation
+                lazyGridState!!.scrollToItem(itemIndex.coerceAtLeast(0))
             }
         }
     }
@@ -182,6 +220,12 @@ class AdaptedScrollController {
                 val targetIndex = (firstVisibleItemIndex + itemDelta).coerceAtLeast(0)
                 lazyListState!!.animateScrollToItem(targetIndex)
             }
+            lazyGridState != null -> {
+                // For LazyGrid, approximate by scrolling items
+                val itemDelta = (delta / 100).toInt()
+                val targetIndex = (firstVisibleItemIndex + itemDelta).coerceAtLeast(0)
+                lazyGridState!!.animateScrollToItem(targetIndex)
+            }
         }
     }
     
@@ -199,27 +243,35 @@ class AdaptedScrollController {
                 val targetIndex = (firstVisibleItemIndex + itemDelta).coerceAtLeast(0)
                 lazyListState!!.scrollToItem(targetIndex)
             }
+            lazyGridState != null -> {
+                // For LazyGrid, approximate by scrolling items
+                val itemDelta = (delta / 100).toInt()
+                val targetIndex = (firstVisibleItemIndex + itemDelta).coerceAtLeast(0)
+                lazyGridState!!.scrollToItem(targetIndex)
+            }
         }
     }
     
     /**
-     * Scroll to a specific item index (for LazyListState only).
+     * Scroll to a specific item index (for LazyListState and LazyGridState).
      * 
      * @param index The item index to scroll to
      * @param scrollOffset Optional scroll offset within the item
      */
     suspend fun animateScrollToItem(index: Int, scrollOffset: Int = 0) {
         lazyListState?.animateScrollToItem(index, scrollOffset)
+        lazyGridState?.animateScrollToItem(index, scrollOffset)
     }
     
     /**
-     * Scroll to a specific item index immediately (for LazyListState only).
+     * Scroll to a specific item index immediately (for LazyListState and LazyGridState).
      * 
      * @param index The item index to scroll to
      * @param scrollOffset Optional scroll offset within the item
      */
     suspend fun scrollToItem(index: Int, scrollOffset: Int = 0) {
         lazyListState?.scrollToItem(index, scrollOffset)
+        lazyGridState?.scrollToItem(index, scrollOffset)
     }
     
     /**
@@ -229,6 +281,7 @@ class AdaptedScrollController {
         when {
             scrollState != null -> scrollState!!.animateScrollTo(0)
             lazyListState != null -> lazyListState!!.animateScrollToItem(0)
+            lazyGridState != null -> lazyGridState!!.animateScrollToItem(0)
         }
     }
     
@@ -239,18 +292,21 @@ class AdaptedScrollController {
         when {
             scrollState != null -> scrollState!!.scrollTo(0)
             lazyListState != null -> lazyListState!!.scrollToItem(0)
+            lazyGridState != null -> lazyGridState!!.scrollToItem(0)
         }
     }
     
     /**
      * Convenience method to scroll to bottom with animation.
-     * Note: For LazyList, this requires knowing the item count.
+     * Note: For LazyList and LazyGrid, this requires knowing the item count.
      */
     suspend fun animateScrollToBottom(itemCount: Int = 0) {
         when {
             scrollState != null -> scrollState!!.animateScrollTo(scrollState!!.maxValue)
             lazyListState != null && itemCount > 0 -> 
                 lazyListState!!.animateScrollToItem(itemCount - 1)
+            lazyGridState != null && itemCount > 0 ->
+                lazyGridState!!.animateScrollToItem(itemCount - 1)
         }
     }
     
