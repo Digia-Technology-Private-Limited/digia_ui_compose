@@ -1,6 +1,7 @@
 package com.digia.digiaui.framework.base
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -8,6 +9,7 @@ import com.digia.digiaui.framework.RenderPayload
 import com.digia.digiaui.framework.models.CommonProps
 import com.digia.digiaui.framework.models.Props
 import com.digia.digiaui.framework.utils.applyCommonProps
+import com.digia.digiaui.framework.utils.toComposeAlignment
 
 abstract class VirtualLeafNode<T>(
     val props: T,
@@ -28,6 +30,17 @@ abstract class VirtualLeafNode<T>(
 
         if (!isVisible) return
 
+        val alignment= commonProps?.align?.toComposeAlignment()
+
+        if(alignment!=null){
+            Box(
+//                modifier = Modifier.fillMaxSize(),
+                contentAlignment = alignment
+            ) {
+                Render(extendedPayload)
+            }
+            return
+        }
 
         Render(extendedPayload)
 
@@ -45,16 +58,4 @@ abstract class VirtualLeafNode<T>(
 
 
 
-fun String.toComposeAlignment(): Alignment =
-    when (this) {
-        "center" -> Alignment.Center
-        "topLeft" -> Alignment.TopStart
-        "topRight" -> Alignment.TopEnd
-        "bottomLeft" -> Alignment.BottomStart
-        "bottomRight" -> Alignment.BottomEnd
-        "centerLeft" -> Alignment.CenterStart
-        "centerRight" -> Alignment.CenterEnd
-        "topCenter" -> Alignment.TopCenter
-        "bottomCenter" -> Alignment.BottomCenter
-        else -> Alignment.Center
-    }
+

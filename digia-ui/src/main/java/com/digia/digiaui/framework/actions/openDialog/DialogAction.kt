@@ -12,7 +12,6 @@ import com.digia.digiaui.framework.expr.ScopeContext
 import com.digia.digiaui.framework.models.ExprOr
 import com.digia.digiaui.framework.state.StateContext
 import com.digia.digiaui.framework.utils.JsonLike
-import isDarkTheme
 import kotlinx.coroutines.launch
 import resourceColor
 
@@ -92,7 +91,7 @@ class ShowDialogProcessor : ActionProcessor<ShowDialogAction>() {
             componentId = componentId,
             args = args,
             barrierDismissible = barrierDismissible,
-            barrierColor = barrierColorStr ?.let { token -> resourceColor(token, resourcesProvider, isDarkTheme(context)) },
+            barrierColor = barrierColorStr ?.let { token -> resourceColor(token, resourcesProvider) },
             onDismiss = { result ->
                 // Handle result if waitForResult is true
                 if (action.waitForResult && action.onResult != null) {

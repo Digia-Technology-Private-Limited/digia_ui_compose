@@ -88,6 +88,7 @@ fun DigiaUIApp(
             com.digia.digiaui.framework.bottomsheet.BottomSheetManager()
         DigiaUIManager.getInstance().dialogManager = 
             com.digia.digiaui.framework.dialog.DialogManager()
+
         
         // Set analytics provider
         analytics?.let {
@@ -150,7 +151,7 @@ fun DigiaUIApp(
         DigiaUIManager.getInstance().bottomSheetManager?.let { manager ->
             com.digia.digiaui.framework.bottomsheet.BottomSheetHost(
                 bottomSheetManager = manager,
-                registry = DUIFactory.getInstance().getRegistry(),
+                _registry = DUIFactory.getInstance().getRegistry(),
                 resources = DUIFactory.getInstance().getResources()
             )
         }

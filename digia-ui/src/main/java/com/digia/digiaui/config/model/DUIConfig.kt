@@ -150,14 +150,28 @@ data class DUIConfig(
 
 
     companion object {
-        /** Creates a DUIConfig instance from a JSON string */
-        fun fromJson(json: String): DUIConfig {
-            return Gson().fromJson(json, DUIConfig::class.java)
-        }
+
 
         /** Creates a DUIConfig instance from a Map */
         fun fromMap(map: Map<String, Any>): DUIConfig {
-            return Gson().fromJson(Gson().toJson(map), DUIConfig::class.java)
+            return DUIConfig(
+                    themeConfig = map["theme"] as? Map<String, Any> ?: emptyMap(),
+                    pages = map["pages"] as? Map<String, Any> ?: emptyMap(),
+                    components = map["components"] as? Map<String, Any>,
+                    restConfig = map["rest"] as? Map<String, Any> ?: emptyMap(),
+                    appSettings =
+                        AppSettings(
+                                initialRoute =
+                                    (map["appSettings"] as? Map<String, Any>)
+                                            ?.get("initialRoute") as? String
+                                            ?: ""
+                        ),
+                    appState = map["appState"] as? List<Any>,
+                    version = (map["version"] as? Double)?.toInt(),
+                    versionUpdated = map["versionUpdated"] as? Boolean,
+                    functionsFilePath = map["functionsFilePath"] as? String,
+                    _environment = map["environment"] as? Map<String, Any>
+            )
         }
     }
 

@@ -17,6 +17,7 @@ import com.digia.digiaui.framework.models.ExprOr
 import com.digia.digiaui.framework.state.LocalStateContextProvider
 import com.digia.digiaui.framework.state.StateContext
 import com.digia.digiaui.framework.state.StateScopeContext
+import com.digia.digiaui.framework.utils.JsonLike
 import com.digia.digiaui.network.APIModel
 import defaultTextStyle
 import makeTextStyle
@@ -171,7 +172,7 @@ fun RenderPayload.fontFactory(): DUIFontFactory? =
 
 @Composable
 fun RenderPayload.textStyle(
-    token: Map<String, Any?>?,
+    token: JsonLike?,
     fallback: TextStyle? = defaultTextStyle
 ): TextStyle? =
     makeTextStyle(token, { expr -> eval<String>(expr) }, fallback)

@@ -39,6 +39,7 @@ data class DigiaUIOptions(
         val flavor: Flavor =
                 Flavor.Debug(), // Default to Debug flavor which doesn't require extra params
         val analytics: DUIAnalytics? = null,
+        val themeMode: ThemeMode= ThemeMode.SYSTEM,
         val networkConfiguration: NetworkConfiguration? = null,
         val developerConfig: DeveloperConfig = DeveloperConfig()
 )

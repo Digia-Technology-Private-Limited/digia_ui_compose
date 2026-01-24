@@ -1,17 +1,22 @@
 package com.digia.digiaui.framework.bottomsheet
 
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.unit.dp
 import com.digia.digiaui.framework.DUIFactory
 import com.digia.digiaui.framework.DefaultVirtualWidgetRegistry
 import com.digia.digiaui.framework.UIResources
 import com.digia.digiaui.framework.utils.JsonLike
+import com.digia.digiaui.framework.utils.ToUtils
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import resourceColor
 
 /**
  * Data class representing a bottom sheet request
@@ -21,6 +26,9 @@ data class BottomSheetRequest(
     val args: JsonLike?,
     val backgroundColor: String?,
     val barrierColor: String?,
+    val borderColor: String?,
+    val borderWidth: Float?,
+    val borderRadius: Any?,
     val maxHeightRatio: Float,
     val useSafeArea: Boolean,
     val onDismiss: ((Any?) -> Unit)?
@@ -44,6 +52,9 @@ class BottomSheetManager {
         args: JsonLike? = null,
         backgroundColor: String? = null,
         barrierColor: String? = null,
+        borderColor: String? = null,
+        borderWidth: Float? = null,
+        borderRadius: Any? = null,
         maxHeightRatio: Float = 1f,
         useSafeArea: Boolean = true,
         onDismiss: ((Any?) -> Unit)? = null
@@ -53,6 +64,9 @@ class BottomSheetManager {
             args = args,
             backgroundColor = backgroundColor,
             barrierColor = barrierColor,
+            borderColor = borderColor,
+            borderWidth = borderWidth,
+            borderRadius = borderRadius,
             maxHeightRatio = maxHeightRatio,
             useSafeArea = useSafeArea,
             onDismiss = onDismiss
@@ -81,14 +95,15 @@ class BottomSheetManager {
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
+@Suppress("UNUSED_PARAMETER")
 fun BottomSheetHost(
     bottomSheetManager: BottomSheetManager,
-    registry: DefaultVirtualWidgetRegistry,
+    _registry: DefaultVirtualWidgetRegistry,
     resources: UIResources
 ) {
     val currentRequest by bottomSheetManager.currentRequest.collectAsState()
     val sheetState = rememberModalBottomSheetState(
-        skipPartiallyExpanded = false
+        skipPartiallyExpanded = true
     )
 
     LaunchedEffect(currentRequest) {
@@ -100,44 +115,48 @@ fun BottomSheetHost(
     }
 
     currentRequest?.let { request ->
+        val shape = ToUtils.borderRadius(request.borderRadius)
+        val resolvedBorderColor = request.borderColor
+            ?.let { token -> resolveColorToken(token, resources) }
+        val resolvedBorderWidth = (request.borderWidth ?: 0f)
+
+        val configuration = LocalConfiguration.current
+        val maxHeight =
+            configuration.screenHeightDp.dp * request.maxHeightRatio
+
         ModalBottomSheet(
-            onDismissRequest = {
-                bottomSheetManager.dismiss()
-            },
+            onDismissRequest = bottomSheetManager::dismiss,
             sheetState = sheetState,
-            containerColor = parseColor(request.backgroundColor) ?: MaterialTheme.colorScheme.surface,
-            scrimColor = parseColor(request.barrierColor) ?: BottomSheetDefaults.ScrimColor,
-            modifier = Modifier
-                .fillMaxWidth()
-                .fillMaxHeight(request.maxHeightRatio)
+            shape = shape,
+            containerColor = resolveColorToken(request.backgroundColor, resources)
+                ?: MaterialTheme.colorScheme.surface,
+            scrimColor = resolveColorToken(request.barrierColor, resources)
+                ?: BottomSheetDefaults.ScrimColor,
+            modifier = Modifier.fillMaxWidth()
         ) {
-
-
-//            if (componentDef != null) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .then(
-                            if (request.useSafeArea) {
-                                Modifier.windowInsetsPadding(WindowInsets.systemBars)
-                            } else {
-                                Modifier
-                            }
-                        )
-                ) {
-                    DUIFactory.getInstance().CreateComponent(
-                        componentId = request.componentId,
-                        args = request.args,
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = maxHeight)   // ✅ HERE
+                    .wrapContentHeight()
+                    .then(
+                        if (resolvedBorderColor != null && resolvedBorderWidth > 0f) {
+                            Modifier.border(resolvedBorderWidth.dp, resolvedBorderColor, shape)
+                        } else Modifier
                     )
-                }
-//            } else {
-//                Text(
-//                    text = "Component not found: ${request.componentId}",
-//                    modifier = Modifier.padding(16.dp),
-//                    color = MaterialTheme.colorScheme.error
-//                )
-//            }
+                    .then(
+                        if (request.useSafeArea) {
+                            Modifier.windowInsetsPadding(WindowInsets.navigationBars)
+                        } else Modifier
+                    )
+            ) {
+                DUIFactory.getInstance().CreateComponent(
+                    componentId = request.componentId,
+                    args = request.args
+                )
+            }
         }
+
     }
 }
 
@@ -145,22 +164,11 @@ fun BottomSheetHost(
  * Parse color string to Compose Color
  * Supports hex colors (#RRGGBB, #AARRGGBB) and named colors
  */
-private fun parseColor(colorString: String?): Color? {
-    if (colorString == null) return null
-    
-    return try {
-        when {
-            colorString.startsWith("#") -> {
-                val hex = colorString.substring(1)
-                when (hex.length) {
-                    6 -> Color(android.graphics.Color.parseColor("#FF$hex"))
-                    8 -> Color(android.graphics.Color.parseColor("#$hex"))
-                    else -> null
-                }
-            }
-            else -> null // Could add named color support here
-        }
-    } catch (e: Exception) {
-        null
-    }
+private fun resolveColorToken(token: String?, resources: UIResources,): Color? {
+    if (token.isNullOrBlank()) return null
+    // Supports:
+    // - resource tokens (looked up in UIResources)
+    // - hex (#RRGGBB/#AARRGGBB)
+    // - rgba(...) (via ColorUtil)
+    return resourceColor(token, resources)
 }

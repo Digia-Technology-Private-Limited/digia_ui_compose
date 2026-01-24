@@ -33,6 +33,7 @@ class JsonUtil {
          *
          * Returns the value associated with the first matching key, or null if no key is found.
          */
+        @Suppress("UNCHECKED_CAST")
         fun <T> tryKeys(
             json: JsonLike,
             keys: List<String>,
@@ -63,7 +64,9 @@ fun JsonLike.valueFor(keyPath: String): Any? {
     return if (keysSplit.isEmpty()) {
         thisValue
     } else if (thisValue is Map<*, *>) {
-        (thisValue as JsonLike).valueFor(keysSplit.joinToString("."))
+        @Suppress("UNCHECKED_CAST")
+        val nested = thisValue as JsonLike
+        nested.valueFor(keysSplit.joinToString("."))
     } else {
         null
     }

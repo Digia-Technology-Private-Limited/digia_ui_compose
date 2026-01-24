@@ -460,7 +460,7 @@ class VWTextFormField(
             }
 
 
-      ClearFocusOnTapOutside {
+//      ClearFocusOnTapOutside {
           InternalTextFormField(
               controller = TextController(initialText = textValue),
               autoFocus = autoFocus,
@@ -498,7 +498,7 @@ class VWTextFormField(
               suffixWidget = suffixWidget
           )
 
-      }
+//      }
         // Cleanup debouncer on dispose
         DisposableEffect(Unit) { onDispose { debouncer?.cancel() } }
     }

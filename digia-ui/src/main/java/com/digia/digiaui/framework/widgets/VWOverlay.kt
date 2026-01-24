@@ -7,13 +7,13 @@ import com.digia.digiaui.framework.RenderPayload
 import com.digia.digiaui.framework.VirtualWidgetRegistry
 import com.digia.digiaui.framework.base.VirtualCompositeNode
 import com.digia.digiaui.framework.base.VirtualNode
-import com.digia.digiaui.framework.base.toComposeAlignment
 import com.digia.digiaui.framework.models.CommonProps
 import com.digia.digiaui.framework.models.ExprOr
 import com.digia.digiaui.framework.models.Props
 import com.digia.digiaui.framework.models.VWNodeData
 import com.digia.digiaui.framework.registerAllChildern
 import com.digia.digiaui.framework.utils.JsonLike
+import com.digia.digiaui.framework.utils.toComposeAlignment
 import com.digia.digiaui.framework.widgets.overlay.Overlay
 
 // Overlay Props

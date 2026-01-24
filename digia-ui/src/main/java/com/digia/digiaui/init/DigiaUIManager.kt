@@ -13,7 +13,6 @@ import com.digia.digiaui.utils.DigiaInspector
 import com.digia.digiaui.utils.DigiaUIHost
 import kotlin.collections.map
 import kotlin.collections.mapOf
-import kotlin.toString
 
 /**
  * Singleton manager for accessing the initialized Digia UI instance.
@@ -54,6 +53,10 @@ class DigiaUIManager private constructor() {
                         ?: throw IllegalStateException(
                                 "DigiaUI not initialized. Call DigiaUIManager.initialize() first."
                         )
+
+    /** The current theme mode (Light, Dark, System) */
+    val themeMode: ThemeMode
+        get() = instance.initConfig.themeMode
 
     /** The access key used for authentication */
     val accessKey: String

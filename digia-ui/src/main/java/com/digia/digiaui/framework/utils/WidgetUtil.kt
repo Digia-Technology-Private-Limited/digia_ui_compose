@@ -14,9 +14,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -74,6 +76,9 @@ fun Modifier.applyCommonProps(
             (border?.get("borderType") as? JsonLike)
                 ?.get("borderPattern") as? String
 
+        val alignment = commonProps.align?.toComposeAlignment()
+
+
         /* ------------------------------------------------------ */
         /* 1️⃣ Margin (outer spacing - OUTSIDE clickable area)    */
         /* ------------------------------------------------------ */
@@ -110,6 +115,15 @@ fun Modifier.applyCommonProps(
         /* 3️⃣ Size constraints                                   */
         /* ------------------------------------------------------ */
         modifier = modifier.applySizing(style)
+
+
+        /* ------------------------------------------------------ */
+        /* 5️⃣ Content alignment                                  */
+        /* ------------------------------------------------------ */
+//        if (alignment != null) {
+//            modifier = modifier.wrapContentSize(alignment)
+//        }
+
 
         /* ------------------------------------------------------ */
         /* 4️⃣ Background                                         */
@@ -160,6 +174,22 @@ fun Modifier.applyCommonProps(
 
     return modifier
 }
+
+
+fun String.toComposeAlignment(): Alignment? =
+    when (this) {
+        "center" -> Alignment.Center
+        "topLeft" -> Alignment.TopStart
+        "topRight" -> Alignment.TopEnd
+        "bottomLeft" -> Alignment.BottomStart
+        "bottomRight" -> Alignment.BottomEnd
+        "centerLeft" -> Alignment.CenterStart
+        "centerRight" -> Alignment.CenterEnd
+        "topCenter" -> Alignment.TopCenter
+        "bottomCenter" -> Alignment.BottomCenter
+        else -> null
+    }
+
 
 //@Composable
 //fun Modifier.applyCommonProps(
@@ -327,26 +357,28 @@ private fun Modifier.applySizing(style: CommonStyle): Modifier {
     // Calculate width
     val wPercent = style.width.toPercentFraction()
     val wDp = if (wPercent == null) style.width.toDp() else null
+    val isWidthWrap = style.width.equals("wrapcontentsize", true)
 
     // Calculate height
     val hPercent = style.height.toPercentFraction()
     val hDp = if (hPercent == null) style.height.toDp() else null
+    val isHeightWrap = style.height.equals("wrapcontentsize", true)
 
-    // Apply size() when both width and height are Dp values
-    if (wDp != null && hDp != null) {
+    // Apply size() when both width and height are Dp values and not wrap
+    if (wDp != null && hDp != null && !isWidthWrap && !isHeightWrap) {
         m = m.size(width = wDp, height = hDp)
     } else {
         // Width logic
-        if (wPercent != null) {
+        if (wPercent != null && !isWidthWrap) {
             m = m.fillMaxWidth(wPercent)
-        } else if (wDp != null) {
+        } else if (wDp != null && !isWidthWrap) {
             m = m.width(wDp)
         }
 
         // Height logic
-        if (hPercent != null) {
+        if (hPercent != null && !isHeightWrap) {
             m = m.fillMaxHeight(hPercent)
-        } else if (hDp != null) {
+        } else if (hDp != null && !isHeightWrap) {
             m = m.height(hDp)
         }
     }

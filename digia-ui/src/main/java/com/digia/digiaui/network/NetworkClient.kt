@@ -4,16 +4,25 @@ import android.content.Context
 import android.os.Build
 import com.digia.digiaui.utils.DeveloperConfig
 import com.google.gson.Gson
+import com.google.gson.GsonBuilder
+import com.google.gson.JsonDeserializationContext
+import com.google.gson.JsonDeserializer
+import com.google.gson.TypeAdapter
+import com.google.gson.TypeAdapterFactory
 import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.JsonElement
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response as OkHttpResponse
 import java.io.IOException
+import java.lang.reflect.Type
 import java.net.InetSocketAddress
 import java.net.Proxy
+import java.math.BigDecimal
+import java.math.BigInteger
 import java.security.cert.X509Certificate
 import java.util.concurrent.TimeUnit
 import javax.net.ssl.HostnameVerifier
@@ -45,6 +54,12 @@ class NetworkClient(
             // Fallback: check build type
             Build.TYPE == "debug" || Build.TYPE == "eng"
         }
+
+    private val gson: Gson = GsonBuilder()
+        .registerTypeAdapter(Any::class.java, AnyDeserializer())
+        .registerTypeAdapter(JsonElement::class.java, AnyDeserializer())
+        .registerTypeAdapter(Map::class.java, AnyDeserializer())
+        .create()
 
     init {
         if (baseUrl.isEmpty()) {
@@ -295,12 +310,16 @@ class NetworkClient(
 
                 val response = digiaClient.newCall(request).execute()
                 println(response.request)
-
                 if (response.isSuccessful) {
                     val json = response.body?.string()
+
                     val type = object : TypeToken<Map<String, Any?>>() {}.type
-                    val map = Gson().fromJson<Map<String, Any?>>(json, type)
+
+                    // 🔥 THIS is where AnyDeserializer kicks in
+                    val map: Map<String, Any?> =
+                        gson.fromJson(json, type)
                     BaseResponse.fromJson(map, fromJsonT)
+
                 } else {
                     BaseResponse(isSuccess = false, data = null, error = mapOf("code" to response.code))
                 }
@@ -391,6 +410,59 @@ class NetworkClient(
                     exception = e
                 )
             }
+        }
+    }
+}
+
+class AnyDeserializer : JsonDeserializer<Any> {
+    override fun deserialize(
+        json: com.google.gson.JsonElement?,
+        typeOfT: Type?,
+        context: JsonDeserializationContext?
+    ): Any? {
+
+        if (json == null || json.isJsonNull) return null
+
+        return when {
+            json.isJsonPrimitive -> {
+                val prim = json.asJsonPrimitive
+                when {
+                    prim.isBoolean -> prim.asBoolean
+                    prim.isString -> prim.asString
+                    prim.isNumber -> {
+                        val numStr = prim.asString
+
+                        when {
+                            // Decimal / scientific notation: keep as BigDecimal (Number) to avoid forced Double
+                            numStr.contains('.') || numStr.contains('e') || numStr.contains('E') ->
+                                runCatching { BigDecimal(numStr) }.getOrNull()
+
+                            // Integer: prefer Int/Long, fall back to BigInteger if it doesn't fit
+                            else -> {
+                                val longValue = numStr.toLongOrNull()
+                                if (longValue != null) {
+                                    if (longValue in Int.MIN_VALUE..Int.MAX_VALUE) longValue.toInt() else longValue
+                                } else {
+                                    runCatching { BigInteger(numStr) }.getOrNull()
+                                }
+                            }
+                        }
+                    }
+                    else -> null
+                }
+            }
+
+            json.isJsonArray ->
+                json.asJsonArray.map {
+                    deserialize(it, Any::class.java, context)
+                }
+
+            json.isJsonObject ->
+                json.asJsonObject.entrySet().associate {
+                    it.key to deserialize(it.value, Any::class.java, context)
+                }
+
+            else -> null
         }
     }
 }

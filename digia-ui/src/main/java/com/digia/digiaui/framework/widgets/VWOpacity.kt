@@ -9,6 +9,7 @@ import com.digia.digiaui.framework.VirtualWidgetRegistry
 import com.digia.digiaui.framework.base.VirtualCompositeNode
 import com.digia.digiaui.framework.base.VirtualNode
 import com.digia.digiaui.framework.models.CommonProps
+import com.digia.digiaui.framework.models.ExprOr
 import com.digia.digiaui.framework.models.Props
 import com.digia.digiaui.framework.models.VWNodeData
 import com.digia.digiaui.framework.registerAllChildern
@@ -35,14 +36,14 @@ class VWOpacity(
 
     @Composable
     override fun Render(payload: RenderPayload) {
-        val opacity = (opacityProps.opacity ?: 1.0).toFloat()
-        val alwaysIncludeSemantics = opacityProps.alwaysIncludeSemantics ?: false
+        val opacity = (opacityProps.opacity?.evaluate(payload.scopeContext) ?: 1.0)
+        val alwaysIncludeSemantics = opacityProps.alwaysIncludeSemantics?.evaluate(payload.scopeContext) ?: false
 
         // In Compose, semantics are generally preserved with alpha.
         // We use Modifier.alpha to apply transparency.
 
         var modifier = Modifier.buildModifier(payload)
-        modifier = modifier.alpha(opacity)
+        modifier = modifier.alpha(opacity.toFloat())
 
         Box(modifier = modifier) { child?.ToWidget(payload) }
     }
@@ -50,13 +51,16 @@ class VWOpacity(
 
 // ============== Props ==============
 
-data class OpacityProps(val opacity: Double? = null, val alwaysIncludeSemantics: Boolean? = null) {
+data class OpacityProps(val opacity: ExprOr<Double>? = null, val alwaysIncludeSemantics: ExprOr<Boolean>? = null) {
     companion object {
-        @Suppress("UNCHECKED_CAST")
         fun fromJson(json: JsonLike): OpacityProps {
             return OpacityProps(
-                    opacity = NumUtil.toDouble(json["opacity"]),
-                    alwaysIncludeSemantics = json["alwaysIncludeSemantics"] as? Boolean
+                    opacity = ExprOr.fromJson(
+                        json["opacity"]
+                    ),
+                    alwaysIncludeSemantics = ExprOr.fromJson(
+                        json["alwaysIncludeSemantics"]
+                    )
             )
         }
     }

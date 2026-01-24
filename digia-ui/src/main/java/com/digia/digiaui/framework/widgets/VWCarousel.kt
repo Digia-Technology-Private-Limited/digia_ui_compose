@@ -40,6 +40,7 @@ import com.digia.digiaui.framework.state.LocalStateContextProvider
 import com.digia.digiaui.framework.utils.JsonLike
 import com.digia.digiaui.framework.utils.NumUtil
 import com.digia.digiaui.framework.utils.toDp
+import com.digia.digiaui.framework.utils.toPercentFraction
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.absoluteValue
@@ -213,15 +214,22 @@ class VWCarousel(
         }
 
         // Sizing: height takes priority over aspectRatio (per Flutter behavior)
-        val widthDp: Dp? = props.width.toDp()
-        val heightDp: Dp? = props.height.toDp()
+        val widthDp: Dp? = props.width?.toDp()
+        val widthPercent = props.width?.toPercentFraction()
+        val heightDp: Dp? = props.height?.toDp()
+        val heightPercent = props.height?.toPercentFraction()
 
         var modifier = Modifier.buildModifier(payload)
         modifier = modifier.then(
-            if (widthDp != null) Modifier.width(widthDp) else Modifier.fillMaxWidth()
+            when {
+                widthPercent != null -> Modifier.fillMaxWidth(widthPercent)
+                widthDp != null -> Modifier.width(widthDp)
+                else -> Modifier.fillMaxWidth()
+            }
         )
         modifier = modifier.then(
             when {
+                heightPercent != null -> Modifier.fillMaxHeight(heightPercent)
                 heightDp != null -> Modifier.height(heightDp)
                 props.aspectRatio > 0 -> Modifier.aspectRatio(1f / props.aspectRatio.toFloat())
                 else -> Modifier.height(300.dp) // Fallback
