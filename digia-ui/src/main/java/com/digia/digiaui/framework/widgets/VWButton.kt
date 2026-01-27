@@ -299,6 +299,9 @@ class VWButton(
                     )
         }
 
+        // Border
+        val border = toBorderStroke(props.shape, payload)
+
         // Use ElevatedButton with elevation set to 0 since we handle shadow via modifier
         ElevatedButton(
                 onClick = {
@@ -324,6 +327,7 @@ class VWButton(
                                 disabledElevation = 0.dp
                         ),
                 contentPadding = padding,
+                border = border,
                 modifier = buttonModifier
         ) {
             ButtonContent(
@@ -503,6 +507,26 @@ class VWButton(
             "none" -> RoundedCornerShape(0.dp)
             else -> ToUtils.borderRadius(shapeProps.borderRadius, or = RoundedCornerShape(0.dp))
         }
+    }
+
+    /** Converts shape properties to BorderStroke */
+    @Composable
+    private fun toBorderStroke(
+            shapeProps: ShapeProps?,
+            payload: RenderPayload
+    ): androidx.compose.foundation.BorderStroke? {
+        if (shapeProps == null) return null
+
+        val width = shapeProps.borderWidth ?: 0.0
+        val style = shapeProps.borderStyle ?: "none"
+
+        // Default style is "none" in the schema, but Flutter's logic usually implies solid if width
+        // > 0 unless explicitly none.
+        if (width <= 0 || style == "none") return null
+
+        val color = shapeProps.borderColor?.let { payload.evalColor(it.value) } ?: Color.Transparent
+
+        return androidx.compose.foundation.BorderStroke(width.dp, color)
     }
 
     /** Converts alignment string to Compose Alignment */
