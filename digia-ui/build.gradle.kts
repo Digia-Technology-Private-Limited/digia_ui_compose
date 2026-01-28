@@ -1,7 +1,7 @@
 plugins {
     id("com.android.library")
     id("org.jetbrains.kotlin.android")
-    id("org.jetbrains.kotlin.plugin.compose") version "2.0.21"
+    id("org.jetbrains.kotlin.plugin.compose") version "2.3.0"
     id("org.jetbrains.kotlin.plugin.serialization")
     id("maven-publish")
 }
@@ -118,7 +118,7 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.8.0")
     
     // Kotlin Serialization
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.10.0")
 
     // Image Loading
     implementation("io.coil-kt:coil-compose:2.5.0")
