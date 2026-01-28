@@ -48,7 +48,7 @@ kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutine
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
 
 # JSON
-gson = "com.google.code.gson:gson:2.10.1"
+gson = "com.google.code.gson:gson:2.13.2"
 
 # Networking
 lottie-compose = { module = "com.airbnb.android:lottie-compose", version.ref = "lottieCompose" }

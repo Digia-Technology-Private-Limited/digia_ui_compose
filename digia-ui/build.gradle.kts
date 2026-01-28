@@ -94,7 +94,7 @@ dependencies {
     )
 
     // JSON
-    implementation("com.google.code.gson:gson:2.10.1")
+    implementation("com.google.code.gson:gson:2.13.2")
 
     // Markdown (Markwon)
     implementation("io.noties.markwon:core:4.6.2")
