@@ -86,6 +86,6 @@ androidx-compose-foundation = { group = "androidx.compose.foundation", name = "f
 
 [plugins]
 android-application = { id = "com.android.application", version = "8.1.4" }
-android-library = { id = "com.android.library", version = "8.1.4" }
+android-library = { id = "com.android.library", version = "9.0.0" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 
