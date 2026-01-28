@@ -264,7 +264,10 @@ class VWContainer(
         /* ==========================================================
          * 6️⃣ Clip (before clickable)
          * ========================================================== */
-        modifier = modifier.clip(shape)
+        val clipBehavior = containerProps.clipBehavior
+        if (clipBehavior != null && clipBehavior != "none") {
+            modifier = modifier.clip(shape)
+        }
 
         /* ==========================================================
          * 7️⃣ Click
@@ -335,7 +338,8 @@ data class ContainerProps(
         val padding: Any? = null,
         val margin: Any? = null,
         val color: Any? = null,
-        val border: BorderProps? = null
+        val border: BorderProps? = null,
+        val clipBehavior: String? = null
 ) {
     companion object {
         @Suppress("UNCHECKED_CAST")
@@ -363,7 +367,8 @@ data class ContainerProps(
                     decorationImage =
                             (json["decorationImage"] as? JsonLike)?.let {
                                 DecorationImageProps.fromJson(it)
-                            }
+                            },
+                    clipBehavior = json["clipBehavior"] as? String
             )
         }
     }
