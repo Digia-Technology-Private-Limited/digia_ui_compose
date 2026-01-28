@@ -85,7 +85,7 @@ androidx-compose-foundation = { group = "androidx.compose.foundation", name = "f
 #androidx-navigation-runtime-ktx = { group = "androidx.navigation", name = "navigation-runtime-ktx", version.ref = "navigationRuntimeKtx" }
 
 [plugins]
-android-application = { id = "com.android.application", version = "8.1.4" }
+android-application = { id = "com.android.application", version = "9.0.0" }
 android-library = { id = "com.android.library", version = "8.1.4" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 
