@@ -4,11 +4,11 @@ digiaexpr="1.0.0"
 kotlin = "1.9.0"
 compose = "1.4.3"
 lottieCompose = "6.7.1"
-media3Exoplayer = "1.9.0"
-media3UiCompose = "1.9.0"
-media3UiComposeMaterial3 = "1.9.0"
+media3Exoplayer = "1.9.1"
+media3UiCompose = "1.9.1"
+media3UiComposeMaterial3 = "1.9.1"
 quickjs-wrapper = "3.2.3"
-composeBom = "2023.03.00"
+composeBom = "2026.01.00"
 coroutines = "1.7.3"
 runtime = "1.10.0"
 composeMaterial3 = "1.5.6"
@@ -16,7 +16,7 @@ foundationLayout = "1.10.0"
 animationCore = "1.10.0"
 ui = "1.10.0"
 browser = "1.9.0"
-media3Ui = "1.9.0"
+media3Ui = "1.9.1"
 uiGraphics = "1.10.0"
 foundation = "1.10.1"
 #navigationRuntimeKtx = "2.9.6"
@@ -30,9 +30,9 @@ androidx-media3-ui-compose-material3 = { module = "androidx.media3:media3-ui-com
 digia_expr_kt = { module = "com.digia:digiaexpr", version.ref = "digiaexpr" }
 
 # AndroidX Core
-androidx-core-ktx = "androidx.core:core-ktx:1.12.0"
-androidx-lifecycle-runtime-ktx = "androidx.lifecycle:lifecycle-runtime-ktx:2.6.2"
-androidx-activity-compose = "androidx.activity:activity-compose:1.7.2"
+androidx-core-ktx = "androidx.core:core-ktx:1.17.0"
+androidx-lifecycle-runtime-ktx = "androidx.lifecycle:lifecycle-runtime-ktx:2.10.0"
+androidx-activity-compose = "androidx.activity:activity-compose:1.12.2"
 
 # Compose
 androidx-compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }
@@ -55,14 +55,14 @@ lottie-compose = { module = "com.airbnb.android:lottie-compose", version.ref = "
 okhttp = "com.squareup.okhttp3:okhttp:4.12.0"
 
 # DataStore
-androidx-datastore-preferences = "androidx.datastore:datastore-preferences:1.0.0"
+androidx-datastore-preferences = "androidx.datastore:datastore-preferences:1.2.0"
 
 # ViewModel
-androidx-lifecycle-viewmodel-compose = "androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2"
-androidx-lifecycle-runtime-compose = "androidx.lifecycle:lifecycle-runtime-compose:2.6.2"
+androidx-lifecycle-viewmodel-compose = "androidx.lifecycle:lifecycle-viewmodel-compose:2.10.0"
+androidx-lifecycle-runtime-compose = "androidx.lifecycle:lifecycle-runtime-compose:2.10.0"
 
 # Navigation
-androidx-navigation-compose = "androidx.navigation:navigation-compose:2.8.0"
+androidx-navigation-compose = "androidx.navigation:navigation-compose:2.9.6"
 
 # Kotlin Serialization
 kotlinx-serialization-json = "org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0"
