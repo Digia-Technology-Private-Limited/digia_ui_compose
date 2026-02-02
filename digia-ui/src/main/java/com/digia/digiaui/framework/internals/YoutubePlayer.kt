@@ -1,100 +1,128 @@
 package com.digia.digiaui.framework.internals
 
-import android.net.Uri
+import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.lifecycle.compose.LocalLifecycleOwner
-import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.PlayerConstants
+import androidx.core.net.toUri
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.YouTubePlayer
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.listeners.AbstractYouTubePlayerListener
+import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.options.IFramePlayerOptions
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.views.YouTubePlayerView
-import java.net.URLDecoder
-import androidx.core.net.toUri
 
+private const val TAG = "VWYoutubePlayer"
 
 @Composable
 fun InternalYoutubePlayer(
-    videoUrl: String,
-    isMuted: Boolean = false,
-    loop: Boolean = false,
-    autoPlay: Boolean = false,
-    modifier: Modifier = Modifier,
+        videoUrl: String,
+        isMuted: Boolean = false,
+        loop: Boolean = false,
+        autoPlay: Boolean = false,
+        modifier: Modifier = Modifier,
 ) {
-    val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
+    var playbackPosition by rememberSaveable { mutableFloatStateOf(0f) }
+    var playerInstance by remember { mutableStateOf<YouTubePlayer?>(null) }
 
-    val videoId = remember(videoUrl) {
-        extractVideoId(videoUrl)
-    }
-
-    var youTubePlayer by remember { mutableStateOf<YouTubePlayer?>(null) }
-
-    AndroidView(
-        modifier = modifier,
-        factory = {
-            YouTubePlayerView(context).apply {
-                lifecycleOwner.lifecycle.addObserver(this)
-
-                addYouTubePlayerListener(object : AbstractYouTubePlayerListener() {
-
-                    override fun onReady(player: YouTubePlayer) {
-                        youTubePlayer = player
-                    }
-
-                    override fun onStateChange(
-                        player: YouTubePlayer,
-                        state: PlayerConstants.PlayerState
-                    ) {
-                        if (loop && state == PlayerConstants.PlayerState.ENDED) {
-                            player.seekTo(0f)
-                            player.play()
-                        }
-                    }
-                })
+    val videoId =
+            remember(videoUrl) {
+                val id = extractVideoId(videoUrl)
+                Log.d(TAG, "Extracted VideoId: '$id' from Url: '$videoUrl'")
+                id
             }
-        }
-    )
-
-    // ▶️ Load / change video safely
-    LaunchedEffect(videoId, youTubePlayer) {
-        val player = youTubePlayer ?: return@LaunchedEffect
-        if (videoId.isNotBlank()) {
-            if (autoPlay) {
-                player.loadVideo(videoId, 0f)
-            } else {
-                player.cueVideo(videoId, 0f)
-            }
-        }
-    }
-
-    // 🔇 Mute handling
-    LaunchedEffect(isMuted, youTubePlayer) {
-        youTubePlayer?.let {
-            if (isMuted) it.mute() else it.unMute()
-        }
-    }
 
     DisposableEffect(Unit) {
         onDispose {
-            youTubePlayer = null
+            Log.d(TAG, "Disposing YouTubePlayerView")
+            playerInstance = null
         }
     }
+
+    AndroidView(
+            modifier = modifier,
+            factory = { context ->
+                YouTubePlayerView(context).apply {
+                    lifecycleOwner.lifecycle.addObserver(this)
+                    enableAutomaticInitialization = false
+
+                    val options =
+                            IFramePlayerOptions.Builder(context)
+                                    .controls(1)
+                                    .rel(0)
+                                    .ivLoadPolicy(3)
+                                    .ccLoadPolicy(0)
+                                    .build()
+
+                    initialize(
+                            object : AbstractYouTubePlayerListener() {
+                                override fun onReady(player: YouTubePlayer) {
+                                    Log.d(
+                                            TAG,
+                                            "Player ready, loading video: $videoId at position: $playbackPosition"
+                                    )
+                                    playerInstance = player
+
+                                    if (videoId.isNotEmpty()) {
+                                        if (autoPlay) {
+                                            player.loadVideo(videoId, playbackPosition)
+                                        } else {
+                                            player.cueVideo(videoId, playbackPosition)
+                                        }
+                                    }
+
+                                    if (isMuted) {
+                                        player.mute()
+                                    }
+                                }
+
+                                override fun onCurrentSecond(player: YouTubePlayer, second: Float) {
+                                    playbackPosition = second
+                                }
+
+                                override fun onError(
+                                        youTubePlayer: YouTubePlayer,
+                                        error:
+                                                com.pierfrancescosoffritti.androidyoutubeplayer.core.player.PlayerConstants.PlayerError
+                                ) {
+                                    Log.e(TAG, "Player error: $error")
+                                }
+
+                                override fun onStateChange(
+                                        youTubePlayer: YouTubePlayer,
+                                        state:
+                                                com.pierfrancescosoffritti.androidyoutubeplayer.core.player.PlayerConstants.PlayerState
+                                ) {
+                                    Log.d(TAG, "State changed: $state")
+                                    if (loop &&
+                                                    state ==
+                                                            com.pierfrancescosoffritti
+                                                                    .androidyoutubeplayer.core
+                                                                    .player.PlayerConstants
+                                                                    .PlayerState.ENDED
+                                    ) {
+                                        youTubePlayer.seekTo(0f)
+                                        youTubePlayer.play()
+                                    }
+                                }
+                            },
+                            options
+                    )
+                }
+            }
+    )
 }
-
-
 
 private fun extractVideoId(input: String): String {
     if (input.isBlank()) return ""
 
-    // Already looks like a videoId
     if (!input.contains("/") && input.length in 10..15) {
         return input
     }
@@ -103,24 +131,12 @@ private fun extractVideoId(input: String): String {
         val uri = input.toUri()
 
         when {
-            // youtu.be/VIDEO_ID
-            uri.host?.contains("youtu.be") == true ->
-                uri.lastPathSegment ?: ""
-
-            // youtube.com/shorts/VIDEO_ID
-            uri.path?.startsWith("/shorts/") == true ->
-                uri.pathSegments.getOrNull(1) ?: ""
-
-            // youtube.com/embed/VIDEO_ID
-            uri.path?.startsWith("/embed/") == true ->
-                uri.pathSegments.getOrNull(1) ?: ""
-
-            // youtube.com/watch?v=VIDEO_ID
-            else ->
-                uri.getQueryParameter("v") ?: ""
+            uri.host?.contains("youtu.be") == true -> uri.lastPathSegment ?: ""
+            uri.path?.startsWith("/shorts/") == true -> uri.pathSegments.getOrNull(1) ?: ""
+            uri.path?.startsWith("/embed/") == true -> uri.pathSegments.getOrNull(1) ?: ""
+            else -> uri.getQueryParameter("v") ?: ""
         }
     } catch (e: Exception) {
         ""
     }
 }
-
