@@ -1,6 +1,5 @@
 package com.digia.digiaui.framework.internals
 
-import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -18,8 +17,6 @@ import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.listeners.Abs
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.options.IFramePlayerOptions
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.views.YouTubePlayerView
 
-private const val TAG = "VWYoutubePlayer"
-
 @Composable
 fun InternalYoutubePlayer(
         videoUrl: String,
@@ -32,19 +29,9 @@ fun InternalYoutubePlayer(
     var playbackPosition by rememberSaveable { mutableFloatStateOf(0f) }
     var playerInstance by remember { mutableStateOf<YouTubePlayer?>(null) }
 
-    val videoId =
-            remember(videoUrl) {
-                val id = extractVideoId(videoUrl)
-                Log.d(TAG, "Extracted VideoId: '$id' from Url: '$videoUrl'")
-                id
-            }
+    val videoId = remember(videoUrl) { extractVideoId(videoUrl) }
 
-    DisposableEffect(Unit) {
-        onDispose {
-            Log.d(TAG, "Disposing YouTubePlayerView")
-            playerInstance = null
-        }
-    }
+    DisposableEffect(Unit) { onDispose { playerInstance = null } }
 
     AndroidView(
             modifier = modifier,
@@ -64,10 +51,6 @@ fun InternalYoutubePlayer(
                     initialize(
                             object : AbstractYouTubePlayerListener() {
                                 override fun onReady(player: YouTubePlayer) {
-                                    Log.d(
-                                            TAG,
-                                            "Player ready, loading video: $videoId at position: $playbackPosition"
-                                    )
                                     playerInstance = player
 
                                     if (videoId.isNotEmpty()) {
@@ -91,16 +74,13 @@ fun InternalYoutubePlayer(
                                         youTubePlayer: YouTubePlayer,
                                         error:
                                                 com.pierfrancescosoffritti.androidyoutubeplayer.core.player.PlayerConstants.PlayerError
-                                ) {
-                                    Log.e(TAG, "Player error: $error")
-                                }
+                                ) {}
 
                                 override fun onStateChange(
                                         youTubePlayer: YouTubePlayer,
                                         state:
                                                 com.pierfrancescosoffritti.androidyoutubeplayer.core.player.PlayerConstants.PlayerState
                                 ) {
-                                    Log.d(TAG, "State changed: $state")
                                     if (loop &&
                                                     state ==
                                                             com.pierfrancescosoffritti
