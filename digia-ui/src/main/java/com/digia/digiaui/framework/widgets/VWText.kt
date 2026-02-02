@@ -4,6 +4,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import com.digia.digiaui.framework.RenderPayload
@@ -111,14 +115,38 @@ internal fun CommonTextRender(
                         else -> TextOverflow.Clip
                 }
 
+        // Gradient logic
+        var finalModifier = modifier
+        var finalStyle = style ?: androidx.compose.ui.text.TextStyle.Default
+
+        val gradientConfig =
+                (payload.evalExpr(ExprOr.fromValue(props.textStyle?.get("gradient")))) as? JsonLike
+        if (gradientConfig != null) {
+                val gradientBrush = GradientProps.fromJson(gradientConfig).toBrush(payload)
+                if (gradientBrush != null) {
+                        // Apply gradient shader mask
+                        finalStyle = finalStyle.copy(color = Color.White)
+                        finalModifier =
+                                finalModifier.graphicsLayer(alpha = 0.99f).drawWithCache {
+                                        onDrawWithContent {
+                                                drawContent()
+                                                drawRect(
+                                                        brush = gradientBrush,
+                                                        blendMode = BlendMode.SrcIn
+                                                )
+                                        }
+                                }
+                }
+        }
+
         // Render Material3 Text
         Text(
                 text = text.toString(),
-                style = style ?: androidx.compose.ui.text.TextStyle.Default,
+                style = finalStyle,
                 maxLines = maxLines ?: Int.MAX_VALUE,
                 textAlign = textAlign,
                 overflow = textOverflow,
-                modifier = modifier
+                modifier = finalModifier
         )
 }
 
