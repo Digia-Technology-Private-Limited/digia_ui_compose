@@ -42,6 +42,7 @@ fun DefaultVirtualWidgetRegistry.registerBuiltInWidgets() {
         register("digia/textFormField", ::textFormFieldBuilder)
         register("digia/videoPlayer", ::videoPlayerBuilder)
         register("digia/button", ::buttonBuilder)
+        register("digia/icon", ::iconBuilder)
         register("digia/image", ::imageBuilder)
         register("digia/container", ::containerBuilder)
         register("digia/carousel", ::carouselBuilder)
@@ -77,7 +78,7 @@ fun DefaultVirtualWidgetRegistry.registerBuiltInWidgets() {
         register("digia/story", ::storyBuilder)
         register("digia/storyVideoPlayer", ::storyVideoPlayerBuilder)
         register("digia/chart", ::chartBuilder)
-        register("digia/icon", ::iconBuilder)
+        register("digia/scratchCard", ::scratchCardBuilder)
 }
 
 fun dummyBuilder(

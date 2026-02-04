@@ -23,7 +23,6 @@ abstract class VirtualLeafNode<T>(
 
     @Composable
     override fun ToWidget(payload: RenderPayload) {
-        RenderNode(widget = this, payload = payload)
 
         val extendedPayload =
             refName?.let { payload.withExtendedHierarchy(it) } ?: payload

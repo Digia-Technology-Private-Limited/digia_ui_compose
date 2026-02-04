@@ -40,9 +40,7 @@ android {
 
     buildFeatures {
         compose = true
-        buildConfig = true
     }
-
 
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.15"
@@ -81,8 +79,9 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material")
-    implementation("androidx.compose.animation:animation")
+    implementation("androidx.compose.material:material-icons-core")
     implementation("androidx.compose.material:material-icons-extended")
+    implementation("androidx.compose.animation:animation")
     implementation(libs.lottie.compose)
 
 
@@ -143,9 +142,11 @@ dependencies {
 //    implementation(libs.androidx.navigation.runtime.ktx)
 
 
-    // Paging
     implementation("androidx.paging:paging-runtime-ktx:3.2.1")
     implementation("androidx.paging:paging-compose:3.2.1")
+
+    // Scratchify for scratch card functionality
+    implementation("io.github.gsrathoreniks:scratchify:1.0.0-alpha2")
 
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
