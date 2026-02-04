@@ -66,7 +66,7 @@ class MainActivity : ComponentActivity() {
 //                            developerConfig = DeveloperConfig(
 //                                baseUrl = "https://app.digia.tech/api/v1"
 //                            ),
-                            accessKey = "696782d80fbc2647373ff8b7"  // Replace with actual access key
+                            accessKey = "697b13250753c105e4cb83a7"  // Replace with actual access key
                         )
                         )
                         appConfigState.value = appConfig

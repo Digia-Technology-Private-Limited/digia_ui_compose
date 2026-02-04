@@ -1,6 +1,10 @@
 package com.digia.digiaui.framework.widgets
 
 import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Abc
+import androidx.compose.material.icons.materialIcon
+import androidx.compose.material.icons.sharp.AcUnit
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.runtime.Composable
@@ -11,7 +15,8 @@ import com.digia.digiaui.framework.VirtualWidgetRegistry
 import com.digia.digiaui.framework.base.VirtualLeafNode
 import com.digia.digiaui.framework.base.VirtualNode
 import com.digia.digiaui.framework.color
-import com.digia.digiaui.framework.components.dui_icons.packs.MaterialIcons
+//import com.digia.digiaui.framework.components.dui_icons.packs.MaterialIcons
+import com.digia.digiaui.framework.components.dui_icons.packs.resolveIcon
 import com.digia.digiaui.framework.models.CommonProps
 import com.digia.digiaui.framework.models.ExprOr
 import com.digia.digiaui.framework.models.Props
@@ -43,7 +48,7 @@ class VWIcon(
         if (pack == "material") {
             val key = iconDataMap["key"] as? String
             if (key != null) {
-                imageVector = MaterialIcons.getMaterialIcon(key)
+                imageVector = resolveIcon(key)
             }
         }
 
