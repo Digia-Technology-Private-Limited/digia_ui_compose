@@ -56,7 +56,7 @@ class NetworkClient(
         }
 
     private val gson: Gson = GsonBuilder()
-        .registerTypeAdapter(Any::class.java, AnyDeserializer())
+//        .registerTypeAdapter(Any::class.java, AnyDeserializer())
         .registerTypeAdapter(JsonElement::class.java, AnyDeserializer())
         .registerTypeAdapter(Map::class.java, AnyDeserializer())
         .create()

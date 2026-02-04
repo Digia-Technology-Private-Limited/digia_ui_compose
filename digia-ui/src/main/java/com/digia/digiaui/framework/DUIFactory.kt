@@ -71,7 +71,8 @@ class DUIFactory private constructor() {
             UIActionType.SHOW_BOTTOM_SHEET -> {
                 DigiaUIManager.getInstance().bottomSheetManager?.show(
                     componentId,
-                  componentArgs
+                  componentArgs,
+                    maxHeightRatio = 0.7F
                 )
             }
             UIActionType.SHOW_DIALOG -> {

@@ -130,9 +130,9 @@ fun BottomSheetHost(
             shape = shape,
             containerColor = resolveColorToken(request.backgroundColor, resources)
                 ?: MaterialTheme.colorScheme.surface,
-            scrimColor = resolveColorToken(request.barrierColor, resources)
-                ?: BottomSheetDefaults.ScrimColor,
-            modifier = Modifier.fillMaxWidth()
+            scrimColor = resolveColorToken(request.barrierColor, resources) ?: Color.Black.copy(alpha = 0.3f),
+            modifier = Modifier.fillMaxWidth(),
+            dragHandle = { null}
         ) {
             Box(
                 modifier = Modifier
