@@ -19,6 +19,7 @@ import com.digia.digiaui.framework.page.DUIPage
 import com.digia.digiaui.framework.utils.asSafe
 import com.digia.digiaui.framework.widgets.registerBuiltInWidgets
 import com.digia.digiaui.init.DigiaUIManager
+import com.digia.digiaui.remoteconfig.RemoteConfigData
 import com.digia.digiaui.utils.asSafe
 import convertToTextStyle
 
@@ -321,6 +322,86 @@ class DUIFactory private constructor() {
                 resources = mergedResources
             )
         }
+    }
+
+    /**
+     * Loads and displays a widget dynamically from remote configuration.
+     *
+     * This method gets component configuration from the provided [RemoteConfigProvider]
+     * (e.g., Firebase Remote Config) and dynamically renders the widget based on the data.
+     *
+     * The remote config should return data in the format:
+     * ```json
+     * {
+     *   "componentId": "cardItem-1d1w",
+     *   "args": {
+     *     "itemPrice": "999",
+     *     "itemName": "Product"
+     *   }
+     * }
+     * ```
+     *
+     * @param key The remote config key/slot name to fetch
+     * @param overrideArgs Optional arguments that completely replace the args from remote config
+     * @param overrideIcons Custom icons to override defaults for this widget
+     * @param overrideImages Custom images to override defaults for this widget
+     * @param overrideTextStyles Custom text styles to override defaults for this widget
+     * @param overrideColors Custom colors to override defaults for this widget
+     * @param overrideDarkColors Custom dark colors to override defaults for this widget
+     */
+    @Composable
+    fun Load(
+        key: String,
+        overrideArgs: Map<String, Any?>? = null,
+        overrideIcons: Map<String, ImageVector>? = null,
+        overrideImages: Map<String, ImageBitmap>? = null,
+        overrideTextStyles: Map<String, TextStyle>? = null,
+        overrideColors: Map<String, Color>? = null,
+        overrideDarkColors: Map<String, Color>? = null
+    ) {
+        if (!isInitialized) {
+            Logger.log("Load: DUIFactory not initialized. Call initialize() first.")
+            return
+        }
+
+        // Get remote config provider from DigiaUI instance
+        val digiaUIInstance = DigiaUIManager.getInstance().safeInstance
+        if (digiaUIInstance == null) {
+            Logger.log("Load: DigiaUIManager not initialized")
+            return
+        }
+
+        val remoteConfigProvider = digiaUIInstance.initConfig.remoteConfigProvider
+        if (remoteConfigProvider == null) {
+            Logger.log("Load: RemoteConfigProvider not configured")
+            return
+        }
+
+        // Get config synchronously from provider (already cached by developer)
+        val configData = try {
+            remoteConfigProvider.getConfig(key)
+        } catch (e: Exception) {
+            Logger.log("Load: Error getting config for key $key: ${e.message}")
+            return
+        }
+
+        if (configData == null) {
+            Logger.log("Load: Config not found for key: $key")
+            return
+        }
+
+        Logger.log("Load: Successfully loaded config for key: $key, componentId: ${configData.componentId}")
+
+        // Render the component with fetched config
+        CreateComponent(
+            componentId = configData.componentId,
+            args = overrideArgs ?: configData.args, // overrideArgs replaces remote config args
+            overrideIcons = overrideIcons,
+            overrideImages = overrideImages,
+            overrideTextStyles = overrideTextStyles,
+            overrideColors = overrideColors,
+            overrideDarkColors = overrideDarkColors
+        )
     }
 
 
