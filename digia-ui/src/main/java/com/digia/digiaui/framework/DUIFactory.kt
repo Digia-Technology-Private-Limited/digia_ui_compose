@@ -50,12 +50,44 @@ import convertToTextStyle
  * }
  * ```
  */
+
+
+enum class UIActionType{
+    SHOW_BOTTOM_SHEET,
+    SHOW_DIALOG,
+    CLOSE_BOTTOM_SHEET,
+    CLOSE_DIALOG
+}
 class DUIFactory private constructor() {
 
     private lateinit var configProvider: ConfigProvider
     private lateinit var widgetRegistry: DefaultVirtualWidgetRegistry
     private var resources: UIResources = UIResources()
     private var isInitialized = false
+
+
+    fun ShowUIAction(actionType: UIActionType, componentId: String,componentArgs: Map<String, Any?>? = null){
+        when(actionType){
+            UIActionType.SHOW_BOTTOM_SHEET -> {
+                DigiaUIManager.getInstance().bottomSheetManager?.show(
+                    componentId,
+                  componentArgs
+                )
+            }
+            UIActionType.SHOW_DIALOG -> {
+                DigiaUIManager.getInstance().dialogManager?.show(
+                    componentId,
+                    componentArgs
+                )
+            }
+            UIActionType.CLOSE_BOTTOM_SHEET -> {
+                DigiaUIManager.getInstance().bottomSheetManager?.dismiss()
+            }
+            UIActionType.CLOSE_DIALOG -> {
+                DigiaUIManager.getInstance().dialogManager?.dismiss()
+            }
+        }
+    }
 
     /**
      * Initializes the singleton factory with all necessary configuration and resources.
