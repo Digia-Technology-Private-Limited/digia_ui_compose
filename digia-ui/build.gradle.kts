@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "com.digia"
-version = "1.0.0-beta.4"
+version = "1.0.0-beta.5"
 
 android {
     namespace = "com.digia.digiaui"
@@ -161,7 +161,7 @@ afterEvaluate {
                 from(components["release"])
                 groupId = "com.digia"
                 artifactId = "digia-ui"
-                version = "1.0.0-beta.4"
+                version = "1.0.0-beta.5"
 
                 pom {
                     name.set("Digia UI Compose")
