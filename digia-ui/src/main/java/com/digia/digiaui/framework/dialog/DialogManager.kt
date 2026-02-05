@@ -12,9 +12,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.window.DialogWindowProvider
 import com.digia.digiaui.framework.DUIFactory
 import com.digia.digiaui.framework.DefaultVirtualWidgetRegistry
 import com.digia.digiaui.framework.UIResources
@@ -109,6 +111,11 @@ fun DialogHost(
             )
         ) {
 
+            val dialogWindowProvider = LocalView.current.parent as? DialogWindowProvider
+            LaunchedEffect(Unit) {
+                dialogWindowProvider?.window?.setDimAmount(0f)
+            }
+
             Box(Modifier.fillMaxSize()) {
 
                 // ✅ Barrier layer
@@ -117,12 +124,8 @@ fun DialogHost(
                         .matchParentSize()
                         .background(request.barrierColor ?: Color.Black.copy(alpha = 0.3F))
                         .then(
-                            if (request.barrierDismissible) {
-                                Modifier.pointerInput(Unit) {
-                                    detectTapGestures { dialogManager.dismiss() }
-                                }
-                            } else Modifier
-                        )
+                            if (request.barrierDismissible) { Modifier.clickable( indication = null, interactionSource = remember { MutableInteractionSource() } ) { dialogManager.dismiss() } } else Modifier )
+
                 )
 
                 // ✅ Dialog content (separate so clicks don’t dismiss)
@@ -134,7 +137,13 @@ fun DialogHost(
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .wrapContentHeight()
+                                .wrapContentHeight().pointerInput(Unit) {
+                                    awaitPointerEventScope {
+                                        while (true) {
+                                            awaitPointerEvent()
+                                        }
+                                    }
+                                }
                         ) {
                             DUIFactory.getInstance().CreateComponent(
                                 componentId = request.componentId,

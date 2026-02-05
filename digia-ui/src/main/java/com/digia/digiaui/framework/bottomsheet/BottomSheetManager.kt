@@ -2,6 +2,7 @@ package com.digia.digiaui.framework.bottomsheet
 
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -114,7 +115,7 @@ fun BottomSheetHost(
     }
 
     currentRequest?.let { request ->
-        val shape = ToUtils.borderRadius(request.borderRadius)
+        val shape = ToUtils.borderRadius(request.borderRadius, or = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
         val resolvedBorderColor = request.borderColor
             ?.let { token -> resolveColorToken(token, resources) }
         val resolvedBorderWidth = (request.borderWidth ?: 0f)
@@ -128,7 +129,7 @@ fun BottomSheetHost(
             sheetState = sheetState,
             shape = shape,
             containerColor = resolveColorToken(request.backgroundColor, resources)
-                ?: MaterialTheme.colorScheme.surface,
+                ?: Color.White,
             scrimColor = resolveColorToken(request.barrierColor, resources) ?: Color.Black.copy(alpha = 0.3f),
             dragHandle = { null}
         ) {
