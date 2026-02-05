@@ -98,7 +98,6 @@ class BottomSheetManager {
 @Suppress("UNUSED_PARAMETER")
 fun BottomSheetHost(
     bottomSheetManager: BottomSheetManager,
-    _registry: DefaultVirtualWidgetRegistry,
     resources: UIResources
 ) {
     val currentRequest by bottomSheetManager.currentRequest.collectAsState()
@@ -131,13 +130,12 @@ fun BottomSheetHost(
             containerColor = resolveColorToken(request.backgroundColor, resources)
                 ?: MaterialTheme.colorScheme.surface,
             scrimColor = resolveColorToken(request.barrierColor, resources) ?: Color.Black.copy(alpha = 0.3f),
-            modifier = Modifier.fillMaxWidth(),
             dragHandle = { null}
         ) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .heightIn(max = maxHeight)   // ✅ HERE
+                   .heightIn(max = maxHeight)   // ✅ HERE
                     .wrapContentHeight()
                     .then(
                         if (resolvedBorderColor != null && resolvedBorderWidth > 0f) {

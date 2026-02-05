@@ -2,6 +2,7 @@ package com.digia.digiaui.framework.dialog
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -10,6 +11,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -92,6 +94,7 @@ fun DialogHost(
     val currentRequest by dialogManager.currentRequest.collectAsState()
 
     currentRequest?.let { request ->
+
         Dialog(
             onDismissRequest = {
                 if (request.barrierDismissible) {
@@ -100,50 +103,46 @@ fun DialogHost(
             },
             properties = DialogProperties(
                 dismissOnBackPress = request.barrierDismissible,
-                dismissOnClickOutside = false, // 👈 we handle clicks ourselves
+                dismissOnClickOutside = false,
                 usePlatformDefaultWidth = false,
                 decorFitsSystemWindows = false
             )
         ) {
-            // 🔥 Fullscreen container
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(
-                        request.barrierColor
-                            ?: Color.Black.copy(alpha = 0.5f)
-                    )
-                    .let { modifier ->
-                        if (request.barrierDismissible) {
-                            modifier.clickable(
-                                indication = null,
-                                interactionSource = remember { MutableInteractionSource() }
-                            ) {
-                                dialogManager.dismiss()
-                            }
-                        } else modifier
-                    },
-                contentAlignment = Alignment.Center
-            ) {
 
-                Surface(
+            Box(Modifier.fillMaxSize()) {
+
+                // ✅ Barrier layer
+                Box(
                     modifier = Modifier
-                        .fillMaxWidth(0.9f)
-                        .wrapContentHeight(),
-                    color = MaterialTheme.colorScheme.surface,
-                    tonalElevation = 6.dp
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .wrapContentHeight()
-                    ) {
-                        DUIFactory.getInstance().CreateComponent(
-                            componentId = request.componentId,
-                            args = request.args,
+                        .matchParentSize()
+                        .background(request.barrierColor ?: Color.Green)
+                        .then(
+                            if (request.barrierDismissible) {
+                                Modifier.pointerInput(Unit) {
+                                    detectTapGestures { dialogManager.dismiss() }
+                                }
+                            } else Modifier
                         )
+                )
+
+                // ✅ Dialog content (separate so clicks don’t dismiss)
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .wrapContentHeight()
+                        ) {
+                            DUIFactory.getInstance().CreateComponent(
+                                componentId = request.componentId,
+                                args = request.args,
+                            )
+                        }
                     }
-                }
+
             }
         }
     }
