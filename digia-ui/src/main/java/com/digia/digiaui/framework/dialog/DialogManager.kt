@@ -115,7 +115,7 @@ fun DialogHost(
                 Box(
                     modifier = Modifier
                         .matchParentSize()
-                        .background(request.barrierColor ?: Color.Green)
+                        .background(request.barrierColor ?: Color.Black.copy(alpha = 0.3F))
                         .then(
                             if (request.barrierDismissible) {
                                 Modifier.pointerInput(Unit) {
