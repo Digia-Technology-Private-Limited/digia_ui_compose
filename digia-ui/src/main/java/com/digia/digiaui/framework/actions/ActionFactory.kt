@@ -20,6 +20,8 @@ import com.digia.digiaui.framework.actions.setState.SetStateAction
 import com.digia.digiaui.framework.actions.showBottomSheet.ShowBottomSheetAction
 import com.digia.digiaui.framework.actions.openDialog.ShowDialogAction
 import com.digia.digiaui.framework.actions.showToast.ShowToastAction
+import com.digia.digiaui.framework.actions.hideBottomSheet.HideBottomSheetAction
+import com.digia.digiaui.framework.actions.dismissDialog.DismissDialogAction
 import com.digia.digiaui.framework.models.ExprOr
 import com.digia.digiaui.framework.utils.JsonLike
 
@@ -52,6 +54,8 @@ class ActionFactory {
                ActionType.CALL_REST_API -> CallRestApiAction.fromJson(actionData)
                 ActionType.SHOW_BOTTOM_SHEET -> ShowBottomSheetAction.fromJson(actionData)
                 ActionType.SHOW_DIALOG -> ShowDialogAction.fromJson(actionData)
+                ActionType.HIDE_BOTTOM_SHEET -> HideBottomSheetAction.fromJson(actionData)
+                ActionType.DISMISS_DIALOG -> DismissDialogAction.fromJson(actionData)
                 ActionType.CONTROL_OBJECT -> ControlObjectAction.fromJson(actionData)
                 ActionType.SHARE_CONTENT -> ShareAction.fromJson(actionData)
                 ActionType.DELAY -> DelayAction.fromJson(actionData)

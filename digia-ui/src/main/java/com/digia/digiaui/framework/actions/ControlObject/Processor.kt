@@ -22,7 +22,7 @@ class ControlObjectProcessor(
         action: ControlObjectAction,
         scopeContext: ScopeContext?,
         stateContext: StateContext?,
-        resourceProvider: UIResources?,
+        resourcesProvider: UIResources?,
         id: String
     ): Any? {
         // Evaluate the data type expression to get the object instance

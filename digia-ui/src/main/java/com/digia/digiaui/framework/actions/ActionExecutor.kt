@@ -63,7 +63,7 @@ class ActionExecutor(
                 // Get processor and execute
                 try {
                     @Suppress("UNCHECKED_CAST")
-                    val processor = processorFactory.getProcessor(action, methodBindingRegistry = MethodBindingRegistry()) as ActionProcessor<Action>
+                    val processor = processorFactory.getProcessor(action, registry = MethodBindingRegistry()) as ActionProcessor<Action>
                     processor.execute(
                             context = context,
                             action = action,

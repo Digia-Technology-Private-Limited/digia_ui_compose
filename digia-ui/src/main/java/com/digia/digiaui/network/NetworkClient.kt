@@ -35,7 +35,6 @@ class NetworkClient(
     digiaHeaders: Map<String, String>,
     projectNetworkConfiguration: NetworkConfiguration,
     developerConfig: DeveloperConfig? = null,
-    val context: Context? = null
 ) {
     val digiaClient: OkHttpClient
     val projectClient: OkHttpClient
