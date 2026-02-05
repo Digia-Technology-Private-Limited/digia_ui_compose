@@ -3,6 +3,7 @@ package com.digia.digiaui.init
 import android.content.Context
 import com.digia.digiaui.framework.analytics.DUIAnalytics
 import com.digia.digiaui.network.NetworkConfiguration
+import com.digia.digiaui.remoteconfig.RemoteConfigProvider
 import com.digia.digiaui.utils.DeveloperConfig
 
 /**
@@ -20,7 +21,8 @@ import com.digia.digiaui.utils.DeveloperConfig
  *     environment = Environment.Production,
  *     flavor = Flavor.Debug(),
  *     analytics = MyAnalyticsHandler(),
- *     networkConfiguration = NetworkConfiguration.withDefaults()
+ *     networkConfiguration = NetworkConfiguration.withDefaults(),
+ *     remoteConfigProvider = FirebaseConfigProvider(remoteConfig)
  * )
  * ```
  *
@@ -29,8 +31,10 @@ import com.digia.digiaui.utils.DeveloperConfig
  * @param environment The deployment environment (Local, Development, Production, or Custom)
  * @param flavor Build flavor configuration (Debug, Staging, Release, or Versioned)
  * @param analytics Optional analytics handler for tracking events
+ * @param themeMode The theme mode (System, Light, or Dark)
  * @param networkConfiguration Optional network configuration for timeouts and interceptors
  * @param developerConfig Optional developer-specific configuration for debugging
+ * @param remoteConfigProvider Optional provider for remote configuration (e.g., Firebase Remote Config)
  */
 data class DigiaUIOptions(
         val context: Context,
@@ -41,6 +45,7 @@ data class DigiaUIOptions(
         val analytics: DUIAnalytics? = null,
         val themeMode: ThemeMode= ThemeMode.SYSTEM,
         val networkConfiguration: NetworkConfiguration? = null,
-        val developerConfig: DeveloperConfig = DeveloperConfig()
+        val developerConfig: DeveloperConfig = DeveloperConfig(),
+        val remoteConfigProvider: RemoteConfigProvider? = null
 )
 
