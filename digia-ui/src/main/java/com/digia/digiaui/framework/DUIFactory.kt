@@ -259,6 +259,7 @@ class DUIFactory private constructor() {
      * Use this when you want full navigation support with back stack management.
      *
      * @param startPageId Optional custom start page ID (defaults to config's initialRoute)
+     * @param pageArgs Optional arguments to pass to the start page
      * @param overrideIcons Custom icons to override defaults
      * @param overrideImages Custom images to override defaults
      * @param overrideTextStyles Custom text styles to override defaults
@@ -270,6 +271,7 @@ class DUIFactory private constructor() {
     @Composable
     fun CreateNavHost(
         startPageId: String? = null,
+        pageArgs: Map<String, Any?>? = null,
         overrideIcons: Map<String, ImageVector>? = null,
         overrideImages: Map<String, ImageBitmap>? = null,
         overrideTextStyles: Map<String, TextStyle>? = null,
@@ -298,6 +300,7 @@ class DUIFactory private constructor() {
                 com.digia.digiaui.framework.navigation.DUINavHost(
                     configProvider = configProvider,
                     startPageId = initialRoute,
+                    startPageArgs = pageArgs,
                     registry = widgetRegistry
                 )
             }
