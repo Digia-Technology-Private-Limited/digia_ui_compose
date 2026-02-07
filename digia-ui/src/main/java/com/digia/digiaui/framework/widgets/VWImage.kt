@@ -98,6 +98,7 @@ class VWImage(
                 refName = refName,
                 parentProps = parentProps
         ) {
+
     @Composable
     override fun Render(payload: RenderPayload) {
         val context = LocalContext.current
@@ -153,18 +154,17 @@ fun resolveImageSource(imageSrc: String?, sourceType: String, resources: UIResou
         return ImageSource.Network(finalUrl)
     }
 
-    if (sourceType == "asset") {
-        val cloudUrl = resources.assetUrls?.get(imageSrc)
-        if (cloudUrl != null) {
-            val finalUrl = applyProxyIfNeeded(cloudUrl)
-            return ImageSource.Network(finalUrl)
-        }
-
-        val cleanPath = imageSrc.removePrefix("/")
-        return ImageSource.LocalAsset(cleanPath)
+    // For both 'asset' and 'network' sourceTypes with non-URL imageSrc,
+    // try to resolve from assetUrls first, then fall back to local asset
+    val cloudUrl = resources.assetUrls?.get(imageSrc)
+    if (cloudUrl != null) {
+        val finalUrl = applyProxyIfNeeded(cloudUrl)
+        return ImageSource.Network(finalUrl)
     }
 
-    return ImageSource.Empty
+    // Fall back to local asset for any non-URL imageSrc
+    val cleanPath = imageSrc.removePrefix("/")
+    return ImageSource.LocalAsset(cleanPath)
 }
 
 /**
@@ -303,6 +303,7 @@ internal fun RenderLocalAssetImage(
         svgColor: Color?
 ) {
     val assetUri = "file:///android_asset/$assetPath"
+    android.util.Log.d("VWImage", "Loading local asset: path=$assetPath, uri=$assetUri")
     RenderNetworkImage(context, assetUri, modifier, props, svgColor)
 }
 
@@ -415,11 +416,13 @@ fun imageBuilder(
         parent: VirtualNode?,
         registry: VirtualWidgetRegistry
 ): VirtualNode {
+    val imageProps = ImageProps.fromJson(data.props.value)
+
     return VWImage(
             refName = data.refName,
             commonProps = data.commonProps,
             parent = parent,
             parentProps = data.parentProps,
-            props = ImageProps.fromJson(data.props.value)
+            props = imageProps
     )
 }
