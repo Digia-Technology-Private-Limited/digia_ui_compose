@@ -1,6 +1,7 @@
 package com.digia.digiaui.framework.widgets
 
 import LocalUIResources
+import android.content.Context
 import android.graphics.Bitmap
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
@@ -38,7 +39,18 @@ import com.digia.digiaui.framework.widgets.image.BlurHashDecoder
 import com.digia.digiaui.init.DigiaUIManager
 import java.net.URLEncoder
 
-/** Image widget properties matching the Flutter schema */
+/**
+ * Sealed class representing the resolved image source. Eliminates string comparisons and provides
+ * type-safe handling.
+ */
+sealed class ImageSource {
+    data class Network(val url: String) : ImageSource()
+    data class LocalAsset(val path: String) : ImageSource()
+    data class Preloaded(val bitmap: ImageBitmap) : ImageSource()
+    object Empty : ImageSource()
+}
+
+/** Image widget properties matching the Flutter schema. */
 data class ImageProps(
         val imageSrc: ExprOr<String>? = null,
         val sourceType: String = "network",
@@ -47,8 +59,8 @@ data class ImageProps(
         val alignment: String = "center",
         val svgColor: ExprOr<String>? = null,
         val aspectRatio: ExprOr<Double>? = null,
-        val placeholder: String = "none", // "none" or "blurHash"
-        val placeholderSrc: String? = null // BlurHash string like "LEHV6nWB2yk8..."
+        val placeholder: String = "none",
+        val placeholderSrc: String? = null
 ) {
     companion object {
         fun fromJson(json: JsonLike): ImageProps {
@@ -71,7 +83,7 @@ data class ImageProps(
     }
 }
 
-/** Virtual Widget for Image rendering */
+/** Virtual Widget for Image rendering. */
 class VWImage(
         refName: String?,
         commonProps: CommonProps?,
@@ -86,113 +98,187 @@ class VWImage(
                 refName = refName,
                 parentProps = parentProps
         ) {
-
     @Composable
     override fun Render(payload: RenderPayload) {
         val context = LocalContext.current
         val resources = LocalUIResources.current
 
-        val imageSrc: String? =
-                props.imageSrc?.let { exprOr ->
-                    if (exprOr.isExpr) payload.evalExpr(exprOr)
-                    else exprOr.value as? String ?: exprOr.value.toString()
-                }
-
+        val imageSrc = resolveImageSrc(payload)
         val svgColor = payload.evalColor(props.svgColor?.value)
         val aspectRatio = payload.evalExpr(props.aspectRatio)?.toFloat()
 
+        val modifier = buildImageModifier(payload, aspectRatio)
+
+        val source = resolveImageSource(imageSrc, props.sourceType, resources)
+
+        RenderImage(context, source, modifier, props, svgColor)
+    }
+
+    private fun resolveImageSrc(payload: RenderPayload): String? {
+        val exprOr = props.imageSrc ?: return null
+
+        if (exprOr.isExpr) {
+            return payload.evalExpr(exprOr)
+        }
+
+        return exprOr.value as? String ?: exprOr.value.toString()
+    }
+
+    @Composable
+    private fun buildImageModifier(payload: RenderPayload, aspectRatio: Float?): Modifier {
         var modifier = Modifier.buildModifier(payload)
+
         if (aspectRatio != null && aspectRatio > 0f) {
             modifier = modifier.aspectRatio(aspectRatio)
         }
 
-        if (imageSrc.isNullOrEmpty()) {
-            RenderEmpty(modifier)
-            return
-        }
-
-        val finalUrl = resolveImageUrl(imageSrc, props.sourceType, resources)
-
-        if (finalUrl == null) {
-            resources.images?.get(imageSrc)?.let {
-                RenderPreloadedImage(it, modifier, props)
-                return
-            }
-            RenderAssetPlaceholder(imageSrc, modifier)
-            return
-        }
-
-        RenderNetworkImage(context, finalUrl, imageSrc, modifier, props, svgColor)
+        return modifier
     }
 }
 
-internal fun resolveImageUrl(
-        imageSrc: String,
-        sourceType: String,
-        resources: UIResources
-): String? {
-    if (imageSrc.startsWith("http://") || imageSrc.startsWith("https://")) {
-        return applyProxyIfNeeded(imageSrc)
+/** Resolves the image source based on source type and available resources. */
+fun resolveImageSource(imageSrc: String?, sourceType: String, resources: UIResources): ImageSource {
+    if (imageSrc.isNullOrEmpty()) {
+        return ImageSource.Empty
     }
-    if (sourceType == "asset") return null
-    return null
+
+    val preloadedBitmap = resources.images?.get(imageSrc)
+    if (preloadedBitmap != null) {
+        return ImageSource.Preloaded(preloadedBitmap)
+    }
+
+    val isNetworkUrl = imageSrc.startsWith("http://") || imageSrc.startsWith("https://")
+    if (isNetworkUrl) {
+        val finalUrl = applyProxyIfNeeded(imageSrc)
+        return ImageSource.Network(finalUrl)
+    }
+
+    if (sourceType == "asset") {
+        val cloudUrl = resources.assetUrls?.get(imageSrc)
+        if (cloudUrl != null) {
+            val finalUrl = applyProxyIfNeeded(cloudUrl)
+            return ImageSource.Network(finalUrl)
+        }
+
+        val cleanPath = imageSrc.removePrefix("/")
+        return ImageSource.LocalAsset(cleanPath)
+    }
+
+    return ImageSource.Empty
 }
 
-internal fun applyProxyIfNeeded(url: String): String {
-    val host = DigiaUIManager.getInstance().host
-    return if (host?.resourceProxyUrl != null) {
-        "${host.resourceProxyUrl}${URLEncoder.encode(url, "UTF-8")}"
-    } else url
+/**
+ * Compatibility function for VWAvatar - resolves image source to a URL string. Returns the URL for
+ * network/asset sources.
+ */
+internal fun resolveImageUrl(imageSrc: String, sourceType: String, resources: UIResources): String {
+    val source = resolveImageSource(imageSrc, sourceType, resources)
+
+    return when (source) {
+        is ImageSource.Network -> source.url
+        is ImageSource.LocalAsset -> "file:///android_asset/${source.path}"
+        else -> imageSrc
+    }
 }
 
-// ============== Render Functions ==============
+/** Applies resource proxy URL if configured. */
+private fun applyProxyIfNeeded(url: String): String {
+    val proxyUrl = DigiaUIManager.getInstance().host?.resourceProxyUrl
+
+    if (proxyUrl == null) {
+        return url
+    }
+
+    return proxyUrl + URLEncoder.encode(url, "UTF-8")
+}
+
+/** Unified image rendering function that handles all source types. */
+@Composable
+fun RenderImage(
+        context: Context,
+        source: ImageSource,
+        modifier: Modifier,
+        props: ImageProps,
+        svgColor: Color?
+) {
+    when (source) {
+        is ImageSource.Empty -> RenderEmptyImage(modifier)
+        is ImageSource.Preloaded -> RenderPreloadedImage(source.bitmap, modifier, props)
+        is ImageSource.Network -> RenderNetworkImage(context, source.url, modifier, props, svgColor)
+        is ImageSource.LocalAsset ->
+                RenderLocalAssetImage(context, source.path, modifier, props, svgColor)
+    }
+}
+
+@Composable
+internal fun RenderEmptyImage(modifier: Modifier) {
+    val isDebugMode = DigiaUIManager.getInstance().host != null
+
+    Box(modifier = modifier, contentAlignment = Alignment.Center) {
+        if (isDebugMode) {
+            Text("No image source", color = Color.Gray)
+        }
+    }
+}
+
+@Composable internal fun RenderEmpty(modifier: Modifier) = RenderEmptyImage(modifier)
+
+@Composable
+internal fun RenderPreloadedImage(bitmap: ImageBitmap, modifier: Modifier, props: ImageProps) {
+    val contentScale = props.fit.toContentScale()
+    val alignment = props.alignment.toAlignment()
+    val imageModifier = applyClippingIfNeeded(modifier, props.fit)
+
+    Image(
+            bitmap = bitmap,
+            contentDescription = null,
+            modifier = imageModifier,
+            contentScale = contentScale,
+            alignment = alignment
+    )
+}
 
 @Composable
 internal fun RenderNetworkImage(
-        context: android.content.Context,
-        finalUrl: String,
+        context: Context,
+        url: String,
+        modifier: Modifier,
+        props: ImageProps,
+        svgColor: Color?
+) {
+    RenderNetworkImageInternal(context, url, modifier, props, svgColor)
+}
+
+/** Compatibility overload for VWAvatar which passes imageSrc separately. */
+@Composable
+internal fun RenderNetworkImage(
+        context: Context,
+        url: String,
         imageSrc: String,
         modifier: Modifier,
         props: ImageProps,
         svgColor: Color?
 ) {
-    val isSvg =
-            props.imageType == "svg" ||
-                    (props.imageType == "auto" && imageSrc.endsWith(".svg", ignoreCase = true))
+    RenderNetworkImageInternal(context, url, modifier, props, svgColor)
+}
 
+@Composable
+private fun RenderNetworkImageInternal(
+        context: Context,
+        url: String,
+        modifier: Modifier,
+        props: ImageProps,
+        svgColor: Color?
+) {
+    val isSvg = isSvgImage(url, props.imageType)
     val contentScale = props.fit.toContentScale()
     val alignment = props.alignment.toAlignment()
+    val imageModifier = applyClippingIfNeeded(modifier, props.fit)
 
-    // Pre-decode BlurHash placeholder (cached via remember)
-    val blurHashBitmap: Bitmap? =
-            remember(props.placeholderSrc) {
-                if (props.placeholder == "blurHash" && !props.placeholderSrc.isNullOrEmpty()) {
-                    BlurHashDecoder.decode(props.placeholderSrc)
-                } else null
-            }
-
-    val imageLoader =
-            remember(isSvg) {
-                ImageLoader.Builder(context)
-                        .components { if (isSvg) add(SvgDecoder.Factory()) }
-                        .build()
-            }
-
-    val imageRequest =
-            remember(finalUrl) {
-                ImageRequest.Builder(context).data(finalUrl).crossfade(300).build()
-            }
-
-    // Flutter Image behavior: Image widget fills available width for ALL BoxFit modes.
-    // ContentScale determines how the content is scaled within that space.
-    // For none/scaleDown, content may overflow so we clip.
-    val needsClipping = props.fit == "none" || props.fit == "scaleDown"
-    val imageModifier =
-            if (needsClipping) {
-                modifier.fillMaxWidth().clipToBounds()
-            } else {
-                modifier.fillMaxWidth()
-            }
+    val blurHashBitmap = rememberBlurHashBitmap(props)
+    val imageLoader = rememberImageLoader(context, isSvg)
+    val imageRequest = rememberImageRequest(context, url)
+    val colorFilter = createColorFilter(isSvg, svgColor)
 
     SubcomposeAsyncImage(
             model = imageRequest,
@@ -201,104 +287,129 @@ internal fun RenderNetworkImage(
             modifier = imageModifier,
             contentScale = contentScale,
             alignment = alignment,
-            colorFilter = if (isSvg && svgColor != null) ColorFilter.tint(svgColor) else null,
-            loading = {
-                if (blurHashBitmap != null) {
-                    Image(
-                            bitmap = blurHashBitmap.asImageBitmap(),
-                            contentDescription = null,
-                            modifier = Modifier.fillMaxWidth(),
-                            contentScale = contentScale,
-                            alignment = alignment
-                    )
-                } else {
-                    RenderLoading()
-                }
-            },
-            error = { RenderError("Failed to load image", Modifier.fillMaxWidth()) },
+            colorFilter = colorFilter,
+            loading = { RenderLoadingPlaceholder(blurHashBitmap, contentScale, alignment) },
+            error = { RenderErrorImage() },
             success = { SubcomposeAsyncImageContent() }
     )
 }
 
 @Composable
-internal fun RenderEmpty(modifier: Modifier) {
-    Box(modifier = modifier, contentAlignment = Alignment.Center) {
-        if (DigiaUIManager.getInstance().host != null) {
-            Text("No image source", color = Color.Gray)
-        }
-    }
+internal fun RenderLocalAssetImage(
+        context: Context,
+        assetPath: String,
+        modifier: Modifier,
+        props: ImageProps,
+        svgColor: Color?
+) {
+    val assetUri = "file:///android_asset/$assetPath"
+    RenderNetworkImage(context, assetUri, modifier, props, svgColor)
 }
 
 @Composable
-internal fun RenderLoading() {
+private fun RenderLoadingPlaceholder(
+        blurHashBitmap: Bitmap?,
+        contentScale: ContentScale,
+        alignment: Alignment
+) {
+    if (blurHashBitmap != null) {
+        Image(
+                bitmap = blurHashBitmap.asImageBitmap(),
+                contentDescription = null,
+                modifier = Modifier.fillMaxWidth(),
+                contentScale = contentScale,
+                alignment = alignment
+        )
+        return
+    }
+
     Box(modifier = Modifier, contentAlignment = Alignment.Center) {
         Text("Loading...", color = Color.Gray)
     }
 }
 
 @Composable
-internal fun RenderError(message: String, modifier: Modifier) {
-    Box(modifier = modifier, contentAlignment = Alignment.Center) {
-        Text(message, color = Color.Red)
+private fun RenderErrorImage() {
+    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+        Text("Failed to load image", color = Color.Red)
     }
 }
 
 @Composable
-internal fun RenderAssetPlaceholder(assetPath: String, modifier: Modifier) {
-    Box(modifier = modifier, contentAlignment = Alignment.Center) {
-        Text("Asset: $assetPath\n(Not available)", color = Color.Gray)
+private fun rememberBlurHashBitmap(props: ImageProps): Bitmap? {
+    return remember(props.placeholderSrc) {
+        val isBlurHash = props.placeholder == "blurHash"
+        val hasSource = !props.placeholderSrc.isNullOrEmpty()
+
+        if (isBlurHash && hasSource) {
+            BlurHashDecoder.decode(props.placeholderSrc)
+        } else {
+            null
+        }
     }
 }
 
 @Composable
-internal fun RenderPreloadedImage(image: ImageBitmap, modifier: Modifier, props: ImageProps) {
-    val contentScale = props.fit.toContentScale()
-    val alignment = props.alignment.toAlignment()
-    val needsClipping = props.fit == "none" || props.fit == "scaleDown"
-
-    val imageModifier =
-            if (needsClipping) {
-                modifier.fillMaxWidth().clipToBounds()
-            } else {
-                modifier.fillMaxWidth()
-            }
-
-    Image(
-            bitmap = image,
-            contentDescription = null,
-            modifier = imageModifier,
-            contentScale = contentScale,
-            alignment = alignment
-    )
+private fun rememberImageLoader(context: Context, isSvg: Boolean): ImageLoader {
+    return remember(isSvg) {
+        ImageLoader.Builder(context).components { if (isSvg) add(SvgDecoder.Factory()) }.build()
+    }
 }
 
-// ============== Extensions ==============
+@Composable
+private fun rememberImageRequest(context: Context, url: String): ImageRequest {
+    return remember(url) { ImageRequest.Builder(context).data(url).crossfade(300).build() }
+}
 
-private fun String.toContentScale(): ContentScale =
-        when (this) {
-            "cover" -> ContentScale.Crop
-            "fill" -> ContentScale.FillBounds
-            "fitWidth" -> ContentScale.FillWidth
-            "fitHeight" -> ContentScale.FillHeight
-            "none" -> ContentScale.None
-            "scaleDown" -> ContentScale.Inside
-            else -> ContentScale.Fit
-        }
+private fun isSvgImage(url: String, imageType: String): Boolean {
+    if (imageType == "svg") return true
+    if (imageType == "auto" && url.endsWith(".svg", ignoreCase = true)) return true
+    return false
+}
 
-private fun String.toAlignment(): Alignment =
-        when (this) {
-            "topLeft", "topStart" -> Alignment.TopStart
-            "topCenter" -> Alignment.TopCenter
-            "topRight", "topEnd" -> Alignment.TopEnd
-            "centerLeft", "centerStart" -> Alignment.CenterStart
-            "centerRight", "centerEnd" -> Alignment.CenterEnd
-            "bottomLeft", "bottomStart" -> Alignment.BottomStart
-            "bottomCenter" -> Alignment.BottomCenter
-            "bottomRight", "bottomEnd" -> Alignment.BottomEnd
-            else -> Alignment.Center
-        }
+private fun createColorFilter(isSvg: Boolean, svgColor: Color?): ColorFilter? {
+    if (!isSvg) return null
+    if (svgColor == null) return null
+    return ColorFilter.tint(svgColor)
+}
 
-/** Builder function for VWImage widget */
+private fun applyClippingIfNeeded(modifier: Modifier, fit: String): Modifier {
+    val needsClipping = fit == "none" || fit == "scaleDown"
+
+    return if (needsClipping) {
+        modifier.fillMaxWidth().clipToBounds()
+    } else {
+        modifier.fillMaxWidth()
+    }
+}
+
+private fun String.toContentScale(): ContentScale {
+    return when (this) {
+        "cover" -> ContentScale.Crop
+        "fill" -> ContentScale.FillBounds
+        "fitWidth" -> ContentScale.FillWidth
+        "fitHeight" -> ContentScale.FillHeight
+        "none" -> ContentScale.None
+        "scaleDown" -> ContentScale.Inside
+        else -> ContentScale.Fit
+    }
+}
+
+private fun String.toAlignment(): Alignment {
+    return when (this) {
+        "topLeft", "topStart" -> Alignment.TopStart
+        "topCenter" -> Alignment.TopCenter
+        "topRight", "topEnd" -> Alignment.TopEnd
+        "centerLeft", "centerStart" -> Alignment.CenterStart
+        "centerRight", "centerEnd" -> Alignment.CenterEnd
+        "bottomLeft", "bottomStart" -> Alignment.BottomStart
+        "bottomCenter" -> Alignment.BottomCenter
+        "bottomRight", "bottomEnd" -> Alignment.BottomEnd
+        else -> Alignment.Center
+    }
+}
+
+/** Builder function for VWImage widget. */
 fun imageBuilder(
         data: VWNodeData,
         parent: VirtualNode?,
