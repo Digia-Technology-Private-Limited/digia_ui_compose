@@ -342,7 +342,6 @@ class VWButton(
      * Parses dimension string to Dp Supports: "100" (dp), "100px" (pixels), "50%" (percentage of
      * reference)
      */
-    @Composable
     private fun parseDimension(
             value: String,
             referenceDp: Dp,
