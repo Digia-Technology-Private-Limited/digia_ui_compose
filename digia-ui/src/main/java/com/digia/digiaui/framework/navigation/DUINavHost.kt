@@ -225,11 +225,12 @@ val LocalDUINavController =
 fun DUINavHost(
     configProvider: ConfigProvider,
     startPageId: String,
+    startPageArgs: Map<String, Any?>? = null,
     registry: VirtualWidgetRegistry
 ) {
     val navState = remember {
         DUINavState().apply {
-            push(DUIPageEntry(startPageId, null))
+            push(DUIPageEntry(startPageId, startPageArgs))
         }
     }
 
@@ -320,7 +321,7 @@ fun DUINavHost(
         }
 
 
-        BackHandler(enabled = navState.stack.size > 1) {
+        BackHandler(enabled = true) {
             navController.pop()
         }
     }

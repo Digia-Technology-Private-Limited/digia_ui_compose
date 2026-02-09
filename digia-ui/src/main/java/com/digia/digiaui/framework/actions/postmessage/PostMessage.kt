@@ -57,7 +57,7 @@ class PostMessageProcessor : ActionProcessor<PostMessageAction>() {
         id: String
     ): Any? {
         val name = action.name
-        val payload = action.payload?.evaluate<Any>(scopeContext)
+        val payload = action.payload?.deepEvaluate(scopeContext)
 
         val messageBus = DigiaUIManager.getInstance().messageBus
         messageBus.send(Message(name = name, payload = payload, context = context))

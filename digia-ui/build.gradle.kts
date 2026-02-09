@@ -1,13 +1,13 @@
 plugins {
     id("com.android.library")
     id("org.jetbrains.kotlin.android")
-    id("org.jetbrains.kotlin.plugin.compose") version "2.0.21"
+    id("org.jetbrains.kotlin.plugin.compose") version "2.1.0"
     id("org.jetbrains.kotlin.plugin.serialization")
     id("maven-publish")
 }
 
 group = "com.digia"
-version = "1.0.0-beta.1"
+version = "1.0.0-beta.5"
 
 android {
     namespace = "com.digia.digiaui"
@@ -40,13 +40,8 @@ android {
 
     buildFeatures {
         compose = true
-        buildConfig = true
     }
 
-
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.15"
-    }
 
 
     packaging {
@@ -81,8 +76,9 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material")
-    implementation("androidx.compose.animation:animation")
+    implementation("androidx.compose.material:material-icons-core")
     implementation("androidx.compose.material:material-icons-extended")
+    implementation("androidx.compose.animation:animation")
     implementation(libs.lottie.compose)
 
 
@@ -143,9 +139,11 @@ dependencies {
 //    implementation(libs.androidx.navigation.runtime.ktx)
 
 
-    // Paging
     implementation("androidx.paging:paging-runtime-ktx:3.2.1")
     implementation("androidx.paging:paging-compose:3.2.1")
+
+    // Scratchify for scratch card functionality
+    implementation("io.github.gsrathoreniks:scratchify:1.0.0-alpha2")
 
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
@@ -163,7 +161,7 @@ afterEvaluate {
                 from(components["release"])
                 groupId = "com.digia"
                 artifactId = "digia-ui"
-version = "1.0.0-beta.1"
+                version = "1.0.0-beta.5"
 
                 pom {
                     name.set("Digia UI Compose")

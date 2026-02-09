@@ -38,8 +38,10 @@ inline fun <reified R> Any?.to(defaultValue: R? = null): R? {
         // Use NumUtil for numeric conversions
         Int::class -> NumUtil.toInt(value)
         Double::class -> NumUtil.toDouble(value)
+        Float::class -> NumUtil.toFloat(value)
         // Use NumUtil for boolean conversion
         Boolean::class -> NumUtil.toBool(value)
+
         // Use NumUtil for num conversion
         Number::class -> NumUtil.toNum(value)
         // Map conversion

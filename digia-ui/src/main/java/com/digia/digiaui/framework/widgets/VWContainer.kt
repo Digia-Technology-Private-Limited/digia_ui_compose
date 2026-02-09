@@ -95,7 +95,7 @@ class VWContainer(
 
         /* ───────── Modifier base ───────── */
 
-        var modifier = Modifier.buildModifier(payload)
+        var modifier: Modifier = Modifier;
 
         /* ==========================================================
          * 1️⃣ Margin (outer spacing – Compose has no real margin)
@@ -264,23 +264,9 @@ class VWContainer(
         /* ==========================================================
          * 6️⃣ Clip (before clickable)
          * ========================================================== */
-        modifier = modifier.clip(shape)
+            modifier = modifier.clip(shape).buildModifier(payload)
 
-        /* ==========================================================
-         * 7️⃣ Click
-         * ========================================================== */
-        commonProps?.onClick?.takeIf { it.actions.isNotEmpty() }?.let { actionFlow ->
-            modifier =
-                    modifier.clickable {
-                        payload.executeAction(
-                                context = context,
-                                actionFlow = actionFlow,
-                                stateContext = stateContext,
-                                resourcesProvider = resources,
-                                actionExecutor = actionExecutor
-                        )
-                    }
-        }
+
 
         /* ==========================================================
          * 8️⃣ Padding (inner spacing)
@@ -335,7 +321,7 @@ data class ContainerProps(
         val padding: Any? = null,
         val margin: Any? = null,
         val color: Any? = null,
-        val border: BorderProps? = null
+        val border: BorderProps? = null,
 ) {
     companion object {
         @Suppress("UNCHECKED_CAST")
@@ -363,7 +349,7 @@ data class ContainerProps(
                     decorationImage =
                             (json["decorationImage"] as? JsonLike)?.let {
                                 DecorationImageProps.fromJson(it)
-                            }
+                            },
             )
         }
     }

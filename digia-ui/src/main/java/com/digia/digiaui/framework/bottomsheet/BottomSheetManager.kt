@@ -1,11 +1,15 @@
 package com.digia.digiaui.framework.bottomsheet
 
 import androidx.compose.foundation.border
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.consumeAllChanges
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
 import com.digia.digiaui.framework.DUIFactory
@@ -98,13 +102,19 @@ class BottomSheetManager {
 @Suppress("UNUSED_PARAMETER")
 fun BottomSheetHost(
     bottomSheetManager: BottomSheetManager,
-    _registry: DefaultVirtualWidgetRegistry,
     resources: UIResources
 ) {
     val currentRequest by bottomSheetManager.currentRequest.collectAsState()
+
+
+
     val sheetState = rememberModalBottomSheetState(
-        skipPartiallyExpanded = true
+        skipPartiallyExpanded = true,
+//        confirmValueChange = { targetValue ->
+//         targetValue != SheetValue.Hidden
+//        }
     )
+
 
     LaunchedEffect(currentRequest) {
         if (currentRequest != null) {
@@ -115,7 +125,7 @@ fun BottomSheetHost(
     }
 
     currentRequest?.let { request ->
-        val shape = ToUtils.borderRadius(request.borderRadius)
+        val shape = ToUtils.borderRadius(request.borderRadius, or = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
         val resolvedBorderColor = request.borderColor
             ?.let { token -> resolveColorToken(token, resources) }
         val resolvedBorderWidth = (request.borderWidth ?: 0f)
@@ -129,16 +139,27 @@ fun BottomSheetHost(
             sheetState = sheetState,
             shape = shape,
             containerColor = resolveColorToken(request.backgroundColor, resources)
-                ?: MaterialTheme.colorScheme.surface,
-            scrimColor = resolveColorToken(request.barrierColor, resources)
-                ?: BottomSheetDefaults.ScrimColor,
-            modifier = Modifier.fillMaxWidth()
+                ?: Color.White,
+            scrimColor = resolveColorToken(request.barrierColor, resources) ?: Color.Black.copy(alpha = 0.3f),
+            dragHandle = { null},
         ) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .heightIn(max = maxHeight)   // ✅ HERE
+                   .heightIn(max = maxHeight)   // ✅ HERE
                     .wrapContentHeight()
+                    .pointerInput(Unit) {
+                        detectVerticalDragGestures(
+                            onVerticalDrag = { change, dragAmount ->
+                                // Only consume vertical drags (sheet dragging)
+                                change.consume()
+                            },
+                            onDragStart = { offset ->
+                                // Consume drag start too
+                                // offset.consume()
+                            }
+                        )
+                    }
                     .then(
                         if (resolvedBorderColor != null && resolvedBorderWidth > 0f) {
                             Modifier.border(resolvedBorderWidth.dp, resolvedBorderColor, shape)
