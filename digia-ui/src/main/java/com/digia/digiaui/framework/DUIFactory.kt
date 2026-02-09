@@ -19,6 +19,7 @@ import com.digia.digiaui.framework.page.DUIPage
 import com.digia.digiaui.framework.utils.asSafe
 import com.digia.digiaui.framework.widgets.registerBuiltInWidgets
 import com.digia.digiaui.init.DigiaUIManager
+import com.digia.digiaui.remoteconfig.RemoteConfigData
 import com.digia.digiaui.utils.asSafe
 import convertToTextStyle
 
@@ -50,12 +51,45 @@ import convertToTextStyle
  * }
  * ```
  */
+
+
+enum class UIActionType{
+    SHOW_BOTTOM_SHEET,
+    SHOW_DIALOG,
+    CLOSE_BOTTOM_SHEET,
+    CLOSE_DIALOG
+}
 class DUIFactory private constructor() {
 
     private lateinit var configProvider: ConfigProvider
     private lateinit var widgetRegistry: DefaultVirtualWidgetRegistry
     private var resources: UIResources = UIResources()
     private var isInitialized = false
+
+
+    fun ShowUIAction(actionType: UIActionType, componentId: String,componentArgs: Map<String, Any?>? = null){
+        when(actionType){
+            UIActionType.SHOW_BOTTOM_SHEET -> {
+                DigiaUIManager.getInstance().bottomSheetManager?.show(
+                    componentId,
+                  componentArgs,
+                    maxHeightRatio = 0.7F
+                )
+            }
+            UIActionType.SHOW_DIALOG -> {
+                DigiaUIManager.getInstance().dialogManager?.show(
+                    componentId,
+                    componentArgs
+                )
+            }
+            UIActionType.CLOSE_BOTTOM_SHEET -> {
+                DigiaUIManager.getInstance().bottomSheetManager?.dismiss()
+            }
+            UIActionType.CLOSE_DIALOG -> {
+                DigiaUIManager.getInstance().dialogManager?.dismiss()
+            }
+        }
+    }
 
     /**
      * Initializes the singleton factory with all necessary configuration and resources.
@@ -225,6 +259,7 @@ class DUIFactory private constructor() {
      * Use this when you want full navigation support with back stack management.
      *
      * @param startPageId Optional custom start page ID (defaults to config's initialRoute)
+     * @param pageArgs Optional arguments to pass to the start page
      * @param overrideIcons Custom icons to override defaults
      * @param overrideImages Custom images to override defaults
      * @param overrideTextStyles Custom text styles to override defaults
@@ -236,6 +271,7 @@ class DUIFactory private constructor() {
     @Composable
     fun CreateNavHost(
         startPageId: String? = null,
+        pageArgs: Map<String, Any?>? = null,
         overrideIcons: Map<String, ImageVector>? = null,
         overrideImages: Map<String, ImageBitmap>? = null,
         overrideTextStyles: Map<String, TextStyle>? = null,
@@ -264,6 +300,7 @@ class DUIFactory private constructor() {
                 com.digia.digiaui.framework.navigation.DUINavHost(
                     configProvider = configProvider,
                     startPageId = initialRoute,
+                    startPageArgs = pageArgs,
                     registry = widgetRegistry
                 )
             }
@@ -321,6 +358,86 @@ class DUIFactory private constructor() {
                 resources = mergedResources
             )
         }
+    }
+
+    /**
+     * Loads and displays a widget dynamically from remote configuration.
+     *
+     * This method gets component configuration from the provided [RemoteConfigProvider]
+     * (e.g., Firebase Remote Config) and dynamically renders the widget based on the data.
+     *
+     * The remote config should return data in the format:
+     * ```json
+     * {
+     *   "componentId": "cardItem-1d1w",
+     *   "args": {
+     *     "itemPrice": "999",
+     *     "itemName": "Product"
+     *   }
+     * }
+     * ```
+     *
+     * @param key The remote config key/slot name to fetch
+     * @param overrideArgs Optional arguments that completely replace the args from remote config
+     * @param overrideIcons Custom icons to override defaults for this widget
+     * @param overrideImages Custom images to override defaults for this widget
+     * @param overrideTextStyles Custom text styles to override defaults for this widget
+     * @param overrideColors Custom colors to override defaults for this widget
+     * @param overrideDarkColors Custom dark colors to override defaults for this widget
+     */
+    @Composable
+    fun Load(
+        key: String,
+        overrideArgs: Map<String, Any?>? = null,
+        overrideIcons: Map<String, ImageVector>? = null,
+        overrideImages: Map<String, ImageBitmap>? = null,
+        overrideTextStyles: Map<String, TextStyle>? = null,
+        overrideColors: Map<String, Color>? = null,
+        overrideDarkColors: Map<String, Color>? = null
+    ) {
+        if (!isInitialized) {
+            Logger.log("Load: DUIFactory not initialized. Call initialize() first.")
+            return
+        }
+
+        // Get remote config provider from DigiaUI instance
+        val digiaUIInstance = DigiaUIManager.getInstance().safeInstance
+        if (digiaUIInstance == null) {
+            Logger.log("Load: DigiaUIManager not initialized")
+            return
+        }
+
+        val remoteConfigProvider = digiaUIInstance.initConfig.remoteConfigProvider
+        if (remoteConfigProvider == null) {
+            Logger.log("Load: RemoteConfigProvider not configured")
+            return
+        }
+
+        // Get config synchronously from provider (already cached by developer)
+        val configData = try {
+            remoteConfigProvider.getConfig(key)
+        } catch (e: Exception) {
+            Logger.log("Load: Error getting config for key $key: ${e.message}")
+            return
+        }
+
+        if (configData == null) {
+            Logger.log("Load: Config not found for key: $key")
+            return
+        }
+
+        Logger.log("Load: Successfully loaded config for key: $key, componentId: ${configData.componentId}")
+
+        // Render the component with fetched config
+        CreateComponent(
+            componentId = configData.componentId,
+            args = overrideArgs ?: configData.args, // overrideArgs replaces remote config args
+            overrideIcons = overrideIcons,
+            overrideImages = overrideImages,
+            overrideTextStyles = overrideTextStyles,
+            overrideColors = overrideColors,
+            overrideDarkColors = overrideDarkColors
+        )
     }
 
 

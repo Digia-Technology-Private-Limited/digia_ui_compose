@@ -173,6 +173,7 @@ fun toFontWeight(value: Any?): FontWeight? =
         "700" -> FontWeight.W700
         "800" -> FontWeight.W800
         "900" -> FontWeight.W900
+        "black"-> FontWeight.Black
         else -> null
     }
 

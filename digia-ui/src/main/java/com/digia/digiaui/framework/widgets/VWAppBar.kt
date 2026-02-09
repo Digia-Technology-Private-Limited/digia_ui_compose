@@ -6,25 +6,24 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.runtime.rememberCoroutineScope
+import LocalUIResources
 import com.digia.digiaui.framework.RenderPayload
 import com.digia.digiaui.framework.VirtualWidgetRegistry
 import com.digia.digiaui.framework.actions.LocalActionExecutor
 import com.digia.digiaui.framework.actions.base.ActionFlow
 import com.digia.digiaui.framework.base.VirtualCompositeNode
 import com.digia.digiaui.framework.base.VirtualNode
+import com.digia.digiaui.framework.evalColor
 import com.digia.digiaui.framework.models.CommonProps
 import com.digia.digiaui.framework.models.ExprOr
 import com.digia.digiaui.framework.models.Props
 import com.digia.digiaui.framework.models.VWNodeData
+import com.digia.digiaui.framework.registerAllChildern
 import com.digia.digiaui.framework.state.LocalStateContextProvider
 import com.digia.digiaui.framework.utils.JsonLike
-import androidx.compose.ui.platform.LocalContext
-import LocalUIResources
-import androidx.compose.runtime.rememberCoroutineScope
-import com.digia.digiaui.framework.evalColor
-import com.digia.digiaui.framework.registerAllChildern
 import kotlinx.coroutines.launch
 
 /**
@@ -103,17 +102,12 @@ class VWAppBar(
         val titleWidget = slot("title")
         val leadingWidget = slot("leading")
         val actionsWidgets = slotChildren("actions")
-        val bottomWidget = slot("bottom")
 
         // Evaluate properties
         val backgroundColor = payload.evalExpr(props.backgroundColor)
             ?.let { payload.evalColor(it) }
-        val centerTitle = payload.evalExpr(props.centerTitle) ?: false
-        val shadowColor = payload.evalExpr(props.shadowColor)
-            ?.let { payload.evalColor(it) }
         val iconColor = payload.evalExpr(props.iconColor)
             ?.let { payload.evalColor(it) }
-        val automaticallyImplyLeading = payload.evalExpr(props.automaticallyImplyLeading) ?: true
         val visibility = payload.evalExpr(props.visibility) ?: true
 
         // Check visibility
@@ -122,63 +116,14 @@ class VWAppBar(
         }
 
         // Build title content
-        val titleContent: @Composable () -> Unit = {
-            if (titleWidget != null) {
-                titleWidget.ToWidget(payload)
-            } else if (props.title != null) {
-                // Render title from TextProps JsonLike
-                val titleText = (props.title["text"] as? String) ?: ""
-                Text(
-                    text = titleText,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            } else {
-                Text("")
-            }
-        }
+        val titleContent = _buildTitle(payload, titleWidget)
 
         // Build leading content
-        val leadingContent: (@Composable () -> Unit)? = if (leadingWidget != null) {
-            { leadingWidget.ToWidget(payload) }
-        } else if (props.leadingIcon != null) {
-            {
-                IconButton(
-                    onClick = {
-                        props.onTapLeadingIcon?.let { actionFlow ->
-                            scope.launch {
-                                payload.executeAction(
-                                    context = context,
-                                    actionFlow = actionFlow,
-                                    actionExecutor = actionExecutor,
-                                    stateContext = stateContext,
-                                        resourcesProvider = resources,
-                                    incomingScopeContext = null
-                                )
-                            }
-                        }
-                    }
-                ) {
-                    // Render icon from leadingIcon JsonLike
-                    // TODO: Create icon widget from JsonLike
-                }
-            }
-        } else {
-            null
-        }
+        val leadingContent: (@Composable () -> Unit)? = _buildLeading(payload, leadingWidget, scope, context, actionExecutor, stateContext, resources)
 
         // Build actions content
         val actionsContent: @Composable androidx.compose.foundation.layout.RowScope.() -> Unit = {
-            if (actionsWidgets.isNotEmpty()) {
-                actionsWidgets.forEach { action ->
-                    action.ToWidget(payload)
-                }
-            } else if (props.trailingIcon != null) {
-                IconButton(onClick = { /* TODO: Handle trailing icon click */ }) {
-                    // Render icon from trailingIcon JsonLike
-                    // TODO: Create icon widget from JsonLike
-                }
-            }
+            _buildActions(payload, actionsWidgets)
         }
 
         // Render Material3 TopAppBar
@@ -193,12 +138,101 @@ class VWAppBar(
                 actionIconContentColor = iconColor ?: TopAppBarDefaults.topAppBarColors().actionIconContentColor,
                 titleContentColor = iconColor ?: TopAppBarDefaults.topAppBarColors().titleContentColor
             )
-
         )
+    }
 
-
+    /**
+     * Build the title widget or text
+     */
+    private fun _buildTitle(payload: RenderPayload, titleWidget: VirtualNode?): @Composable () -> Unit {
+        return {
+            if (titleWidget != null) {
+                titleWidget.ToWidget(payload)
+            } else if (props.title != null) {
+                val titleText = (props.title["text"] as? String) ?: ""
+                Text(
+                    text = titleText,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            } else {
+                Text("")
             }
         }
+    }
+
+    /**
+     * Build the leading icon/widget
+     */
+    private fun _buildLeading(
+        payload: RenderPayload,
+        leadingWidget: VirtualNode?,
+        scope: kotlinx.coroutines.CoroutineScope,
+        context: android.content.Context,
+        actionExecutor: com.digia.digiaui.framework.actions.ActionExecutor,
+        stateContext: com.digia.digiaui.framework.state.StateContext?,
+        resources: com.digia.digiaui.framework.UIResources
+    ): (@Composable () -> Unit)? {
+        if (leadingWidget != null) {
+            return { leadingWidget.ToWidget(payload) }
+        }
+
+        val leadingIconProps = props.leadingIcon?.let { VWIconProps.fromJson(it) }
+        if (leadingIconProps == null) return null
+
+        val iconWidget = VWIcon(
+            props = leadingIconProps,
+            commonProps = null,
+            parent = this
+        )
+
+        return {
+            IconButton(
+                onClick = {
+                    props.onTapLeadingIcon?.let { actionFlow ->
+                        scope.launch {
+                            payload.executeAction(
+                                context = context,
+                                actionFlow = actionFlow,
+                                actionExecutor = actionExecutor,
+                                stateContext = stateContext,
+                                resourcesProvider = resources,
+                                incomingScopeContext = null
+                            )
+                        }
+                    }
+                }
+            ) {
+                iconWidget.ToWidget(payload)
+            }
+        }
+    }
+
+    /**
+     * Build the actions (trailing icons/widgets)
+     */
+    @Composable
+    private fun androidx.compose.foundation.layout.RowScope._buildActions(
+        payload: RenderPayload,
+        actionsWidgets: List<VirtualNode>
+    ) {
+        if (actionsWidgets.isNotEmpty()) {
+            actionsWidgets.forEach { action ->
+                action.ToWidget(payload)
+            }
+        } else {
+            val trailingIconProps = props.trailingIcon?.let { VWIconProps.fromJson(it) }
+            if (trailingIconProps != null) {
+                val iconWidget = VWIcon(
+                    props = trailingIconProps,
+                    commonProps = null,
+                    parent = this@VWAppBar
+                )
+                iconWidget.ToWidget(payload)
+            }
+        }
+    }
+}
 
 
 
@@ -211,12 +245,6 @@ fun appBarBuilder(
     parent: VirtualNode?,
     registry: VirtualWidgetRegistry
 ): VirtualNode {
-    val childrenData = data.childGroups?.mapValues { (_, childrenData) ->
-        childrenData.map { childData ->
-            registry.createWidget(childData, parent)
-        }
-    }
-
     return VWAppBar(
         refName = data.refName,
         commonProps = data.commonProps,

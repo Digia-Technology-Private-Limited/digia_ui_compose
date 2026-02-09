@@ -89,8 +89,42 @@ class NumUtil {
             }
         }
 
+        /**
+         * Attempts to parse a dynamic input into a float.
+         *
+         * Handles the following cases:
+         * - String representations of numbers, including hexadecimal
+         * - Special string values 'inf' or 'infinity' (case-insensitive)
+         * - Numeric types (int, double)
+         *
+         * Returns:
+         * - A valid float if parsing is successful
+         * - Float.POSITIVE_INFINITY for 'inf' or 'infinity' strings
+         * - null if parsing fails or input is of an unsupported type
+         */
+        fun toFloat(input: Any?): Float? {
+            return when (input) {
+                is String -> {
+                    val lower = input.lowercase()
+                    if (lower == "inf" || lower == "infinity") {
+                        Float.POSITIVE_INFINITY
+                    } else if (input.startsWith("0x")) {
+                        try {
+                            input.substring(2).toInt(16).toFloat()
+                        } catch (e: NumberFormatException) {
+                            null
+                        }
+                    } else {
+                        input.toFloatOrNull()
+                    }
+                }
+                is Number -> input.toFloat()
+                else -> null
+            }
+        }
+
         fun toNum(value: Any?): Number? {
-            return toInt(value) ?: toDouble(value)
+            return toInt(value) ?: toFloat(value) ?: toDouble(value)
         }
     }
 }

@@ -93,9 +93,6 @@ class VWFlex(
         }
 
         flexWidget
-
-
-//        wrapWithScrollViewIfNeeded { flexWidget }
     }
 
     @Composable
@@ -172,11 +169,8 @@ class VWFlex(
                                 "loose", "flexible" -> false
                                 else -> true
                             }
-
-                            // This works because we're inside RowScope or ColumnScope
-                            Box(modifier = Modifier.weight(flexValue.toFloat(), fill = fillMaxSize)) {
-                                child.ToWidget(payload)
-                            }
+                            val modifier= Modifier.weight(flexValue.toFloat(), fill = fillMaxSize)
+                             child.ToWidgetWithModifier(payload,modifier)
                         } else {
                             child.ToWidget(payload)
                         }
@@ -207,11 +201,8 @@ class VWFlex(
                                 "loose", "flexible" -> false
                                 else -> true
                             }
-
-                            // This works because we're inside RowScope or ColumnScope
-                            Box(modifier = Modifier.weight(flexValue.toFloat(), fill = fillMaxSize)) {
-                                child.ToWidget(payload)
-                            }
+                            val modifier= Modifier.weight(flexValue.toFloat(), fill = fillMaxSize)
+                            child.ToWidgetWithModifier(payload,modifier)
                         } else {
                             child.ToWidget(payload)
                         }

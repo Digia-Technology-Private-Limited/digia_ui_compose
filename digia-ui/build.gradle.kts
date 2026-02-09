@@ -1,17 +1,17 @@
 plugins {
     id("com.android.library")
     id("org.jetbrains.kotlin.android")
-    id("org.jetbrains.kotlin.plugin.compose") version "2.0.21"
+    id("org.jetbrains.kotlin.plugin.compose") version "2.1.0"
     id("org.jetbrains.kotlin.plugin.serialization")
     id("maven-publish")
 }
 
 group = "com.digia"
-version = "1.0.0-beta.1"
+version = "1.0.0-beta.5"
 
 android {
     namespace = "com.digia.digiaui"
-    compileSdk = 34
+    compileSdk = 36
 
     defaultConfig {
         minSdk = 24
@@ -42,9 +42,6 @@ android {
         compose = true
     }
 
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.15"
-    }
 
 
     packaging {
@@ -79,6 +76,8 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material")
+    implementation("androidx.compose.material:material-icons-core")
+    implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.compose.animation:animation")
     implementation(libs.lottie.compose)
 
@@ -105,7 +104,7 @@ dependencies {
 
     // Networking
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
-implementation(libs.digia.expr.kt)
+    implementation(libs.digia.expr.kt)
     // DataStore for preferences
     implementation("androidx.datastore:datastore-preferences:1.0.0")
 
@@ -121,10 +120,10 @@ implementation(libs.digia.expr.kt)
 
     // Image Loading
     implementation("io.coil-kt:coil-compose:2.5.0")
+    // YouTube Player - using android-youtube-player library v13.0.0
+    implementation(libs.android.youtube.player)
     implementation("io.coil-kt:coil-svg:2.5.0") 
 
-    // YouTube Player (native)
-    implementation("com.pierfrancescosoffritti.androidyoutubeplayer:core:12.1.0")
     implementation(libs.androidx.compose.runtime)
     implementation(libs.compose.material3)
     implementation(libs.androidx.compose.foundation.layout)
@@ -140,9 +139,11 @@ implementation(libs.digia.expr.kt)
 //    implementation(libs.androidx.navigation.runtime.ktx)
 
 
-    // Paging
     implementation("androidx.paging:paging-runtime-ktx:3.2.1")
     implementation("androidx.paging:paging-compose:3.2.1")
+
+    // Scratchify for scratch card functionality
+    implementation("io.github.gsrathoreniks:scratchify:1.0.0-alpha2")
 
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
@@ -160,7 +161,7 @@ afterEvaluate {
                 from(components["release"])
                 groupId = "com.digia"
                 artifactId = "digia-ui"
-version = "1.0.0-beta.1"
+                version = "1.0.0-beta.5"
 
                 pom {
                     name.set("Digia UI Compose")

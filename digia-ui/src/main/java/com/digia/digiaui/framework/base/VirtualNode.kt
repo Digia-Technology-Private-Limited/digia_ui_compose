@@ -40,24 +40,12 @@ abstract class VirtualNode(
     open fun ToWidget(payload: RenderPayload) {
         RenderNode(widget = this, payload = payload)
     }
+    @Composable
+   open fun  ToWidgetWithModifier(payload: RenderPayload, modifier: Modifier) {
+        RenderNode(widget = this, payload = payload)
+    }
 }
-//
-///** Virtual leaf widget - for widgets with no children (Text, Image, etc.) */
-//abstract class VirtualLeafWidget : VirtualWidget()
-//
-///** Virtual builder widget - for widgets that build on demand */
-//class VirtualBuilderWidget(
-//        override val refName: String?,
-//        override val commonProps: CommonProps?,
-//        val builder: @Composable (RenderPayload) -> Unit
-//) : VirtualWidget() {
-//
-//    @Composable
-//    override fun Render(payload: RenderPayload) {
-//        builder(payload)
-//
-//    }
-//}
+
 
 sealed class RenderResult {
     data class Ok(val content: @Composable () -> Unit) : RenderResult()
@@ -79,8 +67,7 @@ fun RenderNode(widget: VirtualNode, payload: RenderPayload) {
         is RenderResult.Error -> {
             if (
                 DigiaUIManager.getInstance().host is DashboardHost
-//                ||
-//                BuildConfig.DEBUG
+
             ) {
                 DefaultErrorWidget(
                     refName = widget.refName ?: "",

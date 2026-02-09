@@ -3,10 +3,15 @@ package com.digia.digiaui.framework.widgets
 
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.airbnb.lottie.compose.*
 import com.digia.digiaui.framework.RenderPayload
@@ -19,7 +24,11 @@ import com.digia.digiaui.framework.models.Props
 import com.digia.digiaui.framework.models.VWNodeData
 import com.digia.digiaui.framework.utils.JsonLike
 import androidx.compose.material.icons.outlined.Info
+import com.digia.digiaui.framework.actions.LocalActionExecutor
+import com.digia.digiaui.framework.actions.base.ActionFlow
+import com.digia.digiaui.framework.state.LocalStateContextProvider
 import com.digia.digiaui.init.DigiaUIManager
+import LocalUIResources
 
 /** Lottie widget properties */
 data class LottieProps(
@@ -31,7 +40,8 @@ data class LottieProps(
     val fit: ExprOr<String>? = null,
     val animate: ExprOr<Boolean>? = null,
     val animationType: ExprOr<String>? = null,
-    val frameRate: ExprOr<Double>? = null
+    val frameRate: ExprOr<Double>? = null,
+    val onComplete: ActionFlow? = null
 ) {
     companion object {
         fun fromJson(json: JsonLike): LottieProps {
@@ -47,8 +57,9 @@ data class LottieProps(
                 fit = ExprOr.fromValue(json["fit"]),
                 animate = ExprOr.fromValue(json["animate"]),
                 animationType = ExprOr.fromValue(json["animationType"]),
-                frameRate = ExprOr.fromValue(json["frameRate"])
-            )
+                frameRate = ExprOr.fromValue(json["frameRate"]),
+                onComplete = (json["onComplete"] as? JsonLike)?.let { ActionFlow.fromJson(it) },
+                )
         }
     }
 }
@@ -70,6 +81,11 @@ class VWLottie(
 
     @Composable
     override fun Render(payload: RenderPayload) {
+        val context = LocalContext.current
+        val actionExecutor = LocalActionExecutor.current
+        val stateContext = LocalStateContextProvider.current
+        val resources = LocalUIResources.current
+
         // Extract lottiePath from src or fallback to lottiePath prop
         val lottiePath =
             payload.evalExpr(props.lottiePath)
@@ -112,7 +128,11 @@ class VWLottie(
             animate = animate,
             repeat = repeat,
             reverse = reverse,
-            frameRate = frameRateVal
+            frameRate = frameRateVal,
+            payload = payload,
+            context = context,
+            actionExecutor = actionExecutor,
+            stateContext = stateContext
         )
     }
 
@@ -125,8 +145,14 @@ class VWLottie(
         animate: Boolean,
         repeat: Boolean,
         reverse: Boolean,
-        frameRate: Double
+        frameRate: Double,
+        payload: RenderPayload,
+        context: android.content.Context,
+        actionExecutor: com.digia.digiaui.framework.actions.ActionExecutor,
+        stateContext: com.digia.digiaui.framework.state.StateContext?,
     ) {
+        val resources = LocalUIResources.current
+        
         // Determine composition spec based on path type
         val compositionSpec = when {
             path.startsWith("http") || path.startsWith("https") -> {
@@ -157,6 +183,27 @@ class VWLottie(
             reverseOnRepeat = reverseOnRepeat,
             speed = frameRate.toFloat() / 60f // Normalize to default 60 fps
         )
+
+        // Track completion for 'once' animation type
+        var hasTriggeredOnComplete by remember { mutableStateOf(false) }
+        LaunchedEffect(progress, composition) {
+            if (!repeat && animate && composition != null) {
+                // When animation completes (progress reaches 1.0 for non-repeating)
+                if (progress >= 1.0f && !hasTriggeredOnComplete) {
+                    hasTriggeredOnComplete = true
+                    props.onComplete?.let {
+                        payload.executeAction(
+                            context = context,
+                            actionFlow = it,
+                            actionExecutor = actionExecutor,
+                            stateContext = stateContext,
+                            resourcesProvider =null,
+                            incomingScopeContext = null,
+                        )
+                    }
+                }
+            }
+        }
 
         LottieAnimation(
             composition = composition,

@@ -3,101 +3,120 @@ package com.digia.digiaui.framework.internals
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.lifecycle.compose.LocalLifecycleOwner
-import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.PlayerConstants
+import androidx.core.net.toUri
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.YouTubePlayer
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.listeners.AbstractYouTubePlayerListener
+import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.options.IFramePlayerOptions
 import com.pierfrancescosoffritti.androidyoutubeplayer.core.player.views.YouTubePlayerView
-import java.net.URLDecoder
 
 @Composable
 fun InternalYoutubePlayer(
-    videoUrl: String,
-    isMuted: Boolean = false,
-    loop: Boolean = false,
-    autoPlay: Boolean = false,
-    modifier: Modifier = Modifier,
+        videoUrl: String,
+        isMuted: Boolean = false,
+        loop: Boolean = false,
+        autoPlay: Boolean = false,
+        modifier: Modifier = Modifier,
 ) {
-    val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
+    var playbackPosition by rememberSaveable { mutableFloatStateOf(0f) }
+    var playerInstance by remember { mutableStateOf<YouTubePlayer?>(null) }
+
     val videoId = remember(videoUrl) { extractVideoId(videoUrl) }
 
-    var currentPlayer by remember { mutableStateOf<YouTubePlayer?>(null) }
-    var currentView by remember { mutableStateOf<YouTubePlayerView?>(null) }
-    var lastVideoId by remember { mutableStateOf<String?>(null) }
-
-    DisposableEffect(lifecycleOwner) {
-        onDispose {
-            currentPlayer = null
-            lastVideoId = null
-            currentView?.let { view ->
-                lifecycleOwner.lifecycle.removeObserver(view)
-                view.release()
-            }
-            currentView = null
-        }
-    }
+    DisposableEffect(Unit) { onDispose { playerInstance = null } }
 
     AndroidView(
-        modifier = modifier,
-        factory = {
-            val view = YouTubePlayerView(context).also {
-                currentView = it
-                lifecycleOwner.lifecycle.addObserver(it)
+            modifier = modifier,
+            factory = { context ->
+                YouTubePlayerView(context).apply {
+                    lifecycleOwner.lifecycle.addObserver(this)
+                    enableAutomaticInitialization = false
 
-                it.addYouTubePlayerListener(object : AbstractYouTubePlayerListener() {
-                    override fun onReady(youTubePlayer: YouTubePlayer) {
-                        currentPlayer = youTubePlayer
+                    val options =
+                            IFramePlayerOptions.Builder(context)
+                                    .controls(1)
+                                    .rel(0)
+                                    .ivLoadPolicy(3)
+                                    .ccLoadPolicy(0)
+                                    .build()
 
-                        if (videoId.isNotBlank()) {
-                            lastVideoId = videoId
-                            if (autoPlay) youTubePlayer.loadVideo(videoId, 0f) else youTubePlayer.cueVideo(videoId, 0f)
-                        }
+                    initialize(
+                            object : AbstractYouTubePlayerListener() {
+                                override fun onReady(player: YouTubePlayer) {
+                                    playerInstance = player
 
-                        if (isMuted) youTubePlayer.mute() else youTubePlayer.unMute()
-                    }
+                                    if (videoId.isNotEmpty()) {
+                                        if (autoPlay) {
+                                            player.loadVideo(videoId, playbackPosition)
+                                        } else {
+                                            player.cueVideo(videoId, playbackPosition)
+                                        }
+                                    }
 
-                    override fun onStateChange(youTubePlayer: YouTubePlayer, state: PlayerConstants.PlayerState) {
-                        if (loop && state == PlayerConstants.PlayerState.ENDED && videoId.isNotBlank()) {
-                            youTubePlayer.loadVideo(videoId, 0f)
-                        }
-                    }
-                })
-            }
+                                    if (isMuted) {
+                                        player.mute()
+                                    }
+                                }
 
-            view
-        },
-        update = {
-            val player = currentPlayer
-            if (player != null) {
-                if (isMuted) player.mute() else player.unMute()
+                                override fun onCurrentSecond(player: YouTubePlayer, second: Float) {
+                                    playbackPosition = second
+                                }
 
-                if (videoId.isNotBlank() && videoId != lastVideoId) {
-                    lastVideoId = videoId
-                    if (autoPlay) player.loadVideo(videoId, 0f) else player.cueVideo(videoId, 0f)
+                                override fun onError(
+                                        youTubePlayer: YouTubePlayer,
+                                        error:
+                                                com.pierfrancescosoffritti.androidyoutubeplayer.core.player.PlayerConstants.PlayerError
+                                ) {}
+
+                                override fun onStateChange(
+                                        youTubePlayer: YouTubePlayer,
+                                        state:
+                                                com.pierfrancescosoffritti.androidyoutubeplayer.core.player.PlayerConstants.PlayerState
+                                ) {
+                                    if (loop &&
+                                                    state ==
+                                                            com.pierfrancescosoffritti
+                                                                    .androidyoutubeplayer.core
+                                                                    .player.PlayerConstants
+                                                                    .PlayerState.ENDED
+                                    ) {
+                                        youTubePlayer.seekTo(0f)
+                                        youTubePlayer.play()
+                                    }
+                                }
+                            },
+                            options
+                    )
                 }
             }
-        }
     )
 }
 
-private fun extractVideoId(url: String): String {
-    if (url.isBlank()) return ""
-    if (!url.contains("http", ignoreCase = true) && !url.contains("www", ignoreCase = true)) {
-        return url
+private fun extractVideoId(input: String): String {
+    if (input.isBlank()) return ""
+
+    if (!input.contains("/") && input.length in 10..15) {
+        return input
     }
 
     return try {
-        val decoded = URLDecoder.decode(url, "UTF-8")
-        val uri = android.net.Uri.parse(decoded)
-        uri.getQueryParameter("v") ?: (uri.lastPathSegment ?: "")
-    } catch (_: Throwable) {
+        val uri = input.toUri()
+
+        when {
+            uri.host?.contains("youtu.be") == true -> uri.lastPathSegment ?: ""
+            uri.path?.startsWith("/shorts/") == true -> uri.pathSegments.getOrNull(1) ?: ""
+            uri.path?.startsWith("/embed/") == true -> uri.pathSegments.getOrNull(1) ?: ""
+            else -> uri.getQueryParameter("v") ?: ""
+        }
+    } catch (e: Exception) {
         ""
     }
 }

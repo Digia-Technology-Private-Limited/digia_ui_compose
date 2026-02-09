@@ -154,16 +154,13 @@ class VWAvatar(
                 return
             }
 
-            val finalUrl = resolveImageUrl(imageSrc, imageProps.sourceType, resources)
-
-            if (finalUrl == null) {
-                resources.images?.get(imageSrc)?.let {
-                    RenderPreloadedImage(it, childModifier, imageProps)
-                    return
-                }
-                RenderAssetPlaceholder(imageSrc, childModifier)
+            // Check preloaded images first
+            resources.images?.get(imageSrc)?.let {
+                RenderPreloadedImage(it, childModifier, imageProps)
                 return
             }
+
+            val finalUrl = resolveImageUrl(imageSrc, imageProps.sourceType, resources)
 
             RenderNetworkImage(context, finalUrl, imageSrc, childModifier, imageProps, svgColor)
         } else if (props.text != null) {

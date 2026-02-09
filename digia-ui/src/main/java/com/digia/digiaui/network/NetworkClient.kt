@@ -35,7 +35,6 @@ class NetworkClient(
     digiaHeaders: Map<String, String>,
     projectNetworkConfiguration: NetworkConfiguration,
     developerConfig: DeveloperConfig? = null,
-    val context: Context? = null
 ) {
     val digiaClient: OkHttpClient
     val projectClient: OkHttpClient
@@ -56,7 +55,7 @@ class NetworkClient(
         }
 
     private val gson: Gson = GsonBuilder()
-        .registerTypeAdapter(Any::class.java, AnyDeserializer())
+//        .registerTypeAdapter(Any::class.java, AnyDeserializer())
         .registerTypeAdapter(JsonElement::class.java, AnyDeserializer())
         .registerTypeAdapter(Map::class.java, AnyDeserializer())
         .create()
