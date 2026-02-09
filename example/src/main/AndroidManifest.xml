@@ -13,6 +13,7 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
+            android:configChanges="orientation|screenSize|keyboardHidden|smallestScreenSize|screenLayout"
             android:theme="@style/Theme.DigiaUIExample">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

@@ -120,10 +120,10 @@ dependencies {
 
     // Image Loading
     implementation("io.coil-kt:coil-compose:2.5.0")
+    // YouTube Player - using android-youtube-player library v13.0.0
+    implementation(libs.android.youtube.player)
     implementation("io.coil-kt:coil-svg:2.5.0") 
 
-    // YouTube Player (native)
-    implementation("com.pierfrancescosoffritti.androidyoutubeplayer:core:12.1.0")
     implementation(libs.androidx.compose.runtime)
     implementation(libs.compose.material3)
     implementation(libs.androidx.compose.foundation.layout)
