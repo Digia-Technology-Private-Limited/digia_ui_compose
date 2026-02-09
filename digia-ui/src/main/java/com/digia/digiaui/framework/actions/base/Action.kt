@@ -13,6 +13,8 @@ enum class ActionType(val value: String) {
     NAVIGATE_BACK("Action.pop"),
     SHOW_DIALOG("Action.openDialog"),
     SHOW_BOTTOM_SHEET("Action.showBottomSheet"),
+    HIDE_BOTTOM_SHEET("Action.hideBottomSheet"),
+    DISMISS_DIALOG("Action.dismissDialog"),
     CALL_REST_API("Action.callRestApi"),
     OPEN_URL("Action.openUrl"),
     SET_APP_STATE("Action.setAppState"),

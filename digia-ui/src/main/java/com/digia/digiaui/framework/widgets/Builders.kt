@@ -79,6 +79,7 @@ fun DefaultVirtualWidgetRegistry.registerBuiltInWidgets() {
         register("digia/storyVideoPlayer", ::storyVideoPlayerBuilder)
         register("digia/chart", ::chartBuilder)
         register("digia/scratchCard", ::scratchCardBuilder)
+        register("digia/smartScrollView",::smartScrollViewBuilder)
 }
 
 fun dummyBuilder(

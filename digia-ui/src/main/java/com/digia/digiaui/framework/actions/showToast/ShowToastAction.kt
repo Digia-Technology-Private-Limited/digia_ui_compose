@@ -234,11 +234,13 @@ fun DUISnackbarHost() {
                             } else Modifier
                         )
                 ) {
-                    Text(
-                        text = visuals.messageText,
-                        style = visuals.textStyle,
-                        modifier = Modifier.align(alignment = visuals.alignment ?: Alignment.Center).padding(visuals.padding)
-                    )
+                    Box(modifier = Modifier.fillMaxSize().padding(visuals.padding), contentAlignment = visuals.alignment ?: Alignment.Center,) {
+                        Text(
+                            text = visuals.messageText,
+                            style = visuals.textStyle,
+//                            modifier = Modifier.align(alignment = visuals.alignment ?: Alignment.Center).padding(visuals.padding)
+                        )
+                    }
                 }
             }
 

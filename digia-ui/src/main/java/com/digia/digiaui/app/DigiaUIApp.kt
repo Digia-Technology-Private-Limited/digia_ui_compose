@@ -151,7 +151,6 @@ fun DigiaUIApp(
         DigiaUIManager.getInstance().bottomSheetManager?.let { manager ->
             com.digia.digiaui.framework.bottomsheet.BottomSheetHost(
                 bottomSheetManager = manager,
-                _registry = DUIFactory.getInstance().getRegistry(),
                 resources = DUIFactory.getInstance().getResources()
             )
         }

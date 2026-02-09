@@ -1,13 +1,13 @@
 plugins {
     id("com.android.library")
     id("org.jetbrains.kotlin.android")
-    id("org.jetbrains.kotlin.plugin.compose") version "2.0.21"
+    id("org.jetbrains.kotlin.plugin.compose") version "2.1.0"
     id("org.jetbrains.kotlin.plugin.serialization")
     id("maven-publish")
 }
 
 group = "com.digia"
-version = "1.0.0-beta.1"
+version = "1.0.0-beta.5"
 
 android {
     namespace = "com.digia.digiaui"
@@ -42,9 +42,6 @@ android {
         compose = true
     }
 
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.15"
-    }
 
 
     packaging {
@@ -123,10 +120,10 @@ dependencies {
 
     // Image Loading
     implementation("io.coil-kt:coil-compose:2.5.0")
+    // YouTube Player - using android-youtube-player library v13.0.0
+    implementation(libs.android.youtube.player)
     implementation("io.coil-kt:coil-svg:2.5.0") 
 
-    // YouTube Player (native)
-    implementation("com.pierfrancescosoffritti.androidyoutubeplayer:core:12.1.0")
     implementation(libs.androidx.compose.runtime)
     implementation(libs.compose.material3)
     implementation(libs.androidx.compose.foundation.layout)
@@ -164,7 +161,7 @@ afterEvaluate {
                 from(components["release"])
                 groupId = "com.digia"
                 artifactId = "digia-ui"
-version = "1.0.0-beta.1"
+                version = "1.0.0-beta.5"
 
                 pom {
                     name.set("Digia UI Compose")

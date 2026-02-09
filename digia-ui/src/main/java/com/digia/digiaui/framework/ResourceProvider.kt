@@ -9,9 +9,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
 import com.digia.digiaui.framework.DUIFontFactory
 import com.digia.digiaui.framework.UIResources
+import com.digia.digiaui.init.DigiaUIManager
 import com.digia.digiaui.init.SDKThemeResolver
 import com.digia.digiaui.init.ThemeMode
-import com.digia.digiaui.init.DigiaUIManager
 import com.digia.digiaui.network.APIModel
 
 /* ---------------------------------------------------------
@@ -25,36 +25,32 @@ val LocalUIResources =
 
 val LocalApiModels = compositionLocalOf<Map<String, APIModel>> { emptyMap() }
 
-
 /* ---------------------------------------------------------
  * ResourceProvider (top-level provider)
  * --------------------------------------------------------- */
 
 @Composable
 fun ResourceProvider(
-    resources: UIResources,
+        resources: UIResources,
         apiModels: Map<String, APIModel>? = null,
         content: @Composable () -> Unit
 ) {
-    val themeMode= DigiaUIManager.getInstance().themeMode
+    val themeMode = DigiaUIManager.getInstance().themeMode
     val systemIsDark = isSystemInDarkTheme()
 
-    val isDarkTheme = when (themeMode) {
-        ThemeMode.SYSTEM -> systemIsDark
-        ThemeMode.DARK -> true
-        ThemeMode.LIGHT -> false
-    }
+    val isDarkTheme =
+            when (themeMode) {
+                ThemeMode.SYSTEM -> systemIsDark
+                ThemeMode.DARK -> true
+                ThemeMode.LIGHT -> false
+            }
 
     // 🔑 Push resolved value into SDK (side-effect)
-    SideEffect {
-        SDKThemeResolver.update(isDarkTheme)
-    }
+    SideEffect { SDKThemeResolver.update(isDarkTheme) }
     CompositionLocalProvider(
-        LocalUIResources provides resources,
+            LocalUIResources provides resources,
             LocalApiModels provides (apiModels ?: emptyMap())
-    ) {
-            content()
-    }
+    ) { content() }
 }
 
 /* ---------------------------------------------------------
@@ -95,6 +91,20 @@ fun resourceFontFactory(): DUIFontFactory? {
     return LocalUIResources.current.fontFactory
 }
 
+/**
+ * Returns the cloud-hosted URL for an asset by its local path key.
+ *
+ * This is used by VWImage to resolve "asset" source type images to their cloud-hosted URLs when the
+ * asset was uploaded via the builder dashboard.
+ *
+ * @param key The local path key of the asset (e.g., "assets/images/logo.png")
+ * @return The cloud URL if found, null otherwise
+ */
+@Composable
+fun resourceAssetUrl(key: String): String? {
+    return LocalUIResources.current.assetUrls?.get(key)
+}
+
 /* ---------------------------------------------------------
  * Resource access helpers (NON-Composable; for Actions)
  * --------------------------------------------------------- */
@@ -103,7 +113,7 @@ fun resourceColor(key: String, resources: UIResources?): Color? {
     val isDark = SDKThemeResolver.isDark()
 
     return (if (isDark) resources?.darkColors else resources?.colors)?.get(key)
-        ?: ColorUtil.fromString(key)
+            ?: ColorUtil.fromString(key)
 }
 
 fun resourceTextStyle(token: String, resources: UIResources?): TextStyle? {

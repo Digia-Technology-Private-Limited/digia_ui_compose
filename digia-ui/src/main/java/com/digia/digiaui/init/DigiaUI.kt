@@ -80,7 +80,6 @@ private constructor(
                                         digiaHeaders = headers,
                                         projectNetworkConfiguration = networkConfig,
                                         developerConfig = options.developerConfig,
-                                        context = options.context
                                 )
                         Logger.log("Network client created with baseUrl: $baseUrl")
 
