@@ -149,20 +149,9 @@ class VWAvatar(
             // We'll create a simple modifier that fills the box
             val childModifier = Modifier.fillMaxSize()
 
-            if (imageSrc.isNullOrEmpty()) {
-                RenderEmpty(childModifier)
-                return
-            }
+            val source = resolveImageSource(imageSrc, imageProps.sourceType, resources)
 
-            // Check preloaded images first
-            resources.images?.get(imageSrc)?.let {
-                RenderPreloadedImage(it, childModifier, imageProps)
-                return
-            }
-
-            val finalUrl = resolveImageUrl(imageSrc, imageProps.sourceType, resources)
-
-            RenderNetworkImage(context, finalUrl, imageSrc, childModifier, imageProps, svgColor)
+            RenderImage(context, source, childModifier, imageProps, svgColor)
         } else if (props.text != null) {
             // Reusing logic from VWText used via CommonTextRender
             Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
