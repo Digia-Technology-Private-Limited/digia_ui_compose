@@ -1,8 +1,8 @@
 plugins {
     id("com.android.library")
     id("org.jetbrains.kotlin.android")
-    id("org.jetbrains.kotlin.plugin.compose") version "2.1.0"
-    id("org.jetbrains.kotlin.plugin.serialization")
+    id("org.jetbrains.kotlin.plugin.compose")
+    id("org.jetbrains.kotlin.plugin.serialization") version "2.0.21"
     id("maven-publish")
 }
 
@@ -74,19 +74,17 @@ dependencies {
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
-    implementation("androidx.compose.material3:material3")
-    implementation("androidx.compose.material:material")
+    implementation("androidx.compose.material3:material3:1.3.1")
     implementation("androidx.compose.material:material-icons-core")
-    implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.compose.animation:animation")
-    implementation(libs.lottie.compose)
+    implementation("com.airbnb.android:lottie-compose:6.7.1")
 
 
     implementation(
-        libs.quickjs.wrapper.java
+        "wang.harlon.quickjs:wrapper-java:3.2.3"
     )
     implementation(
-        libs.quickjs.wrapper.android
+        "wang.harlon.quickjs:wrapper-android:3.2.3"
     )
 
     // JSON
@@ -104,7 +102,7 @@ dependencies {
 
     // Networking
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
-    implementation(libs.digia.expr.kt)
+    implementation("com.github.Digia-Technology-Private-Limited:digia_expr_kt:1.0.0-beta.3")
     // DataStore for preferences
     implementation("androidx.datastore:datastore-preferences:1.0.0")
 
@@ -121,21 +119,20 @@ dependencies {
     // Image Loading
     implementation("io.coil-kt:coil-compose:2.5.0")
     // YouTube Player - using android-youtube-player library v13.0.0
-    implementation(libs.android.youtube.player)
+    implementation("com.pierfrancescosoffritti.androidyoutubeplayer:core:13.0.0")
     implementation("io.coil-kt:coil-svg:2.5.0") 
 
-    implementation(libs.androidx.compose.runtime)
-    implementation(libs.compose.material3)
-    implementation(libs.androidx.compose.foundation.layout)
-    implementation(libs.androidx.compose.animation.core)
-    implementation(libs.androidx.ui)
-    implementation(libs.androidx.browser)
-    implementation(libs.androidx.media3.exoplayer)
-    implementation(libs.androidx.media3.ui.compose)
-    implementation(libs.androidx.media3.ui.compose.material3)
-    implementation(libs.androidx.media3.ui)
-    implementation(libs.androidx.ui.graphics)
-    implementation(libs.androidx.compose.foundation)
+    implementation("androidx.compose.runtime:runtime:1.10.0")
+    implementation("androidx.compose.foundation:foundation-layout:1.10.0")
+    implementation("androidx.compose.animation:animation-core:1.10.0")
+    implementation("androidx.compose.ui:ui:1.10.0")
+    implementation("androidx.browser:browser:1.9.0")
+    implementation("androidx.media3:media3-exoplayer:1.9.0")
+    implementation("androidx.media3:media3-ui-compose:1.9.0")
+    implementation("androidx.media3:media3-ui-compose-material3:1.9.0")
+    implementation("androidx.media3:media3-ui:1.9.0")
+    implementation("androidx.compose.ui:ui-graphics:1.10.0")
+    implementation("androidx.compose.foundation:foundation:1.10.1")
 //    implementation(libs.androidx.navigation.runtime.ktx)
 
 
