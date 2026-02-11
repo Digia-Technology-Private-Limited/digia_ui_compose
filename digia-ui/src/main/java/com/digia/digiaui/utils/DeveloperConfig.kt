@@ -25,6 +25,8 @@ sealed class DigiaUIHost(val resourceProxyUrl: String? = null)
 /// ```
 class DashboardHost(resourceProxyUrl: String? = null) : DigiaUIHost(resourceProxyUrl)
 
+
+class PreviewHost(resourceProxyUrl: String? = null) : DigiaUIHost(resourceProxyUrl)
 /// Developer configuration for debugging and development features.
 ///
 /// [DeveloperConfig] provides configuration options specifically designed
@@ -83,3 +85,29 @@ data class DeveloperConfig(
     /// Defaults to the production Digia Studio API URL.
     val baseUrl: String = "https://app.digia.tech/api/v1"
 )
+
+
+
+/**
+ * Represents the distinct types of host applications supported by Digia UI.
+ */
+enum class HostApp(val value: String) {
+    DASHBOARD("dashboard"),
+    PREVIEW("preview");
+
+    companion object {
+        /**
+         * Returns the corresponding [HostApp] enum value for the given [DigiaUIHost].
+         *
+         * This function maps [DigiaUIHost] subclasses to their respective [HostApp] values.
+         * Returns `null` if the host type is not recognized.
+         */
+        fun getHostApp(host: DigiaUIHost?): HostApp? {
+            return when (host) {
+                is DashboardHost -> DASHBOARD
+                is PreviewHost -> PREVIEW
+                else -> null
+            }
+        }
+    }
+}

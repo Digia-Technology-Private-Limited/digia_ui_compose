@@ -8,9 +8,11 @@ import com.digia.digiaui.config.model.DUIConfig
 import com.digia.digiaui.framework.datatype.Variable
 import com.digia.digiaui.framework.logging.Logger
 import com.digia.digiaui.framework.message.MessageBus
+import com.digia.digiaui.framework.models.LocalAsset
 import com.digia.digiaui.network.NetworkClient
 import com.digia.digiaui.utils.DigiaInspector
 import com.digia.digiaui.utils.DigiaUIHost
+import com.google.gson.Gson
 import kotlin.collections.map
 import kotlin.collections.mapOf
 
@@ -95,15 +97,27 @@ class DigiaUIManager private constructor() {
     /** The dialog manager for displaying dialogs */
     var dialogManager: com.digia.digiaui.framework.dialog.DialogManager? = null
 
-    /**
-     * JavaScript variables for expression evaluation.
-     *
-     * Provides access to JS functions through expression evaluation system.
-     * This is a placeholder for future JS integration.
-     *
-     * In Flutter, this exposes: { 'js': ExprClassInstance(...) }
-     * For now, returns empty map until JS evaluation is implemented.
-     */
+    /** Asset images declared in the config, parsed into LocalAsset objects */
+    val assetImages: List<LocalAsset>
+        get() {
+            val raw = safeInstance?.dslConfig?.appAssets ?: return emptyList()
+            val gson = Gson()
+            return raw.mapNotNull { item ->
+                try {
+                    // item might be Map<String, Any> or a JSON string
+                    val json = when (item) {
+                        is String -> item
+                        else -> gson.toJson(item)
+                    }
+                    gson.fromJson(json, LocalAsset::class.java)
+                } catch (t: Throwable) {
+                    Logger.log("Failed to parse asset item: ${t.message}", tag = "DigiaUIManager")
+                    null
+                }
+            }
+        }
+
+    /** JavaScript variables for expression evaluation. */
     val jsVars: Map<String, Any>
         get() {
             return mapOf(
