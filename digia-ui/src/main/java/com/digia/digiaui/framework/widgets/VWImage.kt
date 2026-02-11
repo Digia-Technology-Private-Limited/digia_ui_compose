@@ -6,12 +6,13 @@ import android.graphics.Bitmap
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
@@ -50,7 +51,18 @@ sealed class ImageSource {
     object Empty : ImageSource()
 }
 
-/** Image widget properties matching the Flutter schema. */
+data class ErrorImageData(val errorSrc: String? = null, val errorEnabled: Boolean = false) {
+    companion object {
+        fun fromJson(json: Any?): ErrorImageData? {
+            val map = json as? Map<*, *> ?: return null
+            return ErrorImageData(
+                    errorSrc = map["errorSrc"] as? String,
+                    errorEnabled = (map["errorEnabled"] as? Boolean) ?: false
+            )
+        }
+    }
+}
+
 data class ImageProps(
         val imageSrc: ExprOr<String>? = null,
         val sourceType: String = "network",
@@ -60,7 +72,9 @@ data class ImageProps(
         val svgColor: ExprOr<String>? = null,
         val aspectRatio: ExprOr<Double>? = null,
         val placeholder: String = "none",
-        val placeholderSrc: String? = null
+        val placeholderSrc: String? = null,
+        val opacity: ExprOr<Double>? = null,
+        val errorImage: ErrorImageData? = null
 ) {
     companion object {
         fun fromJson(json: JsonLike): ImageProps {
@@ -77,7 +91,9 @@ data class ImageProps(
                     svgColor = ExprOr.fromValue(json["svgColor"]),
                     aspectRatio = ExprOr.fromValue(json["aspectRatio"]),
                     placeholder = (json["placeholder"] as? String) ?: "none",
-                    placeholderSrc = json["placeholderSrc"] as? String
+                    placeholderSrc = json["placeholderSrc"] as? String,
+                    opacity = ExprOr.fromValue(json["opacity"]),
+                    errorImage = ErrorImageData.fromJson(json["errorImage"])
             )
         }
     }
@@ -131,6 +147,11 @@ class VWImage(
 
         if (aspectRatio != null && aspectRatio > 0f) {
             modifier = modifier.aspectRatio(aspectRatio)
+        }
+
+        val opacity = payload.evalExpr(props.opacity)?.toFloat() ?: 1f
+        if (opacity < 1f) {
+            modifier = modifier.alpha(opacity)
         }
 
         return modifier
@@ -212,13 +233,7 @@ fun RenderImage(
 
 @Composable
 internal fun RenderEmptyImage(modifier: Modifier) {
-    val isDebugMode = DigiaUIManager.getInstance().host != null
-
-    Box(modifier = modifier, contentAlignment = Alignment.Center) {
-        if (isDebugMode) {
-            Text("No image source", color = Color.Gray)
-        }
-    }
+    Box(modifier = modifier)
 }
 
 @Composable internal fun RenderEmpty(modifier: Modifier) = RenderEmptyImage(modifier)
@@ -249,7 +264,6 @@ internal fun RenderNetworkImage(
     RenderNetworkImageInternal(context, url, modifier, props, svgColor)
 }
 
-/** Compatibility overload for VWAvatar which passes imageSrc separately. */
 @Composable
 internal fun RenderNetworkImage(
         context: Context,
@@ -270,6 +284,7 @@ private fun RenderNetworkImageInternal(
         props: ImageProps,
         svgColor: Color?
 ) {
+    val resources = LocalUIResources.current
     val isSvg = isSvgImage(url, props.imageType)
     val contentScale = props.fit.toContentScale()
     val alignment = props.alignment.toAlignment()
@@ -280,6 +295,8 @@ private fun RenderNetworkImageInternal(
     val imageRequest = rememberImageRequest(context, url)
     val colorFilter = createColorFilter(isSvg, svgColor)
 
+    val errorImageUrl = resolveErrorImageUrl(props.errorImage, resources)
+
     SubcomposeAsyncImage(
             model = imageRequest,
             imageLoader = imageLoader,
@@ -289,9 +306,43 @@ private fun RenderNetworkImageInternal(
             alignment = alignment,
             colorFilter = colorFilter,
             loading = { RenderLoadingPlaceholder(blurHashBitmap, contentScale, alignment) },
-            error = { RenderErrorImage() },
+            error = {
+                if (errorImageUrl != null) {
+                    RenderErrorImageFallback(context, errorImageUrl, contentScale, alignment)
+                }
+            },
             success = { SubcomposeAsyncImageContent() }
     )
+}
+
+@Composable
+private fun RenderErrorImageFallback(
+        context: Context,
+        errorImageUrl: String,
+        contentScale: ContentScale,
+        alignment: Alignment
+) {
+    val imageLoader = rememberImageLoader(context, false)
+    val imageRequest = rememberImageRequest(context, errorImageUrl)
+
+    SubcomposeAsyncImage(
+            model = imageRequest,
+            imageLoader = imageLoader,
+            contentDescription = null,
+            modifier = Modifier.fillMaxWidth(),
+            contentScale = contentScale,
+            alignment = alignment,
+            success = { SubcomposeAsyncImageContent() }
+    )
+}
+
+private fun resolveErrorImageUrl(errorImage: ErrorImageData?, resources: UIResources): String? {
+    if (errorImage == null || errorImage.errorSrc.isNullOrEmpty()) {
+        return null
+    }
+
+    val cleanPath = errorImage.errorSrc.removePrefix("/")
+    return "file:///android_asset/$cleanPath"
 }
 
 @Composable
@@ -303,7 +354,6 @@ internal fun RenderLocalAssetImage(
         svgColor: Color?
 ) {
     val assetUri = "file:///android_asset/$assetPath"
-    android.util.Log.d("VWImage", "Loading local asset: path=$assetPath, uri=$assetUri")
     RenderNetworkImage(context, assetUri, modifier, props, svgColor)
 }
 
@@ -317,22 +367,10 @@ private fun RenderLoadingPlaceholder(
         Image(
                 bitmap = blurHashBitmap.asImageBitmap(),
                 contentDescription = null,
-                modifier = Modifier.fillMaxWidth(),
-                contentScale = contentScale,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop,
                 alignment = alignment
         )
-        return
-    }
-
-    Box(modifier = Modifier, contentAlignment = Alignment.Center) {
-        Text("Loading...", color = Color.Gray)
-    }
-}
-
-@Composable
-private fun RenderErrorImage() {
-    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-        Text("Failed to load image", color = Color.Red)
     }
 }
 
