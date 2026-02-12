@@ -4,16 +4,14 @@ import com.digia.digiaui.core.functions.JSFunctions
 import com.digia.digiaui.framework.datatype.Variable
 import com.digia.digiaui.framework.datatype.VariableConverter
 import com.digia.digiaui.network.APIModel
-import com.google.gson.Gson
-import com.google.gson.annotations.SerializedName
 
 /**
  * Core configuration model for the Digia UI system.
  *
- * DUIConfig represents the complete configuration loaded from the Digia
- * Studio backend, containing all the information needed to render pages, components, and handle API
- * interactions. This includes theme configuration, page definitions, component definitions, API
- * configurations, and environment settings.
+ * DUIConfig represents the complete configuration loaded from the Digia Studio backend, containing
+ * all the information needed to render pages, components, and handle API interactions. This
+ * includes theme configuration, page definitions, component definitions, API configurations, and
+ * environment settings.
  *
  * The configuration is typically loaded during app initialization and used throughout the
  * application lifecycle to:
@@ -31,17 +29,17 @@ import com.google.gson.annotations.SerializedName
  */
 @Suppress("UNCHECKED_CAST")
 data class DUIConfig(
-        @SerializedName("theme") val themeConfig: Map<String, Any>,
-        @SerializedName("pages") val pages: Map<String, Any>,
-        @SerializedName("components") val components: Map<String, Any>? = null,
-        @SerializedName("rest") val restConfig: Map<String, Any>,
-        @SerializedName("appSettings") val appSettings: AppSettings,
-        @SerializedName("appState") val appState: List<Any>? = null,
-        @SerializedName("version") val version: Int? = null,
-        @SerializedName("versionUpdated") val versionUpdated: Boolean? = null,
-        @SerializedName("functionsFilePath") val functionsFilePath: String? = null,
-        @SerializedName("environment") private val _environment: Map<String, Any>? = null,
-        @SerializedName("appAssets") val appAssets: List<Any>? = null
+        val themeConfig: Map<String, Any>,
+        val pages: Map<String, Any>,
+        val components: Map<String, Any>? = null,
+        val restConfig: Map<String, Any>,
+        val appSettings: AppSettings,
+        val appState: List<Any>? = null,
+        val version: Int? = null,
+        val versionUpdated: Boolean? = null,
+        val functionsFilePath: String? = null,
+        private val _environment: Map<String, Any>? = null,
+        val appAssets: List<Any>? = null
 ) {
     /** The initial route/page ID to display when the app starts */
     val initialRoute: String
@@ -91,7 +89,8 @@ data class DUIConfig(
     /**
      * Gets all environment variables defined in the configuration.
      *
-     * Environment variables are used to store configuration values that can vary between different     * environments.
+     * Environment variables are used to store configuration values that can vary between different
+     * * environments.
      *
      * @return A map of variable names to Variable objects
      */
@@ -100,7 +99,6 @@ data class DUIConfig(
 
         return VariableConverter.fromJson(rawVariables)
     }
-
 
     /**
      * Sets an environment variable value at runtime.
@@ -143,15 +141,13 @@ data class DUIConfig(
         val resources =
                 restConfig["resources"] as? Map<String, Any>
                         ?: throw NoSuchElementException("No resources found in REST config")
-        val resource= resources[id] as? Map<String, Any>
-                ?: throw NoSuchElementException("API model with id '$id' not found")
-        return APIModel.fromJson(resource )
+        val resource =
+                resources[id] as? Map<String, Any>
+                        ?: throw NoSuchElementException("API model with id '$id' not found")
+        return APIModel.fromJson(resource)
     }
-    
-
 
     companion object {
-
 
         /** Creates a DUIConfig instance from a Map */
         fun fromMap(map: Map<String, Any>): DUIConfig {
@@ -161,12 +157,14 @@ data class DUIConfig(
                     components = map["components"] as? Map<String, Any>,
                     restConfig = map["rest"] as? Map<String, Any> ?: emptyMap(),
                     appSettings =
-                        AppSettings(
-                                initialRoute =
-                                    (map["appSettings"] as? Map<String, Any>)
-                                            ?.get("initialRoute") as? String
-                                            ?: ""
-                        ),
+                            AppSettings(
+                                    initialRoute =
+                                            (map["appSettings"] as? Map<String, Any>)?.get(
+                                                    "initialRoute"
+                                            ) as?
+                                                    String
+                                                    ?: ""
+                            ),
                     appState = map["appState"] as? List<Any>,
                     version = (map["version"] as? Double)?.toInt(),
                     versionUpdated = map["versionUpdated"] as? Boolean,
@@ -179,4 +177,4 @@ data class DUIConfig(
     var jsFunctions: JSFunctions? = null
 }
 
-data class AppSettings(@SerializedName("initialRoute") val initialRoute: String)
+data class AppSettings(val initialRoute: String)

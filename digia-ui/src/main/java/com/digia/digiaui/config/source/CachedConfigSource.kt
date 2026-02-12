@@ -5,8 +5,8 @@ import com.digia.digiaui.config.ConfigException
 import com.digia.digiaui.config.ConfigFetcher
 import com.digia.digiaui.config.model.DUIConfig
 import com.digia.digiaui.framework.logging.Logger
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
+import com.digia.digiaui.framework.utils.JsonUtil
+import kotlinx.serialization.json.Json
 
 /**
  * ConfigSource that loads configuration from cached file
@@ -17,10 +17,8 @@ import com.google.gson.reflect.TypeToken
  * @param provider The ConfigProvider (used for fileOps)
  * @param cachedFilePath The path to the cached config file
  */
-class CachedConfigSource(
-    private val provider: ConfigFetcher,
-    private val cachedFilePath: String
-) : ConfigSource {
+class CachedConfigSource(private val provider: ConfigFetcher, private val cachedFilePath: String) :
+        ConfigSource {
 
     override suspend fun getConfig(): DUIConfig {
         try {
@@ -33,17 +31,15 @@ class CachedConfigSource(
             }
 
             // Parse the JSON and create DUIConfig
-            val type = object : TypeToken<Map<String, Any>>() {}.type
-            val jsonData = Gson().fromJson<Map<String, Any>>(cachedJson, type)
+            val jsonParser = Json { ignoreUnknownKeys = true }
+            val jsonElement = jsonParser.parseToJsonElement(cachedJson)
+            val jsonData = JsonUtil.jsonElementToMap(jsonElement)
             val config = DUIConfig.fromMap(jsonData)
 
             // Initialize functions
             config.functionsFilePath?.let { functionsPath ->
                 try {
-                    provider.initFunctions(
-                            remotePath = functionsPath,
-                            version = config.version
-                    )
+                    provider.initFunctions(remotePath = functionsPath, version = config.version)
                 } catch (e: Exception) {
                     Logger.log("Failed to initialize functions from cached config: $functionsPath")
                 }
