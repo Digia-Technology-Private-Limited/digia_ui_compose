@@ -1,11 +1,11 @@
 package com.digia.digiaui.framework.widgets
 
 import LocalUIResources
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -121,16 +121,11 @@ class VWAppBar(
         if (!visibility) return
 
         val titleContent = _buildTitle(payload, titleWidget)
-        val leadingContent =
-                _buildLeading(
-                        payload,
-                        leadingWidget,
-                        scope,
-                        context,
-                        actionExecutor,
-                        stateContext,
-                        resources
-                )
+
+        // Build leading content
+        val leadingContent: (@Composable () -> Unit)? = _buildLeading(payload, leadingWidget)
+
+        // Build actions content
         val actionsContent: @Composable androidx.compose.foundation.layout.RowScope.() -> Unit = {
             _buildActions(payload, actionsWidgets)
         }
@@ -191,14 +186,10 @@ class VWAppBar(
     }
 
     /** Build the leading icon/widget */
+    @Composable
     private fun _buildLeading(
             payload: RenderPayload,
-            leadingWidget: VirtualNode?,
-            scope: kotlinx.coroutines.CoroutineScope,
-            context: android.content.Context,
-            actionExecutor: com.digia.digiaui.framework.actions.ActionExecutor,
-            stateContext: com.digia.digiaui.framework.state.StateContext?,
-            resources: com.digia.digiaui.framework.UIResources
+            leadingWidget: VirtualNode?
     ): (@Composable () -> Unit)? {
         if (leadingWidget != null) {
             return { leadingWidget.ToWidget(payload) }
@@ -210,21 +201,28 @@ class VWAppBar(
         val iconWidget = VWIcon(props = leadingIconProps, commonProps = null, parent = this)
 
         return {
-            IconButton(
-                    onClick = {
-                        props.onTapLeadingIcon?.let { actionFlow ->
-                            scope.launch {
-                                payload.executeAction(
-                                        context = context,
-                                        actionFlow = actionFlow,
-                                        actionExecutor = actionExecutor,
-                                        stateContext = stateContext,
-                                        resourcesProvider = resources,
-                                        incomingScopeContext = null
-                                )
+            val scope = rememberCoroutineScope()
+            val context = LocalContext.current
+            val actionExecutor = LocalActionExecutor.current
+            val stateContext = LocalStateContextProvider.current
+            val resources = LocalUIResources.current
+
+            Box(
+                    modifier =
+                            Modifier.clickable {
+                                props.onTapLeadingIcon?.let { actionFlow ->
+                                    scope.launch {
+                                        payload.executeAction(
+                                                context = context,
+                                                actionFlow = actionFlow,
+                                                actionExecutor = actionExecutor,
+                                                stateContext = stateContext,
+                                                resourcesProvider = resources,
+                                                incomingScopeContext = null
+                                        )
+                                    }
+                                }
                             }
-                        }
-                    }
             ) { iconWidget.ToWidget(payload) }
         }
     }
