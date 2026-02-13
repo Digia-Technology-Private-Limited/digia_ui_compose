@@ -5,6 +5,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -12,9 +14,12 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.digia.digiaui.framework.VirtualWidgetRegistry
+import com.digia.digiaui.framework.actions.LocalActionExecutor
 import com.digia.digiaui.framework.page.ConfigProvider
 import com.digia.digiaui.framework.page.DUIPage
+import com.digia.digiaui.framework.page.RootStateTreeProvider
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 
 /** Navigation controller composition local for providing access throughout the tree */
 val LocalDUINavController =
@@ -31,6 +36,7 @@ val LocalDUINavController =
  * @param startPageArgs Optional arguments for the start page
  * @param registry The widget registry for creating widgets
  * @param navController Optional custom NavController (creates one if not provided)
+ * @param onNavigationComplete Optional callback when navigation completes (for SDK Activity mode)
  */
 @Composable
 fun DUINavHost(
@@ -38,7 +44,8 @@ fun DUINavHost(
         startPageId: String,
         startPageArgs: Map<String, Any?>? = null,
         registry: VirtualWidgetRegistry,
-        navController: NavHostController = rememberNavController()
+        navController: NavHostController = rememberNavController(),
+        onNavigationComplete: ((Map<String, Any?>?) -> Unit)? = null
 ) {
     // Store start page args if provided
     LaunchedEffect(startPageArgs) {
@@ -46,6 +53,12 @@ fun DUINavHost(
             NavigationManager.setPageArgs(startPageId, startPageArgs)
         }
     }
+
+    // Scope for executing callbacks
+    val scope = rememberCoroutineScope()
+
+    // Capture action executor for ExecuteResultCallback
+    val actionExecutor = LocalActionExecutor.current
 
     // Listen to navigation events from NavigationManager
     LaunchedEffect(navController) {
@@ -60,7 +73,7 @@ fun DUINavHost(
                     // Navigate using type-safe route
                     if (event.replace) {
                         navController.navigate(event.route) {
-                            // Pop up to the previous destination
+                            // Pop up to the previous destination and replace it
                             popUpTo(
                                     navController.currentDestination?.route
                                             ?: PageRoute(startPageId)
@@ -68,14 +81,10 @@ fun DUINavHost(
                                 inclusive = true
                                 saveState = true
                             }
-                            restoreState = true
-                            //                            launchSingleTop = true
                         }
                     } else {
-                        navController.navigate(event.route) {
-                            restoreState = true
-                            //                            launchSingleTop = true
-                        }
+                        // Normal forward navigation - back stack maintains state automatically
+                        navController.navigate(event.route) { restoreState = true }
                     }
                 }
                 is NavigationEvent.Pop -> {
@@ -100,38 +109,82 @@ fun DUINavHost(
                     navController.popBackStack(route = event.route, inclusive = event.inclusive)
                 }
                 is NavigationEvent.ExecuteResultCallback -> {
-                    // This is handled via Pop events
+                    // Execute the result callback action flow
+                    scope.launch {
+                        try {
+                            // Create scope context with result data
+                            // The event contains the complete execution context from where
+                            // the callback was registered, preserving the state hierarchy
+                            val resultScopeContext =
+                                    event.scopeContext?.copyAndExtend(
+                                            mapOf("result" to event.result)
+                                    )
+                                            ?: event.scopeContext
+
+                            // Execute using the original execution context
+                            // This preserves State1 -> DUINavHost -> State2 -> Button hierarchy
+                            actionExecutor.execute(
+                                    context = navController.context,
+                                    actionFlow = event.actionFlow,
+                                    scopeContext = resultScopeContext,
+                                    stateContext = event.stateContext,
+                                    resourcesProvider = event.resourcesProvider,
+                                    scope = this
+                            )
+                        } catch (e: Exception) {
+                            println("Error executing result callback: ${e.message}")
+                            e.printStackTrace()
+                        }
+                    }
                 }
             }
         }
     }
 
     // Handle back button
-    BackHandler(enabled = navController.previousBackStackEntry != null) {
-        navController.popBackStack()
+    BackHandler(
+            enabled = navController.previousBackStackEntry != null || onNavigationComplete != null
+    ) {
+        if (navController.previousBackStackEntry != null) {
+            navController.popBackStack()
+        } else {
+            // No more pages to pop - complete navigation
+            onNavigationComplete?.invoke(null)
+        }
     }
+
+    // SaveableStateHolder for preserving UI state across navigation
+    val saveableStateHolder = rememberSaveableStateHolder()
 
     // Provide NavController to composition tree
     CompositionLocalProvider(LocalDUINavController provides navController) {
-        NavHost(navController = navController, startDestination = PageRoute(startPageId)) {
-            // Register a single type-safe route pattern that handles ALL pages
-            composable<PageRoute> { backStackEntry ->
-                // Extract the actual page ID from the type-safe route
-                val route = backStackEntry.toRoute<PageRoute>()
-                val pageId = route.pageId
+        // Provide a single StateTree for the entire navigation graph
+        RootStateTreeProvider {
+            NavHost(navController = navController, startDestination = PageRoute(startPageId)) {
+                // Register a single type-safe route pattern that handles ALL pages
+                composable<PageRoute> { backStackEntry ->
+                    // Extract the actual page ID from the type-safe route
+                    val route = backStackEntry.toRoute<PageRoute>()
+                    val pageId = route.pageId
 
-                // Get page arguments from NavigationManager
-                val pageArgs = remember(pageId) { NavigationManager.getPageArgs(pageId) }
+                    // Get page arguments from NavigationManager - use backStackEntry as key
+                    val pageArgs =
+                            remember(backStackEntry) { NavigationManager.getPageArgs(pageId) }
 
-                val pageDef = remember(pageId) { configProvider.getPageDefinition(pageId) }
+                    val pageDef =
+                            remember(backStackEntry) { configProvider.getPageDefinition(pageId) }
 
-                // All pages render through the same DUIPage composable
-                DUIPage(
-                        pageId = pageId,
-                        pageArgs = pageArgs,
-                        pageDef = pageDef,
-                        registry = registry
-                )
+                    // Wrap page in SaveableStateProvider to preserve UI state across navigation
+                    saveableStateHolder.SaveableStateProvider(pageId) {
+                        // All pages render through the same DUIPage composable
+                        DUIPage(
+                                pageId = pageId,
+                                pageArgs = pageArgs,
+                                pageDef = pageDef,
+                                registry = registry
+                        )
+                    }
+                }
             }
         }
     }

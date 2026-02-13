@@ -6,20 +6,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
-import com.digia.digiaui.config.model.DUIConfig
 import com.digia.digiaui.framework.actions.ActionExecutor
 import com.digia.digiaui.framework.actions.ActionProvider
 import com.digia.digiaui.framework.component.DUIComponent
 import com.digia.digiaui.framework.logging.Logger
-import com.digia.digiaui.framework.models.ComponentDefinition
-import com.digia.digiaui.framework.models.PageDefinition
 import com.digia.digiaui.framework.page.ConfigProvider
 import com.digia.digiaui.framework.page.DUIConfigProvider
 import com.digia.digiaui.framework.page.DUIPage
 import com.digia.digiaui.framework.utils.asSafe
 import com.digia.digiaui.framework.widgets.registerBuiltInWidgets
 import com.digia.digiaui.init.DigiaUIManager
-import com.digia.digiaui.remoteconfig.RemoteConfigData
 import com.digia.digiaui.utils.asSafe
 import convertToTextStyle
 
@@ -51,14 +47,13 @@ import convertToTextStyle
  * }
  * ```
  */
-
-
-enum class UIActionType{
+enum class UIActionType {
     SHOW_BOTTOM_SHEET,
     SHOW_DIALOG,
     CLOSE_BOTTOM_SHEET,
     CLOSE_DIALOG
 }
+
 class DUIFactory private constructor() {
 
     private lateinit var configProvider: ConfigProvider
@@ -66,21 +61,19 @@ class DUIFactory private constructor() {
     private var resources: UIResources = UIResources()
     private var isInitialized = false
 
-
-    fun ShowUIAction(actionType: UIActionType, componentId: String,componentArgs: Map<String, Any?>? = null){
-        when(actionType){
+    fun ShowUIAction(
+            actionType: UIActionType,
+            componentId: String,
+            componentArgs: Map<String, Any?>? = null
+    ) {
+        when (actionType) {
             UIActionType.SHOW_BOTTOM_SHEET -> {
-                DigiaUIManager.getInstance().bottomSheetManager?.show(
-                    componentId,
-                  componentArgs,
-                    maxHeightRatio = 0.7F
-                )
+                DigiaUIManager.getInstance()
+                        .bottomSheetManager
+                        ?.show(componentId, componentArgs, maxHeightRatio = 0.7F)
             }
             UIActionType.SHOW_DIALOG -> {
-                DigiaUIManager.getInstance().dialogManager?.show(
-                    componentId,
-                    componentArgs
-                )
+                DigiaUIManager.getInstance().dialogManager?.show(componentId, componentArgs)
             }
             UIActionType.CLOSE_BOTTOM_SHEET -> {
                 DigiaUIManager.getInstance().bottomSheetManager?.dismiss()
@@ -95,11 +88,12 @@ class DUIFactory private constructor() {
      * Initializes the singleton factory with all necessary configuration and resources.
      *
      * This method must be called before using any other factory methods. It sets up the widget
-     * registry, configuration provider, and UI resources based on the initialized DigiaUI
-     * instance and optional custom resources.
+     * registry, configuration provider, and UI resources based on the initialized DigiaUI instance
+     * and optional custom resources.
      *
      * @param config The application configuration containing pages, components, and resources
-     * @param pageConfigFetcher Custom page configuration provider, defaults to built-in provider if not specified
+     * @param pageConfigFetcher Custom page configuration provider, defaults to built-in provider if
+     * not specified
      * @param icons Custom icon mappings to override or extend default icons
      * @param images Custom image provider mappings for app-specific images
      * @param textStyles Custom text styles for typography
@@ -112,10 +106,10 @@ class DUIFactory private constructor() {
      * Note: Environment variables should be set using the DUIConfig or DigiaUIManager directly
      */
     fun initialize(
-        pageConfigFetcher: ConfigProvider? = null,
-        icons: Map<String, ImageVector>? = null,
-        images: Map<String, ImageBitmap>? = null,
-        fontFactory: DUIFontFactory? = null
+            pageConfigFetcher: ConfigProvider? = null,
+            icons: Map<String, ImageVector>? = null,
+            images: Map<String, ImageBitmap>? = null,
+            fontFactory: DUIFontFactory? = null
     ) {
         if (isInitialized) {
             Logger.log("DUIFactory already initialized, reinitializing...")
@@ -126,8 +120,8 @@ class DUIFactory private constructor() {
         val digiaUIInstance = DigiaUIManager.getInstance().safeInstance
         if (digiaUIInstance == null) {
             throw IllegalStateException(
-                "DigiaUIManager is not initialized. Make sure to call DigiaUI.initialize() " +
-                        "and DigiaUIManager.initialize() before calling DUIFactory.initialize()."
+                    "DigiaUIManager is not initialized. Make sure to call DigiaUI.initialize() " +
+                            "and DigiaUIManager.initialize() before calling DUIFactory.initialize()."
             )
         }
 
@@ -135,23 +129,30 @@ class DUIFactory private constructor() {
         configProvider = pageConfigFetcher ?: DUIConfigProvider(digiaUIInstance.dslConfig)
 
         // Create UI resources from config and custom overrides
-        resources = UIResources(
-            icons = icons,
-            images = images,
-            textStyles =  digiaUIInstance.dslConfig.fontTokens
-                .mapValues { convertToTextStyle(it.value,fontFactory) }
-         ,
-            colors = digiaUIInstance.dslConfig.colorTokens.mapValues { it -> asSafe<String>(it.value)?.let { ColorUtil.fromString(it) }  },
-            darkColors = digiaUIInstance.dslConfig.darkColorTokens.mapValues { it -> asSafe<String>(it.value)?.let { ColorUtil.fromString(it) }  },
-            fontFactory = fontFactory
-        )
+        resources =
+                UIResources(
+                        icons = icons,
+                        images = images,
+                        textStyles =
+                                digiaUIInstance.dslConfig.fontTokens.mapValues {
+                                    convertToTextStyle(it.value, fontFactory)
+                                },
+                        colors =
+                                digiaUIInstance.dslConfig.colorTokens.mapValues { it ->
+                                    asSafe<String>(it.value)?.let { ColorUtil.fromString(it) }
+                                },
+                        darkColors =
+                                digiaUIInstance.dslConfig.darkColorTokens.mapValues { it ->
+                                    asSafe<String>(it.value)?.let { ColorUtil.fromString(it) }
+                                },
+                        fontFactory = fontFactory
+                )
 
         // Initialize widget registry with component builder
-        widgetRegistry = DefaultVirtualWidgetRegistry(
-            componentBuilder = { id, args ->
-                CreateComponent(id, args)
-            }
-        )
+        widgetRegistry =
+                DefaultVirtualWidgetRegistry(
+                        componentBuilder = { id, args -> CreateComponent(id, args) }
+                )
 
         // Register all built-in widgets
         widgetRegistry.registerBuiltInWidgets()
@@ -159,6 +160,25 @@ class DUIFactory private constructor() {
         isInitialized = true
         Logger.log("DUIFactory initialized successfully")
     }
+
+    /**
+     * Get the configuration provider for internal use
+     * @throws IllegalStateException if factory is not initialized
+     */
+    internal fun getConfigProvider(): ConfigProvider {
+        checkInitialized()
+        return configProvider
+    }
+
+    /**
+     * Get the widget registry for internal use
+     * @throws IllegalStateException if factory is not initialized
+     */
+    internal fun getWidgetRegistry(): VirtualWidgetRegistry {
+        checkInitialized()
+        return widgetRegistry
+    }
+
     /**
      * Creates a page by ID with optional arguments and resource overrides.
      *
@@ -178,13 +198,13 @@ class DUIFactory private constructor() {
      */
     @Composable
     fun CreatePage(
-        pageId: String,
-        pageArgs: Map<String, Any?>? = null,
-        overrideIcons: Map<String, ImageVector>? = null,
-        overrideImages: Map<String, ImageBitmap>? = null,
-        overrideTextStyles: Map<String, TextStyle>? = null,
-        overrideColors: Map<String, Color>? = null,
-        overrideDarkColors: Map<String, Color>? = null
+            pageId: String,
+            pageArgs: Map<String, Any?>? = null,
+            overrideIcons: Map<String, ImageVector>? = null,
+            overrideImages: Map<String, ImageBitmap>? = null,
+            overrideTextStyles: Map<String, TextStyle>? = null,
+            overrideColors: Map<String, Color>? = null,
+            overrideDarkColors: Map<String, Color>? = null
     ) {
         checkInitialized()
 
@@ -192,30 +212,27 @@ class DUIFactory private constructor() {
         val pageDef = configProvider.getPageDefinition(pageId)
 
         // Merge overriding resources with existing resources
-        val mergedResources = UIResources(
-            icons = mergeMap(resources.icons, overrideIcons),
-            images = mergeMap(resources.images, overrideImages),
-            textStyles = mergeMap(resources.textStyles, overrideTextStyles),
-            colors = mergeMap(resources.colors, overrideColors),
-            darkColors = mergeMap(resources.darkColors, overrideDarkColors),
-            fontFactory = resources.fontFactory
-        )
-        ActionProvider(
-         actionExecutor = ActionExecutor()
-        ){
-
+        val mergedResources =
+                UIResources(
+                        icons = mergeMap(resources.icons, overrideIcons),
+                        images = mergeMap(resources.images, overrideImages),
+                        textStyles = mergeMap(resources.textStyles, overrideTextStyles),
+                        colors = mergeMap(resources.colors, overrideColors),
+                        darkColors = mergeMap(resources.darkColors, overrideDarkColors),
+                        fontFactory = resources.fontFactory
+                )
+        ActionProvider(actionExecutor = ActionExecutor()) {
             ResourceProvider(mergedResources, apiModels = configProvider.getAllApiModels()) {
                 DUIPage(
-                    pageId = pageId,
-                    pageArgs = pageArgs,
-                    pageDef = pageDef,
-                    registry = widgetRegistry,
-//                resources = mergedResources
-                )
+                        pageId = pageId,
+                        pageArgs = pageArgs,
+                        pageDef = pageDef,
+                        registry = widgetRegistry,
+                        //                resources = mergedResources
+                        )
             }
         }
     }
-
 
     /**
      * Creates the initial page from configuration.
@@ -232,31 +249,48 @@ class DUIFactory private constructor() {
      */
     @Composable
     fun CreateInitialPage(
-        overrideIcons: Map<String, ImageVector>? = null,
-        overrideImages: Map<String, ImageBitmap>? = null,
-        overrideTextStyles: Map<String, TextStyle>? = null,
-        overrideColors: Map<String, Color>? = null,
-        overrideDarkColors: Map<String, Color>? = null
+            overrideIcons: Map<String, ImageVector>? = null,
+            overrideImages: Map<String, ImageBitmap>? = null,
+            overrideTextStyles: Map<String, TextStyle>? = null,
+            overrideColors: Map<String, Color>? = null,
+            overrideDarkColors: Map<String, Color>? = null
     ) {
         checkInitialized()
 
         // Get initial route from config
         val initialRoute = configProvider.getInitialRoute()
         CreatePage(
-            pageId = initialRoute,
-            overrideIcons = overrideIcons,
-            overrideImages = overrideImages,
-            overrideTextStyles = overrideTextStyles,
-            overrideColors = overrideColors,
-            overrideDarkColors = overrideDarkColors
+                pageId = initialRoute,
+                overrideIcons = overrideIcons,
+                overrideImages = overrideImages,
+                overrideTextStyles = overrideTextStyles,
+                overrideColors = overrideColors,
+                overrideDarkColors = overrideDarkColors
         )
     }
 
     /**
      * Creates a navigation host with all pages from configuration.
      *
-     * This creates a NavHost that manages navigation between all pages defined in the config.
-     * Use this when you want full navigation support with back stack management.
+     * This automatically launches the Digia UI navigation in a separate Activity, abstracting away
+     * the Activity management from the host app. The navigation system runs in an isolated context
+     * with full state preservation.
+     *
+     * Example usage:
+     * ```kotlin
+     * @Composable
+     * fun MyScreen() {
+     *     Button(onClick = {}) {
+     *         Text("Open App")
+     *     }
+     *
+     *     // Automatically launches SDK navigation
+     *     DUIFactory.getInstance().CreateNavHost(
+     *         startPageId = "home",
+     *         pageArgs = mapOf("userId" to "123")
+     *     )
+     * }
+     * ```
      *
      * @param startPageId Optional custom start page ID (defaults to config's initialRoute)
      * @param pageArgs Optional arguments to pass to the start page
@@ -270,40 +304,28 @@ class DUIFactory private constructor() {
      */
     @Composable
     fun CreateNavHost(
-        startPageId: String? = null,
-        pageArgs: Map<String, Any?>? = null,
-        overrideIcons: Map<String, ImageVector>? = null,
-        overrideImages: Map<String, ImageBitmap>? = null,
-        overrideTextStyles: Map<String, TextStyle>? = null,
-        overrideColors: Map<String, Color>? = null,
-        overrideDarkColors: Map<String, Color>? = null
+            startPageId: String? = null,
+            pageArgs: Map<String, Any?>? = null,
+            overrideIcons: Map<String, ImageVector>? = null,
+            overrideImages: Map<String, ImageBitmap>? = null,
+            overrideTextStyles: Map<String, TextStyle>? = null,
+            overrideColors: Map<String, Color>? = null,
+            overrideDarkColors: Map<String, Color>? = null
     ) {
         checkInitialized()
 
-        // Get initial route from config if not specified
-        val initialRoute = startPageId ?: configProvider.getInitialRoute()
+        // Get context from composition - abstracted from user
+        val context = androidx.compose.ui.platform.LocalContext.current
 
-        // Merge overriding resources with existing resources
-        val mergedResources = UIResources(
-            icons = mergeMap(resources.icons, overrideIcons),
-            images = mergeMap(resources.images, overrideImages),
-            textStyles = mergeMap(resources.textStyles, overrideTextStyles),
-            colors = mergeMap(resources.colors, overrideColors),
-            darkColors = mergeMap(resources.darkColors, overrideDarkColors),
-            fontFactory = resources.fontFactory
-        )
-
-        ActionProvider(
-            actionExecutor = ActionExecutor()
-        ) {
-            ResourceProvider(mergedResources, apiModels = configProvider.getAllApiModels()) {
-                com.digia.digiaui.framework.navigation.DUINavHost(
-                    configProvider = configProvider,
-                    startPageId = initialRoute,
-                    startPageArgs = pageArgs,
-                    registry = widgetRegistry
-                )
-            }
+        // Launch SDK Activity with navigation
+        androidx.compose.runtime.LaunchedEffect(Unit) {
+            val intent =
+                    com.digia.digiaui.framework.navigation.DigiaUINavigationActivity.createIntent(
+                            context = context,
+                            startPageId = startPageId,
+                            pageArgs = pageArgs
+                    )
+            context.startActivity(intent)
         }
     }
 
@@ -326,13 +348,13 @@ class DUIFactory private constructor() {
      */
     @Composable
     fun CreateComponent(
-        componentId: String,
-        args: Map<String, Any?>? = null,
-        overrideIcons: Map<String, ImageVector>? = null,
-        overrideImages: Map<String, ImageBitmap>? = null,
-        overrideTextStyles: Map<String, TextStyle>? = null,
-        overrideColors: Map<String, Color>? = null,
-        overrideDarkColors: Map<String, Color>? = null
+            componentId: String,
+            args: Map<String, Any?>? = null,
+            overrideIcons: Map<String, ImageVector>? = null,
+            overrideImages: Map<String, ImageBitmap>? = null,
+            overrideTextStyles: Map<String, TextStyle>? = null,
+            overrideColors: Map<String, Color>? = null,
+            overrideDarkColors: Map<String, Color>? = null
     ) {
         checkInitialized()
 
@@ -340,22 +362,23 @@ class DUIFactory private constructor() {
         val componentDef = configProvider.getComponentDefinition(componentId)
 
         // Merge overriding resources with existing resources
-        val mergedResources = UIResources(
-            icons = mergeMap(resources.icons, overrideIcons),
-            images = mergeMap(resources.images, overrideImages),
-            textStyles = mergeMap(resources.textStyles, overrideTextStyles),
-            colors = mergeMap(resources.colors, overrideColors),
-            darkColors = mergeMap(resources.darkColors, overrideDarkColors),
-            fontFactory = resources.fontFactory
-        )
+        val mergedResources =
+                UIResources(
+                        icons = mergeMap(resources.icons, overrideIcons),
+                        images = mergeMap(resources.images, overrideImages),
+                        textStyles = mergeMap(resources.textStyles, overrideTextStyles),
+                        colors = mergeMap(resources.colors, overrideColors),
+                        darkColors = mergeMap(resources.darkColors, overrideDarkColors),
+                        fontFactory = resources.fontFactory
+                )
 
         ResourceProvider(mergedResources, apiModels = configProvider.getAllApiModels()) {
             DUIComponent(
-                componentId = componentId,
-                args = args,
-                componentDef = componentDef,
-                registry = widgetRegistry,
-                resources = mergedResources
+                    componentId = componentId,
+                    args = args,
+                    componentDef = componentDef,
+                    registry = widgetRegistry,
+                    resources = mergedResources
             )
         }
     }
@@ -363,8 +386,8 @@ class DUIFactory private constructor() {
     /**
      * Loads and displays a widget dynamically from remote configuration.
      *
-     * This method gets component configuration from the provided [RemoteConfigProvider]
-     * (e.g., Firebase Remote Config) and dynamically renders the widget based on the data.
+     * This method gets component configuration from the provided [RemoteConfigProvider] (e.g.,
+     * Firebase Remote Config) and dynamically renders the widget based on the data.
      *
      * The remote config should return data in the format:
      * ```json
@@ -387,13 +410,13 @@ class DUIFactory private constructor() {
      */
     @Composable
     fun Load(
-        key: String,
-        overrideArgs: Map<String, Any?>? = null,
-        overrideIcons: Map<String, ImageVector>? = null,
-        overrideImages: Map<String, ImageBitmap>? = null,
-        overrideTextStyles: Map<String, TextStyle>? = null,
-        overrideColors: Map<String, Color>? = null,
-        overrideDarkColors: Map<String, Color>? = null
+            key: String,
+            overrideArgs: Map<String, Any?>? = null,
+            overrideIcons: Map<String, ImageVector>? = null,
+            overrideImages: Map<String, ImageBitmap>? = null,
+            overrideTextStyles: Map<String, TextStyle>? = null,
+            overrideColors: Map<String, Color>? = null,
+            overrideDarkColors: Map<String, Color>? = null
     ) {
         if (!isInitialized) {
             Logger.log("Load: DUIFactory not initialized. Call initialize() first.")
@@ -414,33 +437,34 @@ class DUIFactory private constructor() {
         }
 
         // Get config synchronously from provider (already cached by developer)
-        val configData = try {
-            remoteConfigProvider.getConfig(key)
-        } catch (e: Exception) {
-            Logger.log("Load: Error getting config for key $key: ${e.message}")
-            return
-        }
+        val configData =
+                try {
+                    remoteConfigProvider.getConfig(key)
+                } catch (e: Exception) {
+                    Logger.log("Load: Error getting config for key $key: ${e.message}")
+                    return
+                }
 
         if (configData == null) {
             Logger.log("Load: Config not found for key: $key")
             return
         }
 
-        Logger.log("Load: Successfully loaded config for key: $key, componentId: ${configData.componentId}")
+        Logger.log(
+                "Load: Successfully loaded config for key: $key, componentId: ${configData.componentId}"
+        )
 
         // Render the component with fetched config
         CreateComponent(
-            componentId = configData.componentId,
-            args = overrideArgs ?: configData.args, // overrideArgs replaces remote config args
-            overrideIcons = overrideIcons,
-            overrideImages = overrideImages,
-            overrideTextStyles = overrideTextStyles,
-            overrideColors = overrideColors,
-            overrideDarkColors = overrideDarkColors
+                componentId = configData.componentId,
+                args = overrideArgs ?: configData.args, // overrideArgs replaces remote config args
+                overrideIcons = overrideIcons,
+                overrideImages = overrideImages,
+                overrideTextStyles = overrideTextStyles,
+                overrideColors = overrideColors,
+                overrideDarkColors = overrideDarkColors
         )
     }
-
-
 
     /**
      * Registers a custom widget builder.
@@ -480,8 +504,8 @@ class DUIFactory private constructor() {
         val digiaUIInstance = DigiaUIManager.getInstance().safeInstance
         if (digiaUIInstance == null) {
             throw IllegalStateException(
-                "DigiaUIManager is not initialized. Make sure to call DigiaUI.initialize() " +
-                        "and await its completion before calling setEnvironmentVariable()."
+                    "DigiaUIManager is not initialized. Make sure to call DigiaUI.initialize() " +
+                            "and await its completion before calling setEnvironmentVariable()."
             )
         }
         // Delegate to DUIConfig
@@ -503,8 +527,8 @@ class DUIFactory private constructor() {
         val digiaUIInstance = DigiaUIManager.getInstance().safeInstance
         if (digiaUIInstance == null) {
             throw IllegalStateException(
-                "DigiaUIManager is not initialized. Make sure to call DigiaUI.initialize() " +
-                        "and await its completion before calling setEnvironmentVariables()."
+                    "DigiaUIManager is not initialized. Make sure to call DigiaUI.initialize() " +
+                            "and await its completion before calling setEnvironmentVariables()."
             )
         }
         // Delegate to DUIConfig for each variable
@@ -513,9 +537,6 @@ class DUIFactory private constructor() {
         }
         Logger.log("Set ${variables.size} environment variables")
     }
-
-
-
 
     /**
      * Clears a single environment variable value at runtime.
@@ -530,8 +551,8 @@ class DUIFactory private constructor() {
         val digiaUIInstance = DigiaUIManager.getInstance().safeInstance
         if (digiaUIInstance == null) {
             throw IllegalStateException(
-                "DigiaUIManager is not initialized. Make sure to call DigiaUI.initialize() " +
-                        "and await its completion before calling clearEnvironmentVariable()."
+                    "DigiaUIManager is not initialized. Make sure to call DigiaUI.initialize() " +
+                            "and await its completion before calling clearEnvironmentVariable()."
             )
         }
         digiaUIInstance.dslConfig.setEnvVariable(key, null)
@@ -549,8 +570,8 @@ class DUIFactory private constructor() {
         val digiaUIInstance = DigiaUIManager.getInstance().safeInstance
         if (digiaUIInstance == null) {
             throw IllegalStateException(
-                "DigiaUIManager is not initialized. Make sure to call DigiaUI.initialize() " +
-                        "and await its completion before calling clearEnvironmentVariables()."
+                    "DigiaUIManager is not initialized. Make sure to call DigiaUI.initialize() " +
+                            "and await its completion before calling clearEnvironmentVariables()."
             )
         }
         for (key in keys) {
@@ -575,7 +596,7 @@ class DUIFactory private constructor() {
 
     /**
      * Gets the widget registry.
-     * 
+     *
      * @return The widget registry instance
      * @throws IllegalStateException if factory is not initialized
      */
@@ -586,7 +607,7 @@ class DUIFactory private constructor() {
 
     /**
      * Gets the UI resources.
-     * 
+     *
      * @return The UI resources instance
      * @throws IllegalStateException if factory is not initialized
      */
@@ -595,9 +616,7 @@ class DUIFactory private constructor() {
         return resources
     }
 
-    /**
-     * Helper method to merge two maps, with the override map taking precedence.
-     */
+    /** Helper method to merge two maps, with the override map taking precedence. */
     private fun <K, V> mergeMap(base: Map<K, V>?, override: Map<K, V>?): Map<K, V>? {
         return when {
             base == null && override == null -> null

@@ -18,15 +18,11 @@ class StateTree {
         childrenMap.remove(child)
     }
 
-    fun parentOf(ctx: StateContext): StateContext? =
-        parentMap[ctx]
+    fun parentOf(ctx: StateContext): StateContext? = parentMap[ctx]
 
-    fun childrenOf(ctx: StateContext): Set<StateContext> =
-        childrenMap[ctx].orEmpty()
+    fun childrenOf(ctx: StateContext): Set<StateContext> = childrenMap[ctx].orEmpty()
 
-    /**
-     * Resolve key owner upward
-     */
+    /** Resolve key owner upward */
     fun findOwner(start: StateContext, key: String): StateContext? {
         var current: StateContext? = start
         while (current != null) {

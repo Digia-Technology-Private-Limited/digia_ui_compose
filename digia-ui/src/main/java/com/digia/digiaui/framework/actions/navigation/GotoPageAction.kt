@@ -17,39 +17,44 @@ import com.digia.digiaui.utils.asSafe
 /**
  * GotoPage Action (NavigateToPageAction)
  *
- * Navigates to a specific page in the application.
- * Supports various navigation modes including waiting for results and stack manipulation.
+ * Navigates to a specific page in the application. Supports various navigation modes including
+ * waiting for results and stack manipulation.
  */
 data class GotoPageAction(
-    override var actionId: ActionId? = null,
-    override var disableActionIf: ExprOr<Boolean>? = null,
-    val pageData: ExprOr<JsonLike>? = null,
-    val waitForResult: ExprOr<Boolean>? = null,
-    val shouldRemovePreviousScreensInStack: ExprOr<Boolean>? = null,
-    val routeNameToRemoveUntil: ExprOr<String>? = null,
-    val onResult: ActionFlow? = null
+        override var actionId: ActionId? = null,
+        override var disableActionIf: ExprOr<Boolean>? = null,
+        val pageData: ExprOr<JsonLike>? = null,
+        val waitForResult: ExprOr<Boolean>? = null,
+        val shouldRemovePreviousScreensInStack: ExprOr<Boolean>? = null,
+        val routeNameToRemoveUntil: ExprOr<String>? = null,
+        val onResult: ActionFlow? = null
 ) : Action {
     override val actionType = ActionType.NAVIGATE_TO_PAGE
 
     override fun toJson(): JsonLike {
         return mapOf(
-            "type" to actionType.value,
-            "pageData" to pageData?.toJson(),
-            "waitForResult" to waitForResult?.toJson(),
-            "shouldRemovePreviousScreensInStack" to shouldRemovePreviousScreensInStack?.toJson(),
-            "routeNameToRemoveUntil" to routeNameToRemoveUntil?.toJson(),
-            "onResult" to onResult?.toJson()
+                "type" to actionType.value,
+                "pageData" to pageData?.toJson(),
+                "waitForResult" to waitForResult?.toJson(),
+                "shouldRemovePreviousScreensInStack" to
+                        shouldRemovePreviousScreensInStack?.toJson(),
+                "routeNameToRemoveUntil" to routeNameToRemoveUntil?.toJson(),
+                "onResult" to onResult?.toJson()
         )
     }
 
     companion object {
         fun fromJson(json: JsonLike): GotoPageAction {
             return GotoPageAction(
-                pageData = json["pageData"]?.let { ExprOr.fromValue<JsonLike>(it) },
-                waitForResult = json["waitForResult"]?.let { ExprOr.fromValue<Boolean>(it) },
-                shouldRemovePreviousScreensInStack = json["shouldRemovePreviousScreensInStack"]?.let { ExprOr.fromValue<Boolean>(it) },
-                routeNameToRemoveUntil = json["routeNameToRemoveUntil"]?.let { ExprOr.fromValue<String>(it) },
-                onResult = json["onResult"]?.let { ActionFlow.fromJson(it as? JsonLike) }
+                    pageData = json["pageData"]?.let { ExprOr.fromValue<JsonLike>(it) },
+                    waitForResult = json["waitForResult"]?.let { ExprOr.fromValue<Boolean>(it) },
+                    shouldRemovePreviousScreensInStack =
+                            json["shouldRemovePreviousScreensInStack"]?.let {
+                                ExprOr.fromValue<Boolean>(it)
+                            },
+                    routeNameToRemoveUntil =
+                            json["routeNameToRemoveUntil"]?.let { ExprOr.fromValue<String>(it) },
+                    onResult = json["onResult"]?.let { ActionFlow.fromJson(it as? JsonLike) }
             )
         }
     }
@@ -58,18 +63,17 @@ data class GotoPageAction(
 /** GotoPage Action Processor */
 class GotoPageProcessor : ActionProcessor<GotoPageAction>() {
     override suspend fun execute(
-        context: Context,
-        action: GotoPageAction,
-        scopeContext: ScopeContext?,
-        stateContext: com.digia.digiaui.framework.state.StateContext?,
-        resourcesProvider: UIResources?,
-
-        id: String
+            context: Context,
+            action: GotoPageAction,
+            scopeContext: ScopeContext?,
+            stateContext: com.digia.digiaui.framework.state.StateContext?,
+            resourcesProvider: UIResources?,
+            id: String
     ): Any? {
         try {
             // Evaluate page data - matches Flutter's deepEvaluate
             val pageEvaluatedData = action.pageData?.deepEvaluate(scopeContext)
-            val pageData=asSafe<JsonLike>(pageEvaluatedData)
+            val pageData = asSafe<JsonLike>(pageEvaluatedData)
             if (pageData == null) {
                 println("GotoPageAction: No pageData provided")
                 return null
@@ -78,7 +82,6 @@ class GotoPageProcessor : ActionProcessor<GotoPageAction>() {
             // Extract page ID from pageData
             val pageId = asSafe<String>(pageData["id"])
 
-            
             if (pageId == null) {
                 throw IllegalArgumentException("Null value for 'id' in pageData")
             }
@@ -86,10 +89,12 @@ class GotoPageProcessor : ActionProcessor<GotoPageAction>() {
             // Extract page arguments - Flutter uses 'args' field
             val evaluatedArgs = asSafe<JsonLike>(pageData["args"])
 
-
             // Evaluate navigation flags
-            val shouldRemovePreviousScreens = action.shouldRemovePreviousScreensInStack?.evaluate<Boolean>(scopeContext) ?: false
-            val routeNameToRemoveUntil = action.routeNameToRemoveUntil?.evaluate<String>(scopeContext)
+            val shouldRemovePreviousScreens =
+                    action.shouldRemovePreviousScreensInStack?.evaluate<Boolean>(scopeContext)
+                            ?: false
+            val routeNameToRemoveUntil =
+                    action.routeNameToRemoveUntil?.evaluate<String>(scopeContext)
             val waitForResult = action.waitForResult?.evaluate<Boolean>(scopeContext) ?: false
 
             println("NavigateToPageProcessor: Navigate to $pageId with args: $evaluatedArgs")
@@ -121,12 +126,14 @@ class GotoPageProcessor : ActionProcessor<GotoPageAction>() {
 
             // Handle result callback if waitForResult is true
             if (waitForResult && action.onResult != null) {
-                // Store the result callback for when navigation returns
-                // This will be handled by NavigationManager when the page pops back
+                // Store the result callback with complete execution context
+                // This preserves the state hierarchy from where the action was triggered
                 NavigationManager.registerResultCallback(
-                    pageId = pageId,
-                    onResult = action.onResult,
-                    scopeContext = scopeContext
+                        pageId = pageId,
+                        onResult = action.onResult,
+                        scopeContext = scopeContext,
+                        stateContext = stateContext,
+                        resourcesProvider = resourcesProvider
                 )
                 println("NavigateToPageProcessor: Registered result callback for $pageId")
             }

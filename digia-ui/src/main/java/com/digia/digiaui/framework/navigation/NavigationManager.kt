@@ -65,8 +65,20 @@ object NavigationManager {
     }
 
     /** Register a callback to be executed when navigation returns with a result */
-    fun registerResultCallback(pageId: String, onResult: ActionFlow, scopeContext: ScopeContext?) {
-        resultCallbacks[pageId] = ResultCallback(onResult, scopeContext)
+    fun registerResultCallback(
+            pageId: String,
+            onResult: ActionFlow,
+            scopeContext: ScopeContext?,
+            stateContext: com.digia.digiaui.framework.state.StateContext?,
+            resourcesProvider: com.digia.digiaui.framework.UIResources?
+    ) {
+        resultCallbacks[pageId] =
+                ResultCallback(
+                        onResult = onResult,
+                        scopeContext = scopeContext,
+                        stateContext = stateContext,
+                        resourcesProvider = resourcesProvider
+                )
     }
 
     /** Execute result callback if one is registered for the given page */
@@ -74,11 +86,14 @@ object NavigationManager {
         val callback = resultCallbacks.remove(pageId)
         if (callback != null) {
             // Emit an event to execute the result callback
+            // Pass all context from where the callback was registered
             _navigationEvents.tryEmit(
                     NavigationEvent.ExecuteResultCallback(
                             actionFlow = callback.onResult,
                             result = result,
-                            scopeContext = callback.scopeContext
+                            scopeContext = callback.scopeContext,
+                            stateContext = callback.stateContext,
+                            resourcesProvider = callback.resourcesProvider
                     )
             )
         }
@@ -91,7 +106,12 @@ object NavigationManager {
 }
 
 /** Result callback data */
-private data class ResultCallback(val onResult: ActionFlow, val scopeContext: ScopeContext?)
+private data class ResultCallback(
+        val onResult: ActionFlow,
+        val scopeContext: ScopeContext?,
+        val stateContext: com.digia.digiaui.framework.state.StateContext?,
+        val resourcesProvider: com.digia.digiaui.framework.UIResources?
+)
 
 /** Navigation Events */
 sealed class NavigationEvent {
@@ -108,7 +128,9 @@ sealed class NavigationEvent {
     data class ExecuteResultCallback(
             val actionFlow: ActionFlow,
             val result: Any?,
-            val scopeContext: ScopeContext?
+            val scopeContext: ScopeContext?,
+            val stateContext: com.digia.digiaui.framework.state.StateContext?,
+            val resourcesProvider: com.digia.digiaui.framework.UIResources?
     ) : NavigationEvent()
 }
 
