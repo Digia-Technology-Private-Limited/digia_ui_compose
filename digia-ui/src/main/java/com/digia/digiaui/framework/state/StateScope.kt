@@ -34,12 +34,22 @@ fun StateScope(
     // Use existing tree or create a new one
     val tree = LocalStateTree.current
 
+        // Parent is the nearest enclosing StateScope (if any)
+        val parentStateContext = LocalStateContextProvider.current
+
     // Use rememberSaveable with custom Saver to persist StateContext across navigation
     val stateContext =
             rememberSaveable(
                     inputs = arrayOf(namespace),
                     saver = stateContextSaver(tree, namespace)
             ) { StateContext(namespace = namespace, tree = tree, initialState = initialState) }
+
+    // Maintain the parent-child relationship in the shared StateTree.
+    // Required for resolving owners across scopes and for observe()/flush propagation.
+    DisposableEffect(tree, parentStateContext, stateContext) {
+        tree.attach(parentStateContext, stateContext)
+        onDispose { tree.detach(stateContext) }
+    }
 
     DisposableEffect(stateContext) { onDispose { stateContext.dispose() } }
 

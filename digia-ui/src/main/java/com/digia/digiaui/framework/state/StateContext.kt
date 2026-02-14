@@ -72,9 +72,22 @@ class StateContext(
     /* ---------------- Writes ---------------- */
 
     fun set(key: String, value: Any?, notify: Boolean = true) {
-        values[key] = value
-        if (notify) flush()
-        else dirty = true
+//       if(containsKey(key)){
+//           values.set(key, value)
+//           if (notify) flush()
+//           else dirty= true
+//           return
+//       }
+        tree.findOwner(this, key)?.let { owner ->
+            owner.values.set(key, value)
+            if (notify) owner.flushFromParent()
+            else owner.dirty = true
+        } ?: run {
+            // If key doesn't exist in the tree, set it in the current context
+            values[key] = value
+            if (notify) flush()
+            else dirty = true
+        }
     }
 
     /* ---------------- Flush ---------------- */
