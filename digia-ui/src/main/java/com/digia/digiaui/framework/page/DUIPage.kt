@@ -21,6 +21,7 @@ import com.digia.digiaui.framework.datatype.DataTypeCreator
 import com.digia.digiaui.framework.expr.DefaultScopeContext
 import com.digia.digiaui.framework.expr.ScopeContext
 import com.digia.digiaui.framework.models.PageDefinition
+import com.digia.digiaui.framework.navigation.NavigationManager
 import com.digia.digiaui.framework.state.LocalStateTree
 import com.digia.digiaui.framework.state.StateContext
 import com.digia.digiaui.framework.state.StateScope
@@ -90,6 +91,42 @@ fun DUIPage(
         val renderPayload = RenderPayload(scopeContext = scopeContext)
 
         /* ----------------------------------------
+         * RESULT CALLBACK EXECUTION
+         * Runs AFTER pop, inside the returning page's composition, using the LIVE StateContext.
+         * ---------------------------------------- */
+        LaunchedEffect(pageId) {
+            val pending = NavigationManager.consumePendingCallback(pageId) ?: return@LaunchedEffect
+            val (lookupPageId, result) = pending
+
+            // Lookup callback using the popped page's ID (where it was registered)
+            val callback =
+                    NavigationManager.getResultCallback(lookupPageId) ?: return@LaunchedEffect
+            NavigationManager.removeResultCallback(lookupPageId)
+
+            try {
+                // Run using the RETURNING page's LIVE scope context + state context.
+                // This ensures SetStateAction updates the state instance driving this UI.
+                val resultScopeContext =
+                        DefaultScopeContext(
+                                variables = mapOf("result" to result),
+                                enclosing = scopeContext
+                        )
+
+                actionContext.execute(
+                        context = context,
+                        actionFlow = callback.onResult,
+                        scopeContext = resultScopeContext,
+                        stateContext = stateContext,
+                        resourcesProvider = resources,
+                        scope = this
+                )
+            } catch (e: Exception) {
+                println("Error executing result callback: ${e.message}")
+                e.printStackTrace()
+            }
+        }
+
+        /* ----------------------------------------
          * ON PAGE LOAD (runs once)
          * ---------------------------------------- */
         // Use rememberSaveable to track if page has loaded - persists across navigation
@@ -100,15 +137,14 @@ fun DUIPage(
                 didLoad.value = true
                 pageDef.onPageLoad?.let { actionFlow ->
                     try {
-                        val executor =
-                                actionContext.execute(
-                                        context = context,
-                                        actionFlow = actionFlow,
-                                        scopeContext = scopeContext,
-                                        stateContext = stateContext,
-                                        resourcesProvider = resources,
-                                        scope = this
-                                )
+                        actionContext.execute(
+                                context = context,
+                                actionFlow = actionFlow,
+                                scopeContext = scopeContext,
+                                stateContext = stateContext,
+                                resourcesProvider = resources,
+                                scope = this
+                        )
                     } catch (e: Exception) {
                         e.printStackTrace()
                     }
@@ -123,15 +159,14 @@ fun DUIPage(
             pageDef.onBackPress?.let { actionFlow ->
                 scope.launch {
                     try {
-                        val executor =
-                                actionContext.execute(
-                                        context = context,
-                                        actionFlow = actionFlow,
-                                        scopeContext = scopeContext,
-                                        stateContext = stateContext,
-                                        resourcesProvider = resources,
-                                        scope = this
-                                )
+                        actionContext.execute(
+                                context = context,
+                                actionFlow = actionFlow,
+                                scopeContext = scopeContext,
+                                stateContext = stateContext,
+                                resourcesProvider = resources,
+                                scope = this
+                        )
                     } catch (e: Exception) {
                         e.printStackTrace()
                     }

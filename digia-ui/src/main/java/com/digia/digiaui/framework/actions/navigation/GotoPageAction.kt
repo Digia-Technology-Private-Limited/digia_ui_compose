@@ -126,14 +126,10 @@ class GotoPageProcessor : ActionProcessor<GotoPageAction>() {
 
             // Handle result callback if waitForResult is true
             if (waitForResult && action.onResult != null) {
-                // Store the result callback with complete execution context
-                // This preserves the state hierarchy from where the action was triggered
                 NavigationManager.registerResultCallback(
                         pageId = pageId,
                         onResult = action.onResult,
-                        scopeContext = scopeContext,
-                        stateContext = stateContext,
-                        resourcesProvider = resourcesProvider
+                        executingNamespace = stateContext?.namespace
                 )
                 println("NavigateToPageProcessor: Registered result callback for $pageId")
             }
