@@ -34,8 +34,8 @@ fun StateScope(
     // Use existing tree or create a new one
     val tree = LocalStateTree.current
 
-        // Parent is the nearest enclosing StateScope (if any)
-        val parentStateContext = LocalStateContextProvider.current
+    // Parent is the nearest enclosing StateScope (if any)
+    val parentStateContext = LocalStateContextProvider.current
 
     // Use rememberSaveable with custom Saver to persist StateContext across navigation
     val stateContext =
