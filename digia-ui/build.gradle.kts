@@ -112,8 +112,10 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.6.2")
 
-    // Navigation
-    implementation("androidx.navigation:navigation-compose:2.8.0")
+    // Navigation - Voyager
+    implementation("cafe.adriel.voyager:voyager-navigator:1.0.0")
+    implementation("cafe.adriel.voyager:voyager-screenmodel:1.0.0")
+    implementation("cafe.adriel.voyager:voyager-transitions:1.0.0")
     
     // Kotlin Serialization
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
