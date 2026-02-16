@@ -122,8 +122,7 @@ private fun DigiaUINavigationContent(
                 configProvider = factory.getConfigProvider(),
                 startPageId = startPageId ?: factory.getConfigProvider().getInitialRoute(),
                 startPageArgs = pageArgs,
-                registry = factory.getWidgetRegistry(),
-                onNavigationComplete = onNavigationComplete
+                registry = factory.getWidgetRegistry()
             )
         }
     }

@@ -79,20 +79,22 @@ fun DUINavHost(
                     }
                 }
                 is NavigationEvent.Pop -> {
-                    if (navController.previousBackStackEntry != null || !event.maybe) {
-                        // Get the previous route for result callback
-                        val previousRoute = navController.previousBackStackEntry?.destination?.route
+                    val canPop = navController.previousBackStackEntry != null
+                    if (canPop || !event.maybe) {
+                        val poppedRoute = navController.currentBackStackEntry?.destination?.route
+                        val poppedPageId = poppedRoute?.let { extractPageIdFromRoute(it) }
 
-                        // Pop the stack
                         val popped = navController.popBackStack()
 
-                        // Execute result callback if registered and pop was successful
-                        if (popped && previousRoute != null && event.result != null) {
-                            // Extract page ID from previousRoute
-                            val pageId = extractPageIdFromRoute(previousRoute)
-                            if (pageId != null) {
-                                NavigationManager.executeResultCallback(pageId, event.result)
-                            }
+                        val returningRoute = navController.currentBackStackEntry?.destination?.route
+                        val returningPageId = returningRoute?.let { extractPageIdFromRoute(it) }
+
+                        if (popped && poppedPageId != null && returningPageId != null && event.result != null) {
+                            NavigationManager.queuePendingCallback(
+                                returningPageId = returningPageId,
+                                lookupPageId = poppedPageId,
+                                result = event.result
+                            )
                         }
                     }
                 }

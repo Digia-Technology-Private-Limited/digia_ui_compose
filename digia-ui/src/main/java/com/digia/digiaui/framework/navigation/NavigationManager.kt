@@ -26,6 +26,10 @@ object NavigationManager {
     // Store result callbacks for pages that wait for results
     private val resultCallbacks = mutableMapOf<String, ResultCallback>()
 
+    // Pending callbacks keyed by the RETURNING page id.
+    // Value contains (lookupPageId, result) where lookupPageId is the POPPED page id.
+    private val pendingCallbacks = mutableMapOf<String, Pair<String, Any?>>()
+
     /** Request navigation to a specific page */
     fun navigate(pageId: String, args: Map<String, Any?>? = null, replace: Boolean = false) {
         val route = PageRoute(pageId)
@@ -69,29 +73,52 @@ object NavigationManager {
         resultCallbacks[pageId] = ResultCallback(onResult, scopeContext)
     }
 
-    /** Execute result callback if one is registered for the given page */
+    /** Get a registered result callback for a page (if any). */
+    fun getResultCallback(pageId: String): ResultCallback? = resultCallbacks[pageId]
+
+    /** Remove a registered result callback for a page (if any). */
+    fun removeResultCallback(pageId: String) {
+        resultCallbacks.remove(pageId)
+    }
+
+    /**
+     * Queue a result for the returning page to consume and execute.
+     *
+     * @param returningPageId Page that becomes visible after pop (the executor)
+     * @param lookupPageId Page that was popped (where callback was registered)
+     */
+    fun queuePendingCallback(returningPageId: String, lookupPageId: String, result: Any?) {
+        pendingCallbacks[returningPageId] = lookupPageId to result
+    }
+
+    /**
+     * Consume (single-use) a pending callback for the given returning page.
+     * Returns a pair of (lookupPageId, result).
+     */
+    fun consumePendingCallback(returningPageId: String): Pair<String, Any?>? {
+        return pendingCallbacks.remove(returningPageId)
+    }
+
+    /**
+     * Legacy helper retained for compatibility.
+     *
+     * In the current navigation implementation, callbacks are executed inside the returning
+     * page's composition (see DUIPage/StateContainer) via [consumePendingCallback].
+     */
     fun executeResultCallback(pageId: String, result: Any?) {
-        val callback = resultCallbacks.remove(pageId)
-        if (callback != null) {
-            // Emit an event to execute the result callback
-            _navigationEvents.tryEmit(
-                    NavigationEvent.ExecuteResultCallback(
-                            actionFlow = callback.onResult,
-                            result = result,
-                            scopeContext = callback.scopeContext
-                    )
-            )
-        }
+        // Deprecated flow-based execution path intentionally no-ops.
+        // Callers should use queuePendingCallback(returningPageId, lookupPageId, result).
     }
 
     /** Clear all registered result callbacks */
     fun clearResultCallbacks() {
         resultCallbacks.clear()
+        pendingCallbacks.clear()
     }
 }
 
-/** Result callback data */
-private data class ResultCallback(val onResult: ActionFlow, val scopeContext: ScopeContext?)
+/** Result callback data (exposed for DUIPage / StateContainer execution). */
+data class ResultCallback(val onResult: ActionFlow, val scopeContext: ScopeContext?)
 
 /** Navigation Events */
 sealed class NavigationEvent {

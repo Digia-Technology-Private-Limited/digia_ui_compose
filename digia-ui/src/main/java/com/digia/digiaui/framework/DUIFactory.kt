@@ -314,8 +314,6 @@ class DUIFactory private constructor() {
     ) {
         checkInitialized()
 
-        // Get context from composition - abstracted from user
-        val context = androidx.compose.ui.platform.LocalContext.current
 
         // Launch SDK Activity with navigation
         androidx.compose.runtime.LaunchedEffect(Unit) {
