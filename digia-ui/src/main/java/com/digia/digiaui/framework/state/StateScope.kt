@@ -16,20 +16,27 @@ fun StateScope(
 ) {
     // Use existing tree or create a new one
     val tree = LocalStateTree.current
-    val state=LocalStateContextProvider.current?.Version()
+    val parentContext = LocalStateContextProvider.current
 
-
-    val stateContext = remember {
-        StateContext(
-            namespace = namespace,
-            tree = tree,
-            initialState = initialState
-        )
+    // Check if StateContext already exists for this namespace
+    val stateContext = remember(namespace) {
+        val existing = namespace?.let { tree.getByNamespace(it) }
+        if (existing != null) {
+            existing
+        } else {
+            val newContext = StateContext(
+                namespace = namespace,
+                tree = tree,
+                initialState = initialState
+            )
+            // Attach to tree with parent
+            tree.attach(parentContext, newContext)
+            newContext
+        }
     }
 
-    DisposableEffect(stateContext) {
-        onDispose { stateContext.dispose() }
-    }
+    // Don't dispose on navigation - let the StateTree persist for back navigation
+    // StateContext will be cleaned up when the StateTree itself is removed
 
     CompositionLocalProvider(
         LocalStateContextProvider provides stateContext,

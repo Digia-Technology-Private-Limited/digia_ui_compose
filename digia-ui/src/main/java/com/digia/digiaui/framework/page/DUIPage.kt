@@ -4,6 +4,7 @@ import LocalUIResources
 import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -20,6 +21,8 @@ import com.digia.digiaui.framework.datatype.DataTypeCreator
 import com.digia.digiaui.framework.expr.DefaultScopeContext
 import com.digia.digiaui.framework.expr.ScopeContext
 import com.digia.digiaui.framework.models.PageDefinition
+import com.digia.digiaui.framework.navigation.LocalCurrentScreenConfig
+import com.digia.digiaui.framework.navigation.LocalDUIRootComponent
 import com.digia.digiaui.framework.state.LocalStateTree
 import com.digia.digiaui.framework.state.StateContext
 import com.digia.digiaui.framework.state.StateScope
@@ -34,7 +37,8 @@ fun DUIPage(
     pageId: String,
     pageArgs: Map<String, Any?>?,
     pageDef: PageDefinition,
-    registry: VirtualWidgetRegistry
+    registry: VirtualWidgetRegistry,
+    stateTree: StateTree
 ) {
 
     val appStateContext = remember {
@@ -69,8 +73,9 @@ fun DUIPage(
 
     val didLoad = remember { mutableStateOf(false) }
 
-
-    RootStateTreeProvider {
+    CompositionLocalProvider(
+        LocalStateTree provides stateTree
+    ) {
         StateScope(
             namespace = pageId,
             initialState = resolvedState
@@ -147,19 +152,6 @@ fun DUIPage(
             )
 
         }
-    }
-}
-
-
-
-@Composable
-fun RootStateTreeProvider(content: @Composable () -> Unit) {
-    val tree = remember { StateTree() } // single tree for entire app/session
-
-    CompositionLocalProvider(
-        LocalStateTree provides tree
-    ) {
-        content()
     }
 
     DUISnackbarHost()

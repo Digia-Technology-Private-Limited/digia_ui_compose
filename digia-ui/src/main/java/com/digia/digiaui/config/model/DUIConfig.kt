@@ -40,7 +40,8 @@ data class DUIConfig(
         @SerializedName("version") val version: Int? = null,
         @SerializedName("versionUpdated") val versionUpdated: Boolean? = null,
         @SerializedName("functionsFilePath") val functionsFilePath: String? = null,
-        @SerializedName("environment") private val _environment: Map<String, Any>? = null
+        @SerializedName("environment") private val _environment: Map<String, Any>? = null,
+        @SerializedName("appAssets") val appAssets: List<Any>? = null
 ) {
     /** The initial route/page ID to display when the app starts */
     val initialRoute: String

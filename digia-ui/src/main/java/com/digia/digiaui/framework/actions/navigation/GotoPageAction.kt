@@ -126,7 +126,8 @@ class GotoPageProcessor : ActionProcessor<GotoPageAction>() {
                 NavigationManager.registerResultCallback(
                     pageId = pageId,
                     onResult = action.onResult,
-                    scopeContext = scopeContext
+                    scopeContext = scopeContext,
+                    stateContext=stateContext,
                 )
                 println("NavigateToPageProcessor: Registered result callback for $pageId")
             }

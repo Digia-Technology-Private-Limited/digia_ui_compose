@@ -3,6 +3,7 @@ package com.digia.digiaui.network
 import android.content.Context
 import android.os.Build
 import com.digia.digiaui.utils.DeveloperConfig
+import com.digia.digiaui.utils.HostApp
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonDeserializationContext
@@ -347,21 +348,25 @@ class NetworkClient(
                 appVersion: String,
                 appBuildNumber: String,
                 environment: String,
-                buildSignature: String
+                buildSignature: String,
+                host: HostApp?
         ): Map<String, String> {
             val headers =
                     mutableMapOf(
-//                            "x-digia-version" to packageVersion,
+                            "x-digia-version" to packageVersion,
                             "x-digia-project-id" to accessKey,
-//                            "x-digia-platform" to platform,
-//                            "x-app-package-name" to packageName,
-//                            "x-app-version" to appVersion,
-//                            "x-app-build-number" to appBuildNumber,
+                            "x-digia-platform" to platform,
+                            "x-app-package-name" to packageName,
+                            "x-app-version" to appVersion,
+                            "x-app-build-number" to appBuildNumber,
                             "x-digia-environment" to environment
                     )
-//            uuid?.let { headers["x-digia-device-id"] = it }
+            uuid?.let { headers["x-digia-device-id"] = it }
             if (buildSignature.isNotEmpty()) {
-//                headers["x-app-signature"] = buildSignature
+                headers["x-app-signature"] = buildSignature
+            }
+            if(host!=null) {
+                headers["x-digia-host"] = host.name
             }
             return headers
         }

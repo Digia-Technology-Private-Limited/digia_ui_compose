@@ -3,6 +3,7 @@ plugins {
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose") version "2.1.0"
     id("org.jetbrains.kotlin.plugin.serialization")
+    id("org.jetbrains.kotlin.plugin.parcelize")
     id("maven-publish")
 }
 
@@ -112,8 +113,9 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.6.2")
 
-    // Navigation
-    implementation("androidx.navigation:navigation-compose:2.8.0")
+    // Navigation - Decompose
+    implementation("com.arkivanov.decompose:decompose:2.2.2")
+    implementation("com.arkivanov.decompose:extensions-compose-jetbrains:2.2.2")
     
     // Kotlin Serialization
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")

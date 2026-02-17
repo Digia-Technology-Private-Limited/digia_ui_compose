@@ -1,346 +1,296 @@
 package com.digia.digiaui.framework.navigation
 
-import androidx.activity.compose.BackHandler
-import androidx.compose.animation.core.animateDp
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.core.updateTransition
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
+import LocalUIResources
+import android.os.Bundle
+import android.os.Parcelable
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.zIndex
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.arkivanov.decompose.ComponentContext
+import com.arkivanov.decompose.DefaultComponentContext
+import com.arkivanov.decompose.extensions.compose.jetbrains.stack.Children
+import com.arkivanov.decompose.extensions.compose.jetbrains.stack.animation.fade
+import com.arkivanov.decompose.extensions.compose.jetbrains.stack.animation.stackAnimation
+import com.arkivanov.decompose.extensions.compose.jetbrains.subscribeAsState
+import com.arkivanov.decompose.router.stack.ChildStack
+import com.arkivanov.decompose.router.stack.StackNavigation
+import com.arkivanov.decompose.router.stack.childStack
+import com.arkivanov.decompose.router.stack.pop
+import com.arkivanov.decompose.router.stack.popTo
+import com.arkivanov.decompose.router.stack.push
+import com.arkivanov.decompose.router.stack.replaceCurrent
+import com.arkivanov.decompose.value.Value
+import com.arkivanov.essenty.lifecycle.LifecycleRegistry
 import com.digia.digiaui.framework.VirtualWidgetRegistry
+import com.digia.digiaui.framework.actions.LocalActionExecutor
 import com.digia.digiaui.framework.page.ConfigProvider
 import com.digia.digiaui.framework.page.DUIPage
+import com.digia.digiaui.framework.state.StateTree
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
+import kotlinx.parcelize.Parcelize
+import kotlinx.serialization.builtins.serializer
 import java.util.UUID
 
-//
-//import androidx.compose.runtime.Composable
-//import androidx.compose.runtime.CompositionLocalProvider
-//import androidx.compose.runtime.LaunchedEffect
-//import androidx.compose.runtime.remember
-//import androidx.navigation.NavHostController
-////import androidx.navigation.compose.NavHost
-////import androidx.navigation.compose.composable
-////import androidx.navigation.compose.rememberNavController
-//import androidx.navigation.toRoute
-//import com.digia.digiaui.config.model.DUIConfig
-//import com.digia.digiaui.framework.VirtualWidgetRegistry
-//import com.digia.digiaui.framework.page.ConfigProvider
-//import com.digia.digiaui.framework.page.DUIPage
-//import kotlinx.coroutines.flow.collectLatest
-//
-///**
-// * DUINavHost
-// *
-// * Navigation host component for the Digia UI framework.
-// * Manages page navigation and routing based on the DUIConfig.
-// * Uses a single route pattern with page ID as parameter for efficiency.
-// *
-// * @param configProvider The configuration provider containing page definitions
-// * @param startPageId The initial page to display
-// * @param registry The widget registry for creating widgets
-// * @param navController Optional custom NavController (creates one if not provided)
-// */
-//@Composable
-//fun DUINavHost(
-//    configProvider: ConfigProvider,
-//    startPageId: String,
-//    registry: VirtualWidgetRegistry,
-//    navController: NavHostController = rememberNavController()
-//) {
-//    // Listen to navigation events from NavigationManager
-//    LaunchedEffect(navController) {
-//        NavigationManager.navigationEvents.collectLatest { event ->
-//            when (event) {
-//                is NavigationEvent.Navigate -> {
-//                    // Navigate using type-safe route
-//                    // Arguments are already stored in NavigationManager
-//                    if (event.replace) {
-//                        navController.navigate(event.route) {
-//                            // Pop up to the previous destination
-//                            popUpTo(navController.currentDestination?.route ?: PageRoute(startPageId)) {
-//                                inclusive = true
-//                                saveState = true        // Save current state
-//                            }
-//                        }
-//                    } else {
-//                        navController.navigate(event.route)
-//                    }
-//                }
-//                is NavigationEvent.Pop -> {
-//                    if (navController.previousBackStackEntry != null) {
-//                        // Get the previous route to execute result callback
-//                        val previousRoute = navController.previousBackStackEntry?.destination?.route
-//
-//                        // Pop the stack
-//                        navController.popBackStack()
-//
-//                        // Execute result callback if registered
-//                        if (previousRoute != null && event.result != null) {
-//                            NavigationManager.executeResultCallback(previousRoute, event.result)
-//                        }
-//                    }
-//                }
-//                is NavigationEvent.PopTo -> {
-//                    navController.popBackStack(
-//                        route = event.route,
-//                        inclusive = event.inclusive
-//                    )
-//                }
-//                is NavigationEvent.ExecuteResultCallback -> {
-//                    // Execute the result callback action flow
-//                    // This would require ActionExecutor to be available in this context
-//                    // For now, just log it
-//                    println("DUINavHost: Would execute result callback with result: ${event.result}")
-//                    // TODO: Execute event.actionFlow with result in scope context
-//                    // This requires access to ActionExecutor which should be provided through composition
-//                }
-//            }
-//        }
-//    }
-//
-//    // Provide NavController to composition tree
-//    CompositionLocalProvider(LocalNavController provides navController) {
-//        NavHost(
-//            navController = navController,
-//            startDestination = PageRoute(startPageId)
-//        ) {
-//            // Register a single type-safe route pattern that handles ALL pages
-//            composable<PageRoute> { backStackEntry ->
-//                // Extract the actual page ID from the type-safe route
-//                val route = backStackEntry.toRoute<PageRoute>()
-//                val pageId = route.pageId
-//
-//                // Get page arguments from NavigationManager only once (single-use data)
-//                // Cache with remember so it survives recompositions
-//                val pageArgs =
-//                    NavigationManager.getPageArgs(pageId)
-//
-//                val page = configProvider.getPageDefinition(pageId)
-//
-//                // All pages render through the same DUIPage composable
-//                DUIPage(
-//                    pageId = pageId,
-//                    pageArgs = pageArgs,
-//                    pageDef = page,
-//                    registry = registry
-//                )
-//            }
-//        }
-//    }
-//}
+/**
+ * Navigation Configuration - Represents screens in the navigation stack
+ * 
+ * Decompose uses Parcelable configurations for state preservation across process death.
+ * Args are stored separately in memory since Map<String, Any?> is not Parcelable.
+ */
+@Parcelize data class ScreenConfig( val pageId: String, val timestamp: Long = System.currentTimeMillis() ) : Parcelable
 
+/**
+ * DUI Root Component - Manages navigation stack using Decompose
+ *
+ * This component holds the navigation logic and state for the entire app.
+ * Decompose automatically preserves state and handles lifecycle.
+ */
+class DUIRootComponent(
+    componentContext: ComponentContext,
+    initialPageId: String,
+    initialArgs: Map<String, Any?>? = null
+) : ComponentContext by componentContext {
 
-@Stable
-data class DUIPageEntry(
-    val pageId: String,
-    val args: Map<String, Any?>?,
-    val key: String = UUID.randomUUID().toString()
-)
+    private val navigation = StackNavigation<ScreenConfig>()
+    private val argsStore = mutableMapOf<String, Map<String, Any?>?>()
+    private val stateTreeStore = mutableMapOf<String, StateTree>()
+    
+    val childStack =
+        childStack(
+            source = navigation,
+//            serializer = ScreenConfig.serializer(),
+            initialConfiguration = ScreenConfig(pageId = initialPageId).also { argsStore[it.pageId + "_" + it.timestamp] = initialArgs },
+            handleBackButton = true,
+            childFactory = ::createChild
+        )
 
+    private fun createChild( config: ScreenConfig, componentContext: ComponentContext ): ScreenChild { val argsKey = config.pageId + "_" + config.timestamp
+        return ScreenChild( pageId = config.pageId, args = argsStore[argsKey], componentContext = componentContext ) }
 
-@Stable
-class DUINavState {
-
-    private val _stack = mutableStateListOf<DUIPageEntry>()
-    val stack: List<DUIPageEntry> get() = _stack
-
-    fun push(page: DUIPageEntry) {
-        _stack.add(page)
+    fun navigate(pageId: String, args: Map<String, Any?>?, replace: Boolean) {
+        val config = ScreenConfig(pageId = pageId)
+        val argsKey = config.pageId + "_" + config.timestamp
+        if (args != null) { argsStore[argsKey] = args }
+        if (replace) navigation.replaceCurrent(config)
+        else navigation.push(config)
     }
 
-    fun replace(page: DUIPageEntry) {
-        if (_stack.isNotEmpty()) _stack.removeLast()
-        _stack.add(page)
+    fun pop(result: Any?) {
+        val active = childStack.value.active.instance
+        if (result != null) {
+            NavigationManager.executeResultCallback(active.pageId, result)
+        }
+        navigation.pop()
     }
-
-    fun pop(): DUIPageEntry? {
-        if (_stack.size <= 1) return null
-        return _stack.removeLast()
-    }
-
-    fun canPop() = _stack.size > 1
 
     fun popTo(pageId: String, inclusive: Boolean) {
-        val index = _stack.indexOfLast { it.pageId == pageId }
-        if (index == -1) return
-
-        val target = if (inclusive) index else index + 1
-        while (_stack.size > target) {
-            _stack.removeLast()
+        val stack = childStack.value.items
+        val target = stack.lastOrNull { it.configuration.pageId == pageId }
+        if (target != null) {
+//            navigation.popTo(target.configuration)
+            if (inclusive) navigation.pop()
         }
     }
-}
 
+    val canPop get() = childStack.value.items.size > 1
 
-class DUINavController internal constructor(
-    private val state: DUINavState
-) {
-
-    fun navigate(
-        pageId: String,
-        args: Map<String, Any?>? = null,
-        replace: Boolean = false
-    ) {
-        val entry = DUIPageEntry(pageId, args)
-        if (replace) state.replace(entry)
-        else state.push(entry)
+    fun getOrCreateStateTree(pageId: String, timestamp: Long): StateTree {
+        val key = pageId + "_" + timestamp
+        return stateTreeStore.getOrPut(key) { StateTree() }
     }
 
+
+    data class ScreenChild(
+        val pageId: String,
+        val args: Map<String, Any?>?,
+        val componentContext: ComponentContext
+    )
+}
+
+/**
+ * DUINavController - Wrapper for compatibility with existing code
+ */
+class DUINavController(private val rootComponent: DUIRootComponent) {
+    
+    fun navigate(pageId: String, args: Map<String, Any?>? = null, replace: Boolean = false) {
+        rootComponent.navigate(pageId, args, replace)
+    }
+    
     fun pop(result: Any? = null, maybe: Boolean = true) {
-        if (!maybe || state.canPop()) {
-            val popped = state.pop()
-            if (popped != null && result != null) {
-                NavigationManager.executeResultCallback(popped.pageId, result)
-            }
+        if (!maybe || rootComponent.canPop) {
+            rootComponent.pop(result)
         }
     }
-
+    
     fun popTo(pageId: String, inclusive: Boolean = false) {
-        state.popTo(pageId, inclusive)
+        rootComponent.popTo(pageId, inclusive)
     }
+    
+    val canPop: Boolean
+        get() = rootComponent.canPop
 }
 
+/** CompositionLocal providers */
+val LocalDUINavController = staticCompositionLocalOf<DUINavController> { 
+    error("DUINavController not provided") 
+}
 
-val LocalDUINavController =
-    staticCompositionLocalOf<DUINavController> {
-        error("DUINavController not provided")
-    }
+val LocalDUIConfigProvider = staticCompositionLocalOf<ConfigProvider> { 
+    error("ConfigProvider not provided") 
+}
 
+val LocalDUIRegistry = staticCompositionLocalOf<VirtualWidgetRegistry> { 
+    error("VirtualWidgetRegistry not provided") 
+}
 
+val LocalDUIRootComponent = staticCompositionLocalOf<DUIRootComponent?> { 
+    null
+}
+
+val LocalCurrentScreenConfig = staticCompositionLocalOf<ScreenConfig?> { 
+    null
+}
+
+/**
+ * DUINavHost - Main navigation host using Decompose
+ *
+ * Sets up Decompose's component-based navigation with automatic state preservation.
+ *
+ * @param configProvider Configuration provider for page definitions
+ * @param startPageId Initial page to display
+ * @param startPageArgs Optional arguments for the start page
+ * @param registry Widget registry for rendering UI components
+ */
 @Composable
 fun DUINavHost(
     configProvider: ConfigProvider,
     startPageId: String,
-    startPageArgs: Map<String, Any?>? = null,
+    startPageArgs: Map<String, Any?>?,
     registry: VirtualWidgetRegistry
 ) {
-    val navState = remember {
-        DUINavState().apply {
-            push(DUIPageEntry(startPageId, startPageArgs))
-        }
+    val rootComponent =
+        rememberDUIRootComponent(startPageId, startPageArgs)
+
+    val actionExecutor = LocalActionExecutor.current
+    val context = LocalContext.current
+    val resource= LocalUIResources.current
+
+    val navController = remember(rootComponent) {
+        DUINavController(rootComponent)
     }
 
-    val navController = remember {
-        DUINavController(navState)
-    }
-
-    // Bridge NavigationManager → Nav3
     LaunchedEffect(Unit) {
         NavigationManager.navigationEvents.collect { event ->
             when (event) {
-                is NavigationEvent.Navigate -> {
+                is NavigationEvent.Navigate ->
                     navController.navigate(
-                        pageId = event.route.pageId,
-                        args = event.args,
-                        replace = event.replace
+                        event.route.pageId,
+                        event.args,
+                        event.replace
                     )
-                }
 
-                is NavigationEvent.Pop -> {
+                is NavigationEvent.Pop ->
                     navController.pop(event.result, event.maybe)
-                }
 
-                is NavigationEvent.PopTo -> {
+                is NavigationEvent.PopTo ->
                     navController.popTo(
                         event.route.pageId,
                         event.inclusive
                     )
-                }
 
                 is NavigationEvent.ExecuteResultCallback -> {
-                    // handled via pop()
+
+                    actionExecutor.execute(context, event.actionFlow, event.scopeContext, event.stateContext, resource)
                 }
+
+                else -> {}
             }
         }
     }
 
     CompositionLocalProvider(
-        LocalDUINavController provides navController
+        LocalDUINavController provides navController,
+        LocalDUIConfigProvider provides configProvider,
+        LocalDUIRegistry provides registry,
+        LocalDUIRootComponent provides rootComponent
     ) {
-        navState.stack.forEachIndexed { index, entry ->
-            val isTop = index == navState.stack.lastIndex
+        DUIDecomposeContent(rootComponent)
+    }
+}
 
-            key(entry.key) {
+@Composable
+private fun DUIDecomposeContent(root: DUIRootComponent) {
+    val configProvider = LocalDUIConfigProvider.current
+    val registry = LocalDUIRegistry.current
 
-                val transition = updateTransition(
-                    targetState = isTop,
-                    label = "pageTransition"
-                )
+    Children(
+        stack = root.childStack,
+        animation = stackAnimation(fade())
+    ) { child ->
+        val instance = child.instance
+        val screenConfig = child.configuration
 
-                val alpha by transition.animateFloat(
-                    label = "alpha",
-                    transitionSpec = { tween(durationMillis = 250) }
-                ) { visible ->
-                    if (visible) 1f else 0f
-                }
-
-                val translation by transition.animateDp(
-                    label = "translationX",
-                    transitionSpec = { tween(durationMillis = 250) }
-                ) { visible ->
-                    if (visible) 0.dp else 32.dp
-                }
-
-                Box(
-                    Modifier
-                        .fillMaxSize()
-                        .zIndex(if (isTop) 1f else 0f)
-                        .graphicsLayer {
-                            this.alpha = alpha
-                            translationX = translation.toPx()
-                        }
-                        .pointerInput(isTop) {
-                            if (!isTop) {
-                                awaitPointerEventScope {
-                                    while (true) awaitPointerEvent()
-                                }
-                            }
-                        }
-                ) {
-                    RenderDUIPage(
-                        entry = entry,
-                        configProvider = configProvider,
-                        registry = registry
-                    )
-                }
-            }
+        val pageDef = remember(instance.pageId) {
+            configProvider.getPageDefinition(instance.pageId)
         }
 
+        val stateTree = remember(screenConfig.pageId, screenConfig.timestamp) {
+            root.getOrCreateStateTree(screenConfig.pageId, screenConfig.timestamp)
+        }
 
-        BackHandler(enabled = true) {
-            navController.pop()
+        CompositionLocalProvider(
+            LocalCurrentScreenConfig provides screenConfig
+        ) {
+            DUIPage(
+                pageId = instance.pageId,
+                pageArgs = instance.args,
+                pageDef = pageDef,
+                registry = registry,
+                stateTree = stateTree
+            )
         }
     }
 }
 
 @Composable
-private fun RenderDUIPage(
-    entry: DUIPageEntry,
-    configProvider: ConfigProvider,
-    registry: VirtualWidgetRegistry
-) {
-    val pageDef = remember(entry.pageId) {
-        configProvider.getPageDefinition(entry.pageId)
-    }
+fun rememberDUIRootComponent(
+    startPageId: String,
+    startArgs: Map<String, Any?>?
+): DUIRootComponent {
 
-    DUIPage(
-        pageId = entry.pageId,
-        pageArgs = entry.args,
-        pageDef = pageDef,
-        registry = registry
-    )
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    return remember {
+        val lifecycle = LifecycleRegistry()
+
+        lifecycleOwner.lifecycle.addObserver(
+            LifecycleEventObserver { _, event ->
+                when (event) {
+                    Lifecycle.Event.ON_CREATE -> lifecycle.onCreate()
+                    Lifecycle.Event.ON_START -> lifecycle.onStart()
+                    Lifecycle.Event.ON_RESUME -> lifecycle.onResume()
+                    Lifecycle.Event.ON_PAUSE -> lifecycle.onPause()
+                    Lifecycle.Event.ON_STOP -> lifecycle.onStop()
+                    Lifecycle.Event.ON_DESTROY -> lifecycle.onDestroy()
+                    else -> {}
+                }
+            }
+        )
+
+        DUIRootComponent(
+            DefaultComponentContext(lifecycle = lifecycle),
+            startPageId,
+            startArgs
+        )
+    }
 }
