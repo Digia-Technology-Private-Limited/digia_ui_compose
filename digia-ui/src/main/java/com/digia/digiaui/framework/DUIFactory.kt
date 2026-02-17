@@ -2,6 +2,7 @@ package com.digia.digiaui.framework
 
 import ResourceProvider
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -16,6 +17,7 @@ import com.digia.digiaui.framework.models.PageDefinition
 import com.digia.digiaui.framework.page.ConfigProvider
 import com.digia.digiaui.framework.page.DUIConfigProvider
 import com.digia.digiaui.framework.page.DUIPage
+import com.digia.digiaui.framework.state.StateTree
 import com.digia.digiaui.framework.utils.asSafe
 import com.digia.digiaui.framework.widgets.registerBuiltInWidgets
 import com.digia.digiaui.init.DigiaUIManager
@@ -205,11 +207,14 @@ class DUIFactory private constructor() {
         ){
 
             ResourceProvider(mergedResources, apiModels = configProvider.getAllApiModels()) {
+                val stateTree = remember { StateTree() }
+                
                 DUIPage(
                     pageId = pageId,
                     pageArgs = pageArgs,
                     pageDef = pageDef,
                     registry = widgetRegistry,
+                    stateTree = stateTree
 //                resources = mergedResources
                 )
             }

@@ -2,6 +2,7 @@ package com.digia.digiaui.framework.navigation
 
 import com.digia.digiaui.framework.actions.base.ActionFlow
 import com.digia.digiaui.framework.expr.ScopeContext
+import com.digia.digiaui.framework.state.StateContext
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -76,9 +77,10 @@ object NavigationManager {
     fun registerResultCallback(
         pageId: String,
         onResult: ActionFlow,
-        scopeContext: ScopeContext?
+        scopeContext: ScopeContext?,
+        stateContext: StateContext?,
     ) {
-        resultCallbacks[pageId] = ResultCallback(onResult, scopeContext)
+        resultCallbacks[pageId] = ResultCallback(onResult, scopeContext,stateContext)
     }
 
     /**
@@ -92,7 +94,8 @@ object NavigationManager {
                 NavigationEvent.ExecuteResultCallback(
                     actionFlow = callback.onResult,
                     result = result,
-                    scopeContext = callback.scopeContext
+                    scopeContext = callback.scopeContext,
+                    stateContext = callback.stateContext
                 )
             )
         }
@@ -111,7 +114,8 @@ object NavigationManager {
  */
 private data class ResultCallback(
     val onResult: ActionFlow,
-    val scopeContext: ScopeContext?
+    val scopeContext: ScopeContext?,
+    val stateContext: StateContext?
 )
 
 /**
@@ -134,7 +138,8 @@ sealed class NavigationEvent {
     data class ExecuteResultCallback(
         val actionFlow: ActionFlow,
         val result: Any?,
-        val scopeContext: ScopeContext?
+        val scopeContext: ScopeContext?,
+        val stateContext: StateContext?
     ) : NavigationEvent()
 }
 

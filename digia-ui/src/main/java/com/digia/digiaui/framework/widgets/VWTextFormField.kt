@@ -14,6 +14,7 @@ import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
@@ -70,10 +71,10 @@ class Debouncer(private val delayMillis: Long, private val scope: CoroutineScope
     fun call(action: () -> Unit) {
         job?.cancel()
         job =
-                scope.launch {
-                    delay(delayMillis)
-                    action()
-                }
+            scope.launch {
+                delay(delayMillis)
+                action()
+            }
     }
 
     fun cancel() {
@@ -85,17 +86,19 @@ class Debouncer(private val delayMillis: Long, private val scope: CoroutineScope
 
 /** Represents a validation rule with associated error message */
 data class ValidationIssue(
-        val type: String,
-        val data: ExprOr<Any>? = null,
-        val errorMessage: ExprOr<String>?
+    val type: String,
+    val data: ExprOr<Any>? = null,
+    val errorMessage: ExprOr<String>?
 ) {
     companion object {
         fun fromJson(json: JsonLike): ValidationIssue {
             return ValidationIssue(
-                    type = json["type"] as? String ?: "",
-                    data = ExprOr.fromValue(json["data"]),
-                    errorMessage =
-                            ExprOr.fromValue<String>(json["errorMessage"] ?: "Validation Failed")
+                type = json["type"] as? String ?: "",
+                data = ExprOr.fromValue(json["data"]),
+                errorMessage =
+                    ExprOr.fromValue<String>(
+                        json["errorMessage"] ?: "Validation Failed"
+                    )
             )
         }
     }
@@ -105,21 +108,21 @@ data class ValidationIssue(
 
 /** Configuration for text field border */
 data class BorderConfig(
-        val borderType: JsonLike? = null,
-        val borderStyle: String? = null,
-        val borderWidth: Double? = null,
-        val borderColor: String? = null,
-        val borderRadius: Any? = null
+    val borderType: JsonLike? = null,
+    val borderStyle: String? = null,
+    val borderWidth: Double? = null,
+    val borderColor: String? = null,
+    val borderRadius: Any? = null
 ) {
     companion object {
         fun fromJson(json: JsonLike?): BorderConfig? {
             if (json == null) return null
             return BorderConfig(
-                    borderType = json["borderType"] as? JsonLike,
-                    borderStyle = json["borderStyle"] as? String,
-                    borderWidth = NumUtil.toDouble(json["borderWidth"]),
-                    borderColor = json["borderColor"] as? String,
-                    borderRadius = json["borderRadius"]
+                borderType = json["borderType"] as? JsonLike,
+                borderStyle = json["borderStyle"] as? String,
+                borderWidth = NumUtil.toDouble(json["borderWidth"]),
+                borderColor = json["borderColor"] as? String,
+                borderRadius = json["borderRadius"]
             )
         }
     }
@@ -129,19 +132,19 @@ data class BorderConfig(
 
 /** Configuration for icon constraints (min/max width/height) */
 data class IconConstraints(
-        val minWidth: Double? = null,
-        val minHeight: Double? = null,
-        val maxWidth: Double? = null,
-        val maxHeight: Double? = null
+    val minWidth: Double? = null,
+    val minHeight: Double? = null,
+    val maxWidth: Double? = null,
+    val maxHeight: Double? = null
 ) {
     companion object {
         fun fromJson(json: JsonLike?): IconConstraints? {
             if (json == null) return null
             return IconConstraints(
-                    minWidth = NumUtil.toDouble(json["minWidth"]),
-                    minHeight = NumUtil.toDouble(json["minHeight"]),
-                    maxWidth = NumUtil.toDouble(json["maxWidth"]),
-                    maxHeight = NumUtil.toDouble(json["maxHeight"])
+                minWidth = NumUtil.toDouble(json["minWidth"]),
+                minHeight = NumUtil.toDouble(json["minHeight"]),
+                maxWidth = NumUtil.toDouble(json["maxWidth"]),
+                maxHeight = NumUtil.toDouble(json["maxHeight"])
             )
         }
     }
@@ -151,87 +154,106 @@ data class IconConstraints(
 
 /** Text Form Field widget properties */
 data class TextFormFieldProps(
-        val controller: ExprOr<Any>? = null,
-        val initialValue: ExprOr<String>? = null,
-        val textStyle: JsonLike? = null,
-        val maxLength: ExprOr<Int>? = null,
-        val minLines: ExprOr<Int>? = null,
-        val maxLines: ExprOr<Int>? = null,
-        val labelText: ExprOr<String>? = null,
-        val labelStyle: JsonLike? = null,
-        val keyboardType: ExprOr<String>? = null,
-        val textInputAction: ExprOr<String>? = null,
-        val textAlign: ExprOr<String>? = null,
-        val readOnly: ExprOr<Boolean>? = null,
-        val obscureText: ExprOr<Boolean>? = null,
-        val cursorColor: ExprOr<String>? = null,
-        //    val regex: ExprOr<String>? = null,
-        //    val errorText: ExprOr<String>? = null,
-        val errorStyle: JsonLike? = null,
-        val validationRules: List<ValidationIssue>? = null,
-        val enabledBorder: BorderConfig? = null,
-        val disabledBorder: BorderConfig? = null,
-        val focusedBorder: BorderConfig? = null,
-        val focusedErrorBorder: BorderConfig? = null,
-        val errorBorder: BorderConfig? = null,
-        val focusColor: ExprOr<String>? = null,
-        val autoFocus: ExprOr<Boolean>? = null,
-        val enabled: ExprOr<Boolean>? = null,
-        val fillColor: ExprOr<String>? = null,
-        val hintText: ExprOr<String>? = null,
-        val hintStyle: JsonLike? = null,
-        val contentPadding: Any? = null,
-        val onChanged: ActionFlow? = null,
-        val onSubmit: ActionFlow? = null,
-        val debounceValue: ExprOr<Int>? = null,
-        val prefixIconConstraints: IconConstraints? = null,
-        val suffixIconConstraints: IconConstraints? = null
+    val controller: ExprOr<Any>? = null,
+    val initialValue: ExprOr<String>? = null,
+    val textStyle: JsonLike? = null,
+    val maxLength: ExprOr<Int>? = null,
+    val minLines: ExprOr<Int>? = null,
+    val maxLines: ExprOr<Int>? = null,
+    val labelText: ExprOr<String>? = null,
+    val labelStyle: JsonLike? = null,
+    val keyboardType: ExprOr<String>? = null,
+    val textInputAction: ExprOr<String>? = null,
+    val textAlign: ExprOr<String>? = null,
+    val readOnly: ExprOr<Boolean>? = null,
+    val obscureText: ExprOr<Boolean>? = null,
+    val cursorColor: ExprOr<String>? = null,
+    //    val regex: ExprOr<String>? = null,
+    //    val errorText: ExprOr<String>? = null,
+    val errorStyle: JsonLike? = null,
+    val validationRules: List<ValidationIssue>? = null,
+    val enabledBorder: BorderConfig? = null,
+    val disabledBorder: BorderConfig? = null,
+    val focusedBorder: BorderConfig? = null,
+    val focusedErrorBorder: BorderConfig? = null,
+    val errorBorder: BorderConfig? = null,
+    val focusColor: ExprOr<String>? = null,
+    val autoFocus: ExprOr<Boolean>? = null,
+    val enabled: ExprOr<Boolean>? = null,
+    val fillColor: ExprOr<String>? = null,
+    val hintText: ExprOr<String>? = null,
+    val hintStyle: JsonLike? = null,
+    val contentPadding: Any? = null,
+    val onChanged: ActionFlow? = null,
+    val onSubmit: ActionFlow? = null,
+    val debounceValue: ExprOr<Int>? = null,
+    val prefixIconConstraints: IconConstraints? = null,
+    val suffixIconConstraints: IconConstraints? = null
 ) {
     companion object {
         @Suppress("UNCHECKED_CAST")
         fun fromJson(json: JsonLike): TextFormFieldProps {
             return TextFormFieldProps(
-                    controller = ExprOr.fromValue(json["controller"]),
-                    initialValue = ExprOr.fromValue(json["initialValue"]),
-                    textStyle = json["textStyle"] as? JsonLike,
-                    maxLength = ExprOr.fromValue(json["maxLength"]),
-                    minLines = ExprOr.fromValue(json["minLines"]),
-                    maxLines = ExprOr.fromValue(json["maxLines"]),
-                    labelText = ExprOr.fromValue(json["labelText"]),
-                    labelStyle = json["labelStyle"] as? JsonLike,
-                    keyboardType = ExprOr.fromValue(json["keyboardType"]),
-                    textInputAction = ExprOr.fromValue(json["textInputAction"]),
-                    textAlign = ExprOr.fromValue(json["textAlign"]),
-                    readOnly = ExprOr.fromValue(json["readOnly"]),
-                    obscureText = ExprOr.fromValue(json["obscureText"]),
-                    cursorColor = ExprOr.fromValue(json["cursorColor"]),
-                    //                regex = ExprOr.fromValue(json["regex"]),
-                    //                errorText = ExprOr.fromValue(json["errorText"]),
-                    errorStyle = json["errorStyle"] as? JsonLike,
-                    validationRules =
-                            (json["validationRules"] as? List<Any?>)?.mapNotNull { item ->
-                                (item as? JsonLike)?.let { ValidationIssue.fromJson(it) }
-                            },
-                    enabledBorder = BorderConfig.fromJson(json["enabledBorder"] as? JsonLike),
-                    disabledBorder = BorderConfig.fromJson(json["disabledBorder"] as? JsonLike),
-                    focusedBorder = BorderConfig.fromJson(json["focusedBorder"] as? JsonLike),
-                    focusedErrorBorder =
-                            BorderConfig.fromJson(json["focusedErrorBorder"] as? JsonLike),
-                    errorBorder = BorderConfig.fromJson(json["errorBorder"] as? JsonLike),
-                    focusColor = ExprOr.fromValue(json["focusColor"]),
-                    autoFocus = ExprOr.fromValue(json["autoFocus"]),
-                    enabled = ExprOr.fromValue(json["enabled"]),
-                    fillColor = ExprOr.fromValue(json["fillColor"]),
-                    hintText = ExprOr.fromValue(json["hintText"]),
-                    hintStyle = json["hintStyle"] as? JsonLike,
-                    contentPadding = json["contentPadding"],
-                    onChanged = (json["onChanged"] as? JsonLike)?.let { ActionFlow.fromJson(it) },
-                    onSubmit = (json["onSubmit"] as? JsonLike)?.let { ActionFlow.fromJson(it) },
-                    debounceValue = ExprOr.fromValue(json["debounceValue"]),
-                    prefixIconConstraints =
-                            IconConstraints.fromJson(json["prefixIconConstraints"] as? JsonLike),
-                    suffixIconConstraints =
-                            IconConstraints.fromJson(json["suffixIconConstraints"] as? JsonLike)
+                controller = ExprOr.fromValue(json["controller"]),
+                initialValue = ExprOr.fromValue(json["initialValue"]),
+                textStyle = json["textStyle"] as? JsonLike,
+                maxLength = ExprOr.fromValue(json["maxLength"]),
+                minLines = ExprOr.fromValue(json["minLines"]),
+                maxLines = ExprOr.fromValue(json["maxLines"]),
+                labelText = ExprOr.fromValue(json["labelText"]),
+                labelStyle = json["labelStyle"] as? JsonLike,
+                keyboardType = ExprOr.fromValue(json["keyboardType"]),
+                textInputAction = ExprOr.fromValue(json["textInputAction"]),
+                textAlign = ExprOr.fromValue(json["textAlign"]),
+                readOnly = ExprOr.fromValue(json["readOnly"]),
+                obscureText = ExprOr.fromValue(json["obscureText"]),
+                cursorColor = ExprOr.fromValue(json["cursorColor"]),
+                //                regex = ExprOr.fromValue(json["regex"]),
+                //                errorText = ExprOr.fromValue(json["errorText"]),
+                errorStyle = json["errorStyle"] as? JsonLike,
+                validationRules =
+                    (json["validationRules"] as? List<Any?>)?.mapNotNull { item
+                        ->
+                        (item as? JsonLike)?.let {
+                            ValidationIssue.fromJson(it)
+                        }
+                    },
+                enabledBorder =
+                    BorderConfig.fromJson(json["enabledBorder"] as? JsonLike),
+                disabledBorder =
+                    BorderConfig.fromJson(json["disabledBorder"] as? JsonLike),
+                focusedBorder =
+                    BorderConfig.fromJson(json["focusedBorder"] as? JsonLike),
+                focusedErrorBorder =
+                    BorderConfig.fromJson(
+                        json["focusedErrorBorder"] as? JsonLike
+                    ),
+                errorBorder =
+                    BorderConfig.fromJson(json["errorBorder"] as? JsonLike),
+                focusColor = ExprOr.fromValue(json["focusColor"]),
+                autoFocus = ExprOr.fromValue(json["autoFocus"]),
+                enabled = ExprOr.fromValue(json["enabled"]),
+                fillColor = ExprOr.fromValue(json["fillColor"]),
+                hintText = ExprOr.fromValue(json["hintText"]),
+                hintStyle = json["hintStyle"] as? JsonLike,
+                contentPadding = json["contentPadding"],
+                onChanged =
+                    (json["onChanged"] as? JsonLike)?.let {
+                        ActionFlow.fromJson(it)
+                    },
+                onSubmit =
+                    (json["onSubmit"] as? JsonLike)?.let {
+                        ActionFlow.fromJson(it)
+                    },
+                debounceValue = ExprOr.fromValue(json["debounceValue"]),
+                prefixIconConstraints =
+                    IconConstraints.fromJson(
+                        json["prefixIconConstraints"] as? JsonLike
+                    ),
+                suffixIconConstraints =
+                    IconConstraints.fromJson(
+                        json["suffixIconConstraints"] as? JsonLike
+                    )
             )
         }
     }
@@ -246,22 +268,22 @@ data class TextFormFieldProps(
  * borders (dashed/solid), layout, and validation.
  */
 class VWTextFormField(
-        refName: String?,
-        commonProps: CommonProps?,
-        parent: VirtualNode?,
-        parentProps: Props? = null,
-        props: TextFormFieldProps,
-        slots: ((VirtualCompositeNode<TextFormFieldProps>) -> Map<String, List<VirtualNode>>?)? =
-                null,
+    refName: String?,
+    commonProps: CommonProps?,
+    parent: VirtualNode?,
+    parentProps: Props? = null,
+    props: TextFormFieldProps,
+    slots: ((VirtualCompositeNode<TextFormFieldProps>) -> Map<String, List<VirtualNode>>?)? =
+        null,
 ) :
-        VirtualCompositeNode<TextFormFieldProps>(
-                props = props,
-                commonProps = commonProps,
-                parent = parent,
-                refName = refName,
-                parentProps = parentProps,
-                _slots = slots
-        ) {
+    VirtualCompositeNode<TextFormFieldProps>(
+        props = props,
+        commonProps = commonProps,
+        parent = parent,
+        refName = refName,
+        parentProps = parentProps,
+        _slots = slots
+    ) {
 
     @Composable
     override fun Render(payload: RenderPayload) {
@@ -312,20 +334,24 @@ class VWTextFormField(
         // Validation
         val validationRules = props.validationRules
 
-        // State management
-        var textValue by remember { mutableStateOf(initialValue) }
+        var textValue by rememberSaveable { mutableStateOf(initialValue) }
         val scope = rememberCoroutineScope()
         val debouncer =
-                remember(debounceMs) {
-                    if (debounceMs > 0) Debouncer(debounceMs.toLong(), scope) else null
-                }
+            remember(debounceMs) {
+                if (debounceMs > 0) Debouncer(debounceMs.toLong(), scope) else null
+            }
 
         // Validation logic matching Flutter implementation
         fun validateField(value: String): String? {
             validationRules?.forEach { rule ->
-                val data = rule.data?.evaluate<Any>(scopeContext = payload.scopeContext)
+                val data =
+                    rule.data?.evaluate<Any>(
+                        scopeContext = payload.scopeContext
+                    )
                 val errorMsg =
-                        rule.errorMessage?.evaluate<String>(scopeContext = payload.scopeContext)
+                    rule.errorMessage?.evaluate<String>(
+                        scopeContext = payload.scopeContext
+                    )
                 when (rule.type) {
                     "required" -> {
                         if (value.trim().isEmpty()) {
@@ -339,7 +365,9 @@ class VWTextFormField(
                         }
                     }
                     "maxLength" -> {
-                        val maxLen = NumUtil.toDouble(data)?.toInt() ?: Int.MAX_VALUE
+                        val maxLen =
+                            NumUtil.toDouble(data)?.toInt()
+                                ?: Int.MAX_VALUE
                         if (value.length > maxLen) {
                             return errorMsg
                         }
@@ -362,11 +390,11 @@ class VWTextFormField(
         fun onValueChange(newValue: String) {
             // Apply max length constraint
             val constrainedValue =
-                    if (maxLength != null && newValue.length > maxLength) {
-                        newValue.take(maxLength)
-                    } else {
-                        newValue
-                    }
+                if (maxLength != null && newValue.length > maxLength) {
+                    newValue.take(maxLength)
+                } else {
+                    newValue
+                }
 
             textValue = constrainedValue
 
@@ -374,18 +402,18 @@ class VWTextFormField(
             val triggerAction = {
                 props.onChanged?.let {
                     payload.executeAction(
-                            context = context,
-                            actionFlow = it,
-                            actionExecutor = actionExecutor,
-                            stateContext = stateContext,
-                            resourcesProvider = resources,
-                            incomingScopeContext =
-                                    payload.scopeContext?.copyAndExtend(
-                                            mapOf("text" to constrainedValue)
-                                    )
+                        context = context,
+                        actionFlow = it,
+                        actionExecutor = actionExecutor,
+                        stateContext = stateContext,
+                        resourcesProvider = resources,
+                        incomingScopeContext =
+                            payload.scopeContext?.copyAndExtend(
+                                mapOf("text" to constrainedValue)
+                            )
                     )
                 }
-                        ?: Unit
+                    ?: Unit
             }
 
             if (debouncer != null) {
@@ -398,167 +426,175 @@ class VWTextFormField(
         val onSubmitHandler = { value: String ->
             props.onSubmit?.let {
                 payload.executeAction(
-                        context = context,
-                        actionFlow = it,
-                        actionExecutor = actionExecutor,
-                        stateContext = stateContext,
-                        resourcesProvider = resources,
-                        incomingScopeContext =
-                                payload.scopeContext?.copyAndExtend(mapOf("text" to value))
+                    context = context,
+                    actionFlow = it,
+                    actionExecutor = actionExecutor,
+                    stateContext = stateContext,
+                    resourcesProvider = resources,
+                    incomingScopeContext =
+                        payload.scopeContext?.copyAndExtend(
+                            mapOf("text" to value)
+                        )
                 )
             }
-                    ?: Unit
+                ?: Unit
         }
 
         // Keyboard options
         val keyboardType =
-                when (keyboardTypeStr?.lowercase()) {
-                    "text" -> KeyboardType.Text
-                    "number" -> KeyboardType.Number
-                    "phone" -> KeyboardType.Phone
-                    "email", "emailaddress" -> KeyboardType.Email
-                    "password" -> KeyboardType.Password
-                    "numberpassword" -> KeyboardType.NumberPassword
-                    "url" -> KeyboardType.Uri
-                    "decimal" -> KeyboardType.Decimal
-                    else -> KeyboardType.Text
-                }
+            when (keyboardTypeStr?.lowercase()) {
+                "text" -> KeyboardType.Text
+                "number" -> KeyboardType.Number
+                "phone" -> KeyboardType.Phone
+                "email", "emailaddress" -> KeyboardType.Email
+                "password" -> KeyboardType.Password
+                "numberpassword" -> KeyboardType.NumberPassword
+                "url" -> KeyboardType.Uri
+                "decimal" -> KeyboardType.Decimal
+                else -> KeyboardType.Text
+            }
 
         val imeAction =
-                when (textInputActionStr) {
-                    "done" -> ImeAction.Done
-                    "go" -> ImeAction.Go
-                    "next" -> ImeAction.Next
-                    "previous" -> ImeAction.Previous
-                    "search" -> ImeAction.Search
-                    "send" -> ImeAction.Send
-                    "none" -> ImeAction.None
-                    else -> ImeAction.Default
-                }
+            when (textInputActionStr) {
+                "done" -> ImeAction.Done
+                "go" -> ImeAction.Go
+                "next" -> ImeAction.Next
+                "previous" -> ImeAction.Previous
+                "search" -> ImeAction.Search
+                "send" -> ImeAction.Send
+                "none" -> ImeAction.None
+                else -> ImeAction.Default
+            }
 
         val textAlign =
-                when (textAlignStr) {
-                    "left" -> TextAlign.Left
-                    "right" -> TextAlign.Right
-                    "center" -> TextAlign.Center
-                    "start" -> TextAlign.Start
-                    "end" -> TextAlign.End
-                    "justify" -> TextAlign.Justify
-                    else -> TextAlign.Start
-                }
+            when (textAlignStr) {
+                "left" -> TextAlign.Left
+                "right" -> TextAlign.Right
+                "center" -> TextAlign.Center
+                "start" -> TextAlign.Start
+                "end" -> TextAlign.End
+                "justify" -> TextAlign.Justify
+                else -> TextAlign.Start
+            }
 
         // Content padding
-        val contentPadding = ToUtils.edgeInsets(props.contentPadding) ?: PaddingValues(12.dp)
+        val contentPadding =
+            ToUtils.edgeInsets(props.contentPadding) ?: PaddingValues(12.dp)
 
         // Render prefix and suffix widgets
         val prefixWidget: @Composable (() -> Unit)? =
-                slot("prefix")?.let { prefixNodes -> { prefixNodes.ToWidget(payload) } }
+            slot("prefix")?.let { prefixNodes -> { prefixNodes.ToWidget(payload) } }
 
         val suffixWidget: @Composable (() -> Unit)? =
-                slot("suffix")?.let { suffixNodes -> { suffixNodes.ToWidget(payload) } }
+            slot("suffix")?.let { suffixNodes -> { suffixNodes.ToWidget(payload) } }
 
         // Colors for DigiaTextFieldColors
         val colors =
-                DigiaTextFieldColors(
-                        focusedTextColor = textStyle.color,
-                        unfocusedTextColor = textStyle.color,
-                        disabledTextColor = textStyle.color.copy(alpha = 0.5f),
-                        errorTextColor = textStyle.color,
-                        focusedContainerColor = fillColor ?: Color.Transparent,
-                        unfocusedContainerColor = fillColor ?: Color.Transparent,
-                        disabledContainerColor =
-                                (fillColor ?: Color.Transparent).copy(alpha = 0.5f),
-                        errorContainerColor = fillColor ?: Color.Transparent,
-                        cursorColor = cursorColor ?: MaterialTheme.colorScheme.primary,
-                        errorCursorColor = MaterialTheme.colorScheme.error,
-                        textSelectionColors =
-                                androidx.compose.foundation.text.selection.LocalTextSelectionColors
-                                        .current,
-                        focusedIndicatorColor = focusColor ?: MaterialTheme.colorScheme.primary,
-                        unfocusedIndicatorColor = MaterialTheme.colorScheme.outline,
-                        disabledIndicatorColor =
-                                MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
-                        errorIndicatorColor = MaterialTheme.colorScheme.error,
-                        focusedLeadingIconColor = MaterialTheme.colorScheme.onSurface,
-                        unfocusedLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                        disabledLeadingIconColor =
-                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
-                        errorLeadingIconColor = MaterialTheme.colorScheme.error,
-                        focusedTrailingIconColor = MaterialTheme.colorScheme.onSurface,
-                        unfocusedTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                        disabledTrailingIconColor =
-                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
-                        errorTrailingIconColor = MaterialTheme.colorScheme.error,
-                        focusedLabelColor = focusColor ?: MaterialTheme.colorScheme.primary,
-                        unfocusedLabelColor =
-                                labelStyle.color.takeOrElse {
-                                    MaterialTheme.colorScheme.onSurfaceVariant
-                                },
-                        disabledLabelColor =
-                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
-                        errorLabelColor = MaterialTheme.colorScheme.error,
-                        focusedPlaceholderColor =
-                                hintStyle.color.takeOrElse {
-                                    MaterialTheme.colorScheme.onSurfaceVariant
-                                },
-                        unfocusedPlaceholderColor =
-                                hintStyle.color.takeOrElse {
-                                    MaterialTheme.colorScheme.onSurfaceVariant
-                                },
-                        disabledPlaceholderColor =
-                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
-                        errorPlaceholderColor = MaterialTheme.colorScheme.error,
-                        focusedSupportingTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                        unfocusedSupportingTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                        disabledSupportingTextColor =
-                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
-                        errorSupportingTextColor = MaterialTheme.colorScheme.error,
-                        focusedPrefixColor = MaterialTheme.colorScheme.onSurface,
-                        unfocusedPrefixColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                        disabledPrefixColor =
-                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
-                        errorPrefixColor = MaterialTheme.colorScheme.error,
-                        focusedSuffixColor = MaterialTheme.colorScheme.onSurface,
-                        unfocusedSuffixColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                        disabledSuffixColor =
-                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
-                        errorSuffixColor = MaterialTheme.colorScheme.error
-                )
+            DigiaTextFieldColors(
+                focusedTextColor = textStyle.color,
+                unfocusedTextColor = textStyle.color,
+                disabledTextColor = textStyle.color.copy(alpha = 0.5f),
+                errorTextColor = textStyle.color,
+                focusedContainerColor = fillColor ?: Color.Transparent,
+                unfocusedContainerColor = fillColor ?: Color.Transparent,
+                disabledContainerColor =
+                    (fillColor ?: Color.Transparent).copy(alpha = 0.5f),
+                errorContainerColor = fillColor ?: Color.Transparent,
+                cursorColor = cursorColor ?: MaterialTheme.colorScheme.primary,
+                errorCursorColor = MaterialTheme.colorScheme.error,
+                textSelectionColors =
+                    androidx.compose.foundation.text.selection
+                        .LocalTextSelectionColors.current,
+                focusedIndicatorColor = focusColor
+                    ?: MaterialTheme.colorScheme.primary,
+                unfocusedIndicatorColor = MaterialTheme.colorScheme.outline,
+                disabledIndicatorColor =
+                    MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+                errorIndicatorColor = MaterialTheme.colorScheme.error,
+                focusedLeadingIconColor = MaterialTheme.colorScheme.onSurface,
+                unfocusedLeadingIconColor =
+                    MaterialTheme.colorScheme.onSurfaceVariant,
+                disabledLeadingIconColor =
+                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
+                errorLeadingIconColor = MaterialTheme.colorScheme.error,
+                focusedTrailingIconColor = MaterialTheme.colorScheme.onSurface,
+                unfocusedTrailingIconColor =
+                    MaterialTheme.colorScheme.onSurfaceVariant,
+                disabledTrailingIconColor =
+                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
+                errorTrailingIconColor = MaterialTheme.colorScheme.error,
+                focusedLabelColor = focusColor ?: MaterialTheme.colorScheme.primary,
+                unfocusedLabelColor =
+                    labelStyle.color.takeOrElse {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
+                disabledLabelColor =
+                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
+                errorLabelColor = MaterialTheme.colorScheme.error,
+                focusedPlaceholderColor =
+                    hintStyle.color.takeOrElse {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
+                unfocusedPlaceholderColor =
+                    hintStyle.color.takeOrElse {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
+                disabledPlaceholderColor =
+                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
+                errorPlaceholderColor = MaterialTheme.colorScheme.error,
+                focusedSupportingTextColor =
+                    MaterialTheme.colorScheme.onSurfaceVariant,
+                unfocusedSupportingTextColor =
+                    MaterialTheme.colorScheme.onSurfaceVariant,
+                disabledSupportingTextColor =
+                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
+                errorSupportingTextColor = MaterialTheme.colorScheme.error,
+                focusedPrefixColor = MaterialTheme.colorScheme.onSurface,
+                unfocusedPrefixColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                disabledPrefixColor =
+                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
+                errorPrefixColor = MaterialTheme.colorScheme.error,
+                focusedSuffixColor = MaterialTheme.colorScheme.onSurface,
+                unfocusedSuffixColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                disabledSuffixColor =
+                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
+                errorSuffixColor = MaterialTheme.colorScheme.error
+            )
 
         InternalTextFormField(
-                controller = TextController(initialText = textValue),
-                autoFocus = autoFocus,
-                enabled = enabled,
-                readOnly = readOnly,
-                obscureText = obscureText,
-                keyboardType = keyboardType,
-                imeAction = imeAction,
-                textAlign = textAlign,
-                textStyle = textStyle,
-                labelStyle = labelStyle,
-                hintStyle = hintStyle,
-                errorStyle = errorStyle
-                                ?: MaterialTheme.typography.bodySmall.copy(
-                                        color = MaterialTheme.colorScheme.error
-                                ),
-                maxLines = maxLines,
-                minLines = minLines,
-                maxLength = maxLength,
-                labelText = labelText,
-                hintText = hintText,
-                validate = ::validateField,
-                cursorColor = cursorColor ?: MaterialTheme.colorScheme.primary,
-                focusedBorder = focusedBorder ?: VWInputBorder.None,
-                enabledBorder = enabledBorder ?: VWInputBorder.None,
-                errorBorder = errorBorder ?: VWInputBorder.None,
-                disabledBorder = disabledBorder ?: VWInputBorder.None,
-                focusedErrorBorder = focusedErrorBorder ?: VWInputBorder.None,
-                onValueChange = ::onValueChange,
-                onSubmit = { value -> onSubmitHandler(value) },
-                prefixWidget = prefixWidget,
-                suffixWidget = suffixWidget,
-                contentPadding = contentPadding,
-                colors = colors
+            controller = TextController(initialText = textValue),
+            autoFocus = autoFocus,
+            enabled = enabled,
+            readOnly = readOnly,
+            obscureText = obscureText,
+            keyboardType = keyboardType,
+            imeAction = imeAction,
+            textAlign = textAlign,
+            textStyle = textStyle,
+            labelStyle = labelStyle,
+            hintStyle = hintStyle,
+            errorStyle = errorStyle
+                ?: MaterialTheme.typography.bodySmall.copy(
+                    color = MaterialTheme.colorScheme.error
+                ),
+            maxLines = maxLines,
+            minLines = minLines,
+            maxLength = maxLength,
+            labelText = labelText,
+            hintText = hintText,
+            validate = ::validateField,
+            cursorColor = cursorColor ?: MaterialTheme.colorScheme.primary,
+            focusedBorder = focusedBorder ?: VWInputBorder.None,
+            enabledBorder = enabledBorder ?: VWInputBorder.None,
+            errorBorder = errorBorder ?: VWInputBorder.None,
+            disabledBorder = disabledBorder ?: VWInputBorder.None,
+            focusedErrorBorder = focusedErrorBorder ?: VWInputBorder.None,
+            onValueChange = ::onValueChange,
+            onSubmit = { value -> onSubmitHandler(value) },
+            prefixWidget = prefixWidget,
+            suffixWidget = suffixWidget,
+            contentPadding = contentPadding,
+            colors = colors
         )
 
         // Cleanup debouncer on dispose
@@ -577,50 +613,49 @@ class VWTextFormField(
 
         // Handle dash pattern from nested borderType object
         val dashPatternList =
-                (borderTypeData?.get("dashPattern") as? List<*>)?.filterIsInstance<Number>()?.map {
-                    it.toFloat()
-                }
+            (borderTypeData?.get("dashPattern") as? List<*>)?.filterIsInstance<Number>()
+                ?.map { it.toFloat() }
 
         val strokeCapStr = borderTypeData?.get("strokeCap") as? String
         val strokeCap =
-                when (strokeCapStr) {
-                    "round" -> StrokeCap.Round
-                    "square" -> StrokeCap.Square
-                    else -> StrokeCap.Butt
-                }
+            when (strokeCapStr) {
+                "round" -> StrokeCap.Round
+                "square" -> StrokeCap.Square
+                else -> StrokeCap.Butt
+            }
 
         val shape = ToUtils.borderRadius(config.borderRadius) ?: RoundedCornerShape(4.dp)
 
         return when (typeValue) {
             "outlineInputBorder" ->
-                    VWInputBorder.Outline(
-                            strokeWidth = borderWidth,
-                            shape = shape,
-                            color = borderColor,
-                            dashed = false,
-                            strokeCap = strokeCap
-                    )
+                VWInputBorder.Outline(
+                    strokeWidth = borderWidth,
+                    shape = shape,
+                    color = borderColor,
+                    dashed = false,
+                    strokeCap = strokeCap
+                )
             "underlineInputBorder" ->
-                    VWInputBorder.Underline(
-                            strokeWidth = borderWidth,
-                            color = borderColor,
-                            dashed = false
-                    )
+                VWInputBorder.Underline(
+                    strokeWidth = borderWidth,
+                    color = borderColor,
+                    dashed = false
+                )
             "outlineDashedInputBorder" ->
-                    VWInputBorder.Outline(
-                            strokeWidth = borderWidth,
-                            shape = shape,
-                            color = borderColor,
-                            dashed = true,
-                            dashPattern = dashPatternList,
-                            strokeCap = strokeCap
-                    )
+                VWInputBorder.Outline(
+                    strokeWidth = borderWidth,
+                    shape = shape,
+                    color = borderColor,
+                    dashed = true,
+                    dashPattern = dashPatternList,
+                    strokeCap = strokeCap
+                )
             "underlineDashedInputBorder" ->
-                    VWInputBorder.Underline(
-                            strokeWidth = borderWidth,
-                            color = borderColor,
-                            dashed = true
-                    )
+                VWInputBorder.Underline(
+                    strokeWidth = borderWidth,
+                    color = borderColor,
+                    dashed = true
+                )
             else -> VWInputBorder.None
         }
     }
@@ -630,53 +665,53 @@ class VWTextFormField(
 
 /** Builder function for TextFormField widget */
 fun textFormFieldBuilder(
-        data: VWNodeData,
-        parent: VirtualNode?,
-        registry: VirtualWidgetRegistry
+    data: VWNodeData,
+    parent: VirtualNode?,
+    registry: VirtualWidgetRegistry
 ): VirtualNode {
     return VWTextFormField(
-            refName = data.refName,
-            commonProps = data.commonProps,
-            parent = parent,
-            parentProps = data.props,
-            props = TextFormFieldProps.fromJson(data.props.value),
-            slots = { self -> registerAllChildern(data.childGroups, self, registry) }
+        refName = data.refName,
+        commonProps = data.commonProps,
+        parent = parent,
+        parentProps = data.props,
+        props = TextFormFieldProps.fromJson(data.props.value),
+        slots = { self -> registerAllChildern(data.childGroups, self, registry) }
     )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InternalTextFormField(
-        controller: TextController,
-        autoFocus: Boolean = false,
-        enabled: Boolean = true,
-        readOnly: Boolean = false,
-        obscureText: Boolean = false,
-        keyboardType: KeyboardType = KeyboardType.Text,
-        imeAction: ImeAction = ImeAction.Done,
-        textAlign: TextAlign = TextAlign.Start,
-        textStyle: TextStyle = LocalTextStyle.current,
-        labelStyle: TextStyle = LocalTextStyle.current,
-        hintStyle: TextStyle = LocalTextStyle.current,
-        errorStyle: TextStyle = LocalTextStyle.current,
-        contentPadding: PaddingValues = PaddingValues(0.dp),
-        maxLines: Int? = null,
-        minLines: Int? = null,
-        maxLength: Int? = null,
-        labelText: String? = null,
-        hintText: String? = null,
-        validate: ((String) -> String?)? = null,
-        cursorColor: Color = MaterialTheme.colorScheme.primary,
-        focusedBorder: VWInputBorder = VWInputBorder.None,
-        enabledBorder: VWInputBorder = VWInputBorder.None,
-        errorBorder: VWInputBorder = focusedBorder,
-        disabledBorder: VWInputBorder = enabledBorder,
-        focusedErrorBorder: VWInputBorder = errorBorder,
-        onValueChange: (String) -> Unit,
-        onSubmit: (String) -> Unit,
-        prefixWidget: (@Composable () -> Unit)? = null,
-        suffixWidget: (@Composable () -> Unit)? = null,
-        colors: DigiaTextFieldColors? = null
+    controller: TextController,
+    autoFocus: Boolean = false,
+    enabled: Boolean = true,
+    readOnly: Boolean = false,
+    obscureText: Boolean = false,
+    keyboardType: KeyboardType = KeyboardType.Text,
+    imeAction: ImeAction = ImeAction.Done,
+    textAlign: TextAlign = TextAlign.Start,
+    textStyle: TextStyle = LocalTextStyle.current,
+    labelStyle: TextStyle = LocalTextStyle.current,
+    hintStyle: TextStyle = LocalTextStyle.current,
+    errorStyle: TextStyle = LocalTextStyle.current,
+    contentPadding: PaddingValues = PaddingValues(0.dp),
+    maxLines: Int? = null,
+    minLines: Int? = null,
+    maxLength: Int? = null,
+    labelText: String? = null,
+    hintText: String? = null,
+    validate: ((String) -> String?)? = null,
+    cursorColor: Color = MaterialTheme.colorScheme.primary,
+    focusedBorder: VWInputBorder = VWInputBorder.None,
+    enabledBorder: VWInputBorder = VWInputBorder.None,
+    errorBorder: VWInputBorder = focusedBorder,
+    disabledBorder: VWInputBorder = enabledBorder,
+    focusedErrorBorder: VWInputBorder = errorBorder,
+    onValueChange: (String) -> Unit,
+    onSubmit: (String) -> Unit,
+    prefixWidget: (@Composable () -> Unit)? = null,
+    suffixWidget: (@Composable () -> Unit)? = null,
+    colors: DigiaTextFieldColors? = null
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isFocused by interactionSource.collectIsFocusedAsState()
@@ -720,98 +755,107 @@ fun InternalTextFormField(
     val singleLine = effectiveMaxLines == 1
 
     BasicTextField(
-            value = controller.text,
-            onValueChange = {
-                if (maxLength == null || it.length <= maxLength) {
-                    controller.text = it
-                    onValueChange(it)
-                    if (showError) errorText = validateNow(it)
-                }
-            },
-            modifier = Modifier.fillMaxWidth(),
-            enabled = enabled,
-            readOnly = readOnly,
-            textStyle =
-                    textStyle.copy(
-                            textAlign = textAlign,
-                            color =
-                                    colors?.textColor(
-                                            enabled,
-                                            showError && errorText != null,
-                                            isFocused
-                                    )
-                                            ?: textStyle.color
-                    ),
-            cursorBrush = SolidColor(cursorColor),
-            keyboardOptions = KeyboardOptions(keyboardType = keyboardType, imeAction = imeAction),
-            keyboardActions = KeyboardActions(onDone = { onSubmit(controller.text) }),
-            interactionSource = interactionSource,
-            singleLine = singleLine,
-            maxLines = effectiveMaxLines,
-            minLines = effectiveMinLines,
-            visualTransformation =
-                    if (obscureText) PasswordVisualTransformation() else VisualTransformation.None,
-            decorationBox = { innerTextField ->
-                CommonDecorationBox(
-                        value = controller.text,
-                        innerTextField = innerTextField,
-                        visualTransformation =
-                                if (obscureText) PasswordVisualTransformation()
-                                else VisualTransformation.None,
-                        label = labelText?.let { { Text(it, style = labelStyle) } },
-                        placeholder =
-                                if (controller.text.isEmpty() && hintText != null) {
-                                    {
-                                        Text(
-                                                hintText,
-                                                style = hintStyle.copy(textAlign = textAlign),
-                                                modifier = Modifier.fillMaxWidth()
-                                        )
-                                    }
-                                } else null,
-                        leadingIcon = prefixWidget,
-                        trailingIcon = suffixWidget,
-                        // prefix and suffix slots are for text/widget prefix/suffix inline with
-                        // text,
-                        // but we map schema 'prefix'/'suffix' to leading/trailing icons as per
-                        // Flutter implementation behavior.
-
-                        supportingText =
-                                if (showError && errorText != null) {
-                                    {
-                                        Text(
-                                                errorText!!,
-                                                style =
-                                                        errorStyle.copy(
-                                                                color =
-                                                                        MaterialTheme.colorScheme
-                                                                                .error
-                                                        )
-                                        )
-                                    }
-                                } else null,
-                        enabled = enabled,
-                        isError = showError && errorText != null,
-                        singleLine = singleLine,
-                        interactionSource = interactionSource,
-                        contentPadding = contentPadding,
-                        colors = colors,
-                        container = { cutoutModifier ->
-                            TextFieldContainer(
-                                    enabled = enabled,
-                                    isError = showError && errorText != null,
-                                    interactionSource = interactionSource,
-                                    colors = colors,
-                                    enabledBorder = enabledBorder,
-                                    disabledBorder = disabledBorder,
-                                    focusedBorder = focusedBorder,
-                                    focusedErrorBorder = focusedErrorBorder,
-                                    errorBorder = errorBorder,
-                                    cutoutModifier = cutoutModifier
+        value = controller.text,
+        onValueChange = {
+            if (maxLength == null || it.length <= maxLength) {
+                controller.text = it
+                onValueChange(it)
+                if (showError) errorText = validateNow(it)
+            }
+        },
+        modifier = Modifier.fillMaxWidth(),
+        enabled = enabled,
+        readOnly = readOnly,
+        textStyle =
+            textStyle.copy(
+                textAlign = textAlign,
+                color =
+                    colors?.textColor(
+                        enabled,
+                        showError && errorText != null,
+                        isFocused
+                    )
+                        ?: textStyle.color
+            ),
+        cursorBrush = SolidColor(cursorColor),
+        keyboardOptions =
+            KeyboardOptions(keyboardType = keyboardType, imeAction = imeAction),
+        keyboardActions = KeyboardActions(onDone = { onSubmit(controller.text) }),
+        interactionSource = interactionSource,
+        singleLine = singleLine,
+        maxLines = effectiveMaxLines,
+        minLines = effectiveMinLines,
+        visualTransformation =
+            if (obscureText) PasswordVisualTransformation()
+            else VisualTransformation.None,
+        decorationBox = { innerTextField ->
+            CommonDecorationBox(
+                value = controller.text,
+                innerTextField = innerTextField,
+                visualTransformation =
+                    if (obscureText) PasswordVisualTransformation()
+                    else VisualTransformation.None,
+                label = labelText?.let { { Text(it, style = labelStyle) } },
+                placeholder =
+                    if (controller.text.isEmpty() && hintText != null) {
+                        {
+                            Text(
+                                hintText,
+                                style =
+                                    hintStyle.copy(
+                                        textAlign =
+                                            textAlign
+                                    ),
+                                modifier = Modifier.fillMaxWidth()
                             )
                         }
-                )
-            }
+                    } else null,
+                leadingIcon = prefixWidget,
+                trailingIcon = suffixWidget,
+                // prefix and suffix slots are for text/widget prefix/suffix inline
+                // with
+                // text,
+                // but we map schema 'prefix'/'suffix' to leading/trailing icons as
+                // per
+                // Flutter implementation behavior.
+
+                supportingText =
+                    if (showError && errorText != null) {
+                        {
+                            Text(
+                                errorText!!,
+                                style =
+                                    errorStyle.copy(
+                                        color =
+                                            MaterialTheme
+                                                .colorScheme
+                                                .error
+                                    )
+                            )
+                        }
+                    } else null,
+                enabled = enabled,
+                isError = showError && errorText != null,
+                singleLine = singleLine,
+                interactionSource = interactionSource,
+                contentPadding = contentPadding,
+                colors = colors,
+                container = { cutoutModifier ->
+                    TextFieldContainer(
+                        enabled = enabled,
+                        isError = showError && errorText != null,
+                        interactionSource = interactionSource,
+                        colors = colors,
+                        enabledBorder = enabledBorder,
+                        disabledBorder = disabledBorder,
+                        focusedBorder = focusedBorder,
+                        focusedErrorBorder = focusedErrorBorder,
+                        errorBorder = errorBorder,
+                        cutoutModifier = cutoutModifier
+                    )
+                }
+            )
+        }
     )
 }
 
@@ -819,18 +863,18 @@ fun InternalTextFormField(
 // here)
 sealed class VWInputBorder {
     data class Outline(
-            val strokeWidth: Dp = 1.dp,
-            val shape: Shape = RoundedCornerShape(4.dp),
-            val color: Color = Color.Black,
-            val dashed: Boolean = false,
-            val strokeCap: StrokeCap = StrokeCap.Butt,
-            val dashPattern: List<Float>? = null
+        val strokeWidth: Dp = 1.dp,
+        val shape: Shape = RoundedCornerShape(4.dp),
+        val color: Color = Color.Black,
+        val dashed: Boolean = false,
+        val strokeCap: StrokeCap = StrokeCap.Butt,
+        val dashPattern: List<Float>? = null
     ) : VWInputBorder()
 
     data class Underline(
-            val strokeWidth: Dp = 1.dp,
-            val color: Color = Color.Black,
-            val dashed: Boolean = false
+        val strokeWidth: Dp = 1.dp,
+        val color: Color = Color.Black,
+        val dashed: Boolean = false
     ) : VWInputBorder()
 
     object None : VWInputBorder()
@@ -841,14 +885,14 @@ fun Modifier.dashedOutlineBorder(strokeWidth: Dp, radius: Dp, color: Color) = dr
     val strokePx = strokeWidth.toPx()
     val cornerRadiusPx = radius.toPx()
     drawRoundRect(
-            color = color,
-            size = size,
-            cornerRadius = CornerRadius(cornerRadiusPx),
-            style =
-                    Stroke(
-                            width = strokePx,
-                            pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f))
-                    )
+        color = color,
+        size = size,
+        cornerRadius = CornerRadius(cornerRadiusPx),
+        style =
+            Stroke(
+                width = strokePx,
+                pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f))
+            )
     )
 }
 
