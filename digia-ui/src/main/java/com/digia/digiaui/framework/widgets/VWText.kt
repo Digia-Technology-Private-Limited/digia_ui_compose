@@ -89,7 +89,7 @@ internal fun CommonTextRender(
         modifier: Modifier = Modifier
 ) {
         // Evaluate expressions
-        val text = payload.evalObserve(props.text) ?: ""
+        val text = payload.evalExpr(props.text) ?: ""
         val style = payload.textStyle(props.textStyle)
         val maxLines = payload.evalExpr(props.maxLines)
         val textAlignStr = payload.evalExpr(props.textAlign)
