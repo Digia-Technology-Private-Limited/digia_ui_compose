@@ -1,17 +1,20 @@
 package com.digia.digiaui.framework.navigation
 
+import LocalUIResources
 import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.digia.digiaui.framework.VirtualWidgetRegistry
+import com.digia.digiaui.framework.actions.LocalActionExecutor
 import com.digia.digiaui.framework.page.ConfigProvider
 import com.digia.digiaui.framework.page.DUIPage
 import kotlinx.coroutines.flow.collectLatest
@@ -40,10 +43,25 @@ fun DUINavHost(
         registry: VirtualWidgetRegistry,
         navController: NavHostController = rememberNavController()
 ) {
+
+    val actionExecutor = LocalActionExecutor.current
+    val context = LocalContext.current
+    val resource = LocalUIResources.current
     // Store start page args if provided
     LaunchedEffect(startPageArgs) {
         if (startPageArgs != null) {
             NavigationManager.setPageArgs(startPageId, startPageArgs)
+        }
+    }
+    
+    // Track backstack changes to manage state lifecycle
+    LaunchedEffect(navController) {
+        navController.currentBackStackEntryFlow.collect { entry ->
+            // Mark the current page as entered in backstack
+            entry?.let { 
+                val pageId = it.toRoute<PageRoute>().pageId
+                NavigationManager.markPageEntered(pageId)
+            }
         }
     }
 
@@ -59,8 +77,12 @@ fun DUINavHost(
 
                     // Navigate using type-safe route
                     if (event.replace) {
+                        // Mark replaced page as left
+                        navController.currentBackStackEntry?.let { 
+                            val replacedPageId = it.toRoute<PageRoute>().pageId
+                            NavigationManager.markPageLeft(replacedPageId)
+                        }
                         navController.navigate(event.route) {
-                            // Pop up to the previous destination
                             popUpTo(
                                     navController.currentDestination?.route
                                             ?: PageRoute(startPageId)
@@ -69,40 +91,58 @@ fun DUINavHost(
                                 saveState = true
                             }
                             restoreState = true
-                            //                            launchSingleTop = true
                         }
                     } else {
-                        navController.navigate(event.route) {
-                            restoreState = true
-                            //                            launchSingleTop = true
-                        }
+                        navController.navigate(event.route) { restoreState = true }
                     }
                 }
                 is NavigationEvent.Pop -> {
                     val canPop = navController.previousBackStackEntry != null
                     if (canPop || !event.maybe) {
-                        val poppedRoute = navController.currentBackStackEntry?.destination?.route
-                        val poppedPageId = poppedRoute?.let { extractPageIdFromRoute(it) }
+                        // The page being popped (this is the key used to register the result
+                        // callback)
+                        val poppedPageId =
+                                navController.currentBackStackEntry?.let { backStackEntry ->
+                                    backStackEntry.toRoute<PageRoute>().pageId
+                                }
 
-                        val popped = navController.popBackStack()
+                        // Mark page as left before popping
+                        if (poppedPageId != null) {
+                            NavigationManager.markPageLeft(poppedPageId)
+                        }
 
-                        val returningRoute = navController.currentBackStackEntry?.destination?.route
-                        val returningPageId = returningRoute?.let { extractPageIdFromRoute(it) }
+                        // Pop the current page
+                        navController.popBackStack()
 
-                        if (popped && poppedPageId != null && returningPageId != null && event.result != null) {
-                            NavigationManager.queuePendingCallback(
-                                returningPageId = returningPageId,
-                                lookupPageId = poppedPageId,
-                                result = event.result
-                            )
+                        // Execute result callback if there's a result and a registered callback
+                        // key.
+                        if (event.result != null && poppedPageId != null) {
+                            NavigationManager.executeResultCallback(poppedPageId, event.result)
                         }
                     }
                 }
                 is NavigationEvent.PopTo -> {
+                    // Mark pages being removed as left
+                    var current = navController.currentBackStackEntry
+                    while (current != null && current.toRoute<PageRoute>() != event.route) {
+                        val pageId = current.toRoute<PageRoute>().pageId
+                        NavigationManager.markPageLeft(pageId)
+                        current = navController.previousBackStackEntry
+                    }
+                    if (event.inclusive && current != null) {
+                        val pageId = current.toRoute<PageRoute>().pageId
+                        NavigationManager.markPageLeft(pageId)
+                    }
                     navController.popBackStack(route = event.route, inclusive = event.inclusive)
                 }
                 is NavigationEvent.ExecuteResultCallback -> {
-                    // This is handled via Pop events
+                    actionExecutor.execute(
+                            context,
+                            event.actionFlow,
+                            event.scopeContext,
+                            event.stateContext,
+                            resource
+                    )
                 }
             }
         }
@@ -110,6 +150,11 @@ fun DUINavHost(
 
     // Handle back button
     BackHandler(enabled = navController.previousBackStackEntry != null) {
+        // Mark current page as left before back navigation
+        navController.currentBackStackEntry?.let { 
+            val pageId = it.toRoute<PageRoute>().pageId
+            NavigationManager.markPageLeft(pageId)
+        }
         navController.popBackStack()
     }
 
@@ -137,11 +182,4 @@ fun DUINavHost(
             }
         }
     }
-}
-
-/** Extracts the page ID from a route string. Route format: "PageRoute/{pageId}" */
-private fun extractPageIdFromRoute(route: String): String? {
-    // For type-safe routes, the pageId is embedded in the route
-    // This is a simplified extraction - adjust based on actual route format
-    return route.substringAfterLast("/", "").takeIf { it.isNotEmpty() }
 }

@@ -1,17 +1,12 @@
 package com.digia.digiaui.framework.state
 
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateMapOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.snapshots.Snapshot
 
 class StateContext(
-    val namespace: String? = null,
-    private val tree: StateTree,
-    initialState: Map<String, Any?> = emptyMap()
+        val namespace: String? = null,
+        private val tree: StateTree,
+        initialState: Map<String, Any?> = emptyMap()
 ) {
 
     /* ---------------- State ---------------- */
@@ -59,7 +54,7 @@ class StateContext(
         return owner.values[key]
     }
 
-    val version= scopeVersion.intValue
+    val version = scopeVersion.intValue
 
     fun observe(stateName: String) {
         if (stateName == namespace) {
@@ -72,39 +67,24 @@ class StateContext(
     /* ---------------- Writes ---------------- */
 
     fun set(key: String, value: Any?, notify: Boolean = true) {
-//       if(containsKey(key)){
-//           values.set(key, value)
-//           if (notify) flush()
-//           else dirty= true
-//           return
-//       }
+
         tree.findOwner(this, key)?.let { owner ->
-            owner.values.set(key, value)
-            if (notify) owner.flushFromParent()
-            else owner.dirty = true
-        } ?: run {
-            // If key doesn't exist in the tree, set it in the current context
-            values[key] = value
-            if (notify) flush()
-            else dirty = true
+            owner.values[key] = value
+            if (notify) owner.flushFromParent() else owner.dirty = true
         }
     }
 
     /* ---------------- Flush ---------------- */
 
-     fun flush() {
-        Snapshot.withMutableSnapshot {
-            scopeVersion.intValue++
-        }
+    fun flush() {
+        Snapshot.withMutableSnapshot { scopeVersion.intValue++ }
         dirty = false
 
-       tree.childrenOf(this).forEach { it.flush() }
+        tree.childrenOf(this).forEach { it.flush() }
     }
 
     private fun flushFromParent() {
-        Snapshot.withMutableSnapshot {
-            scopeVersion.intValue++
-        }
+        Snapshot.withMutableSnapshot { scopeVersion.intValue++ }
         dirty = false
 
         tree.childrenOf(this).forEach { it.flushFromParent() }
@@ -123,14 +103,9 @@ class StateContext(
         return values.toMap()
     }
 
-    fun containsKey(key: String): Boolean =
-        tree.findOwner(this, key) != null
+    fun containsKey(key: String): Boolean = tree.findOwner(this, key) != null
 
-    fun containsLocal(key: String): Boolean =
-        values.containsKey(key)
+    fun containsLocal(key: String): Boolean = values.containsKey(key)
 
     fun Version(): Int = scopeVersion.intValue
-
 }
-
-

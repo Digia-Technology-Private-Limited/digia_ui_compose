@@ -45,48 +45,10 @@ class VWStateContainer(
                 initStateDefs.mapValues { DataTypeCreator.create(it.value, payload.scopeContext) }
 
         StateScope(namespace = refName, initialState = resolvedState) { stateContext ->
-            val context = LocalContext.current
-            val actionExecutor = LocalActionExecutor.current
-            val resources = LocalUIResources.current
 
             val scopeContext = _createExprContext(stateContext)
 
             val containerPayload = payload.copyWithChainedContext(scopeContext)
-
-            // Execute pending navigation result callback inside THIS StateScope (refName).
-            // This fixes cases where GotoPageAction is triggered inside a nested StateScope
-            // and the callback must update that same scope's live StateContext.
-            LaunchedEffect(refName) {
-                val executingNamespace = refName ?: return@LaunchedEffect
-                val pending =
-                        NavigationManager.consumePendingCallback(executingNamespace)
-                                ?: return@LaunchedEffect
-                val (lookupPageId, result) = pending
-
-                val callback =
-                        NavigationManager.getResultCallback(lookupPageId) ?: return@LaunchedEffect
-                NavigationManager.removeResultCallback(lookupPageId)
-
-                val enclosing = containerPayload.scopeContext
-                val resultScopeContext =
-                        if (enclosing != null) {
-                            DefaultScopeContext(
-                                    variables = mapOf("result" to result),
-                                    enclosing = enclosing
-                            )
-                        } else {
-                            DefaultScopeContext(variables = mapOf("result" to result))
-                        }
-
-                actionExecutor.execute(
-                        context = context,
-                        actionFlow = callback.onResult,
-                        scopeContext = resultScopeContext,
-                        stateContext = stateContext,
-                        resourcesProvider = resources,
-                        scope = this
-                )
-            }
 
             stateContext.Version()
 

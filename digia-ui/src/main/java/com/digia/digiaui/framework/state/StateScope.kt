@@ -4,26 +4,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.compositionLocalOf
-import androidx.compose.runtime.saveable.Saver
-import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.digia.digiaui.framework.navigation.NavigationManager
 
 val LocalStateTree = compositionLocalOf { StateTree() }
-
-/**
- * Saver for StateContext that preserves state values across navigation Saves all values - they
- * persist during navigation (in-memory) Note: Only primitive types will survive process death
- */
-fun stateContextSaver(tree: StateTree, namespace: String?): Saver<StateContext, Map<String, Any?>> =
-        Saver(
-                save = { context ->
-                    // Save all state values
-                    context.snapshot()
-                },
-                restore = { savedValues ->
-                    // Restore StateContext with saved values
-                    StateContext(namespace = namespace, tree = tree, initialState = savedValues)
-                }
-        )
 
 @Composable
 fun StateScope(
@@ -31,29 +15,36 @@ fun StateScope(
         initialState: Map<String, Any?> = emptyMap(),
         content: @Composable (stateContext: StateContext) -> Unit
 ) {
-    // Use existing tree or create a new one
-    val tree = LocalStateTree.current
+    // Get or create the StateViewModel (survives configuration changes and navigation)
+    val stateViewModel: StateViewModel = viewModel()
+
+    // Get StateTree from ViewModel
+    val tree = stateViewModel.stateTree
 
     // Parent is the nearest enclosing StateScope (if any)
     val parentStateContext = LocalStateContextProvider.current
 
-    // Use rememberSaveable with custom Saver to persist StateContext across navigation
-    val stateContext =
-            rememberSaveable(
-                    inputs = arrayOf(namespace),
-                    saver = stateContextSaver(tree, namespace)
-            ) { StateContext(namespace = namespace, tree = tree, initialState = initialState) }
+    // Get or create StateContext from ViewModel (persists across navigation)
+    val stateContext = stateViewModel.getOrCreateStateContext(namespace, initialState)
 
     // Maintain the parent-child relationship in the shared StateTree.
     // Required for resolving owners across scopes and for observe()/flush propagation.
-    DisposableEffect(tree, parentStateContext, stateContext) {
+    DisposableEffect(tree, parentStateContext, stateContext, namespace) {
         tree.attach(parentStateContext, stateContext)
-        onDispose { tree.detach(stateContext) }
+        onDispose {
+            // Walk up the tree to check if this context or any ancestor page is in the backstack.
+            // This covers both page-level and internal component StateScopeS inside a pushed page.
+            val isUnderBackstack = generateSequence(stateContext) { tree.parentOf(it) }
+                .any { ctx -> ctx.namespace != null && NavigationManager.isPageInBackstack(ctx.namespace) }
+
+            if (!isUnderBackstack) {
+                tree.detach(stateContext)
+            }
+        }
     }
 
-    DisposableEffect(stateContext) { onDispose { stateContext.dispose() } }
-
     CompositionLocalProvider(
+            LocalStateTree provides tree,
             LocalStateContextProvider provides stateContext,
     ) {
         // Read version to trigger recomposition
