@@ -6,6 +6,7 @@ import com.digia.digiaui.framework.logging.Logger
 import com.digia.digiaui.framework.preferences.PreferencesStore
 import com.digia.digiaui.network.NetworkClient
 import com.digia.digiaui.network.NetworkConfiguration
+import com.digia.digiaui.utils.HostApp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -169,7 +170,8 @@ private constructor(
                     appVersion = appVersion,
                     appBuildNumber = appBuildNumber,
                     environment = options.flavor.environment.name,
-                    buildSignature = appSignatureSha256
+                    buildSignature = appSignatureSha256,
+                host = HostApp.getHostApp(options.developerConfig.host)
             )
         }
 
