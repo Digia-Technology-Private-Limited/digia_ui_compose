@@ -4,8 +4,7 @@ import com.digia.digiaui.config.ConfigException
 import com.digia.digiaui.config.ConfigFetcher
 import com.digia.digiaui.config.model.DUIConfig
 import com.digia.digiaui.framework.logging.Logger
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
+import kotlinx.serialization.json.Json
 
 /**
  * ConfigSource that loads configuration from network with file download and caching
@@ -19,10 +18,10 @@ import com.google.gson.reflect.TypeToken
  * @param timeout Optional timeout for network operations
  */
 class NetworkFileConfigSource(
-    private val provider: ConfigFetcher,
-    private val networkPath: String,
-    private val cacheFilePath: String = "appConfig.json",
-    private val timeout: Long = 3000
+        private val provider: ConfigFetcher,
+        private val networkPath: String,
+        private val cacheFilePath: String = "appConfig.json",
+        private val timeout: Long = 3000
 ) : ConfigSource {
 
     override suspend fun getConfig(): DUIConfig {
@@ -42,10 +41,7 @@ class NetworkFileConfigSource(
             // 3. Initialize functions
             config.functionsFilePath?.let { functionsPath ->
                 try {
-                    provider.initFunctions(
-                            remotePath = functionsPath,
-                            version = config.version
-                    )
+                    provider.initFunctions(remotePath = functionsPath, version = config.version)
                 } catch (e: Exception) {
                     Logger.log("Failed to initialize functions: $functionsPath")
                 }
@@ -94,8 +90,9 @@ class NetworkFileConfigSource(
         if (cachedJson == null) {
             throw ConfigException("No cached config found")
         }
-        val type = object : TypeToken<Map<String, Any>>() {}.type
-        val jsonData = Gson().fromJson<Map<String, Any>>(cachedJson, type)
+        val jsonParser = Json { ignoreUnknownKeys = true }
+        val jsonElement = jsonParser.parseToJsonElement(cachedJson)
+        val jsonData = JsonUtil.jsonElementToMap(jsonElement)
         return DUIConfig.fromMap(jsonData)
     }
 
@@ -118,8 +115,9 @@ class NetworkFileConfigSource(
         // Parse the downloaded content
         val fileBytes = responseBody.bytes()
         val fileString = String(fileBytes, Charsets.UTF_8)
-        val type = object : TypeToken<Map<String, Any>>() {}.type
-        val jsonData = Gson().fromJson<Map<String, Any>>(fileString, type)
+        val jsonParser = Json { ignoreUnknownKeys = true }
+        val jsonElement = jsonParser.parseToJsonElement(fileString)
+        val jsonData = JsonUtil.jsonElementToMap(jsonElement)
         val config = DUIConfig.fromMap(jsonData)
 
         // Cache the file content

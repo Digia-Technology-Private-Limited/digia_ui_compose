@@ -4,8 +4,8 @@ import com.digia.digiaui.config.ConfigException
 import com.digia.digiaui.config.ConfigFetcher
 import com.digia.digiaui.config.model.DUIConfig
 import com.digia.digiaui.framework.logging.Logger
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
+import com.digia.digiaui.framework.utils.JsonUtil
+import kotlinx.serialization.json.Json
 
 /**
  * ConfigSource that loads configuration from bundled assets
@@ -22,9 +22,9 @@ import com.google.gson.reflect.TypeToken
  * @param functionsPath Path to the functions asset file (optional)
  */
 class AssetConfigSource(
-    private val provider: ConfigFetcher,
-    private val appConfigPath: String = "config.json",
-    private val functionsPath: String? = "functions.json"
+        private val provider: ConfigFetcher,
+        private val appConfigPath: String = "config.json",
+        private val functionsPath: String? = "functions.json"
 ) : ConfigSource {
 
     override suspend fun getConfig(): DUIConfig {
@@ -35,8 +35,9 @@ class AssetConfigSource(
             val burnedJson = provider.bundleOps.readString(appConfigPath)
 
             // Parse the JSON and create DUIConfig
-            val type = object : TypeToken<Map<String, Any>>() {}.type
-            val jsonData = Gson().fromJson<Map<String, Any>>(burnedJson, type)
+            val jsonParser = Json { ignoreUnknownKeys = true }
+            val jsonElement = jsonParser.parseToJsonElement(burnedJson)
+            val jsonData = JsonUtil.jsonElementToMap(jsonElement)
             val config = DUIConfig.fromMap(jsonData)
 
             // Initialize functions if path provided

@@ -12,9 +12,11 @@ import com.digia.digiaui.framework.models.LocalAsset
 import com.digia.digiaui.network.NetworkClient
 import com.digia.digiaui.utils.DigiaInspector
 import com.digia.digiaui.utils.DigiaUIHost
-import com.google.gson.Gson
 import kotlin.collections.map
 import kotlin.collections.mapOf
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 
 /**
  * Singleton manager for accessing the initialized Digia UI instance.
@@ -101,15 +103,16 @@ class DigiaUIManager private constructor() {
     val assetImages: List<LocalAsset>
         get() {
             val raw = safeInstance?.dslConfig?.appAssets ?: return emptyList()
-            val gson = Gson()
+            val jsonParser = Json { ignoreUnknownKeys = true }
             return raw.mapNotNull { item ->
                 try {
                     // item might be Map<String, Any> or a JSON string
-                    val json = when (item) {
-                        is String -> item
-                        else -> gson.toJson(item)
-                    }
-                    gson.fromJson(json, LocalAsset::class.java)
+                    val json =
+                            when (item) {
+                                is String -> item
+                                else -> jsonParser.encodeToString(item)
+                            }
+                    jsonParser.decodeFromString<LocalAsset>(json)
                 } catch (t: Throwable) {
                     Logger.log("Failed to parse asset item: ${t.message}", tag = "DigiaUIManager")
                     null
@@ -121,48 +124,81 @@ class DigiaUIManager private constructor() {
     val jsVars: Map<String, Any>
         get() {
             return mapOf(
-                "js" to ExprClassInstance(
-                    ExprClass(
-                        name = "js",
-                        fields = mutableMapOf(),
-                        methods = mapOf(
-                            "eval" to ExprCallableImpl(
-                                _arity = 2,
-                                fn = { evaluator, arguments ->
-                                    val first = _toValue<String>(evaluator, arguments.getOrNull(0))
-                                        ?: arguments.getOrNull(0)?.toString()
-                                        ?: ""
-                                    val rest: List<Any?> = arguments
-                                        .drop(1)
-                                        .map { arg -> _toValue(evaluator, arg) }
-                                    safeInstance?.dslConfig?.jsFunctions?.callJs(first, rest)
-                                }
+                    "js" to
+                            ExprClassInstance(
+                                    ExprClass(
+                                            name = "js",
+                                            fields = mutableMapOf(),
+                                            methods =
+                                                    mapOf(
+                                                            "eval" to
+                                                                    ExprCallableImpl(
+                                                                            _arity = 2,
+                                                                            fn = {
+                                                                                    evaluator,
+                                                                                    arguments ->
+                                                                                val first =
+                                                                                        _toValue<
+                                                                                                String>(
+                                                                                                evaluator,
+                                                                                                arguments
+                                                                                                        .getOrNull(
+                                                                                                                0
+                                                                                                        )
+                                                                                        )
+                                                                                                ?: arguments
+                                                                                                        .getOrNull(
+                                                                                                                0
+                                                                                                        )
+                                                                                                        ?.toString()
+                                                                                                        ?: ""
+                                                                                val rest:
+                                                                                        List<Any?> =
+                                                                                        arguments
+                                                                                                .drop(
+                                                                                                        1
+                                                                                                )
+                                                                                                .map {
+                                                                                                        arg
+                                                                                                    ->
+                                                                                                    _toValue(
+                                                                                                            evaluator,
+                                                                                                            arg
+                                                                                                    )
+                                                                                                }
+                                                                                safeInstance
+                                                                                        ?.dslConfig
+                                                                                        ?.jsFunctions
+                                                                                        ?.callJs(
+                                                                                                first,
+                                                                                                rest
+                                                                                        )
+                                                                            }
+                                                                    )
+                                                    )
+                                    )
                             )
-                        )
-                    )
-                )
             )
         }
-
 
     private fun <T> _toValue(evaluator: Any?, obj: Any?): T? {
         if (obj == null) return null
 
         if (obj is ASTNode) {
             try {
-                val evalMethod = evaluator?.javaClass?.methods?.firstOrNull { it.name == "eval" && it.parameterCount == 1 }
+                val evalMethod =
+                        evaluator?.javaClass?.methods?.firstOrNull {
+                            it.name == "eval" && it.parameterCount == 1
+                        }
                 val result = evalMethod?.invoke(evaluator, obj)
-                @Suppress("UNCHECKED_CAST")
-                return result as T?
+                @Suppress("UNCHECKED_CAST") return result as T?
             } catch (t: Throwable) {
                 return null
             }
         }
 
-        @Suppress("UNCHECKED_CAST")
-        return obj as T?
+        @Suppress("UNCHECKED_CAST") return obj as T?
     }
-
 
     companion object {
         @Volatile private var INSTANCE: DigiaUIManager? = null

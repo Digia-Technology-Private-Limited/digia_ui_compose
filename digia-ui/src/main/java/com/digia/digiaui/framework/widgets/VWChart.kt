@@ -32,7 +32,8 @@ import com.digia.digiaui.framework.models.VWNodeData
 import com.digia.digiaui.framework.widgets.chart.ChartColorConverter
 import com.digia.digiaui.framework.widgets.chart.ChartConfigBuilder
 import com.digia.digiaui.framework.widgets.chart.ChartProps
-import com.google.gson.Gson
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 
 /**
  * Virtual Widget for Chart rendering using WebView and Chart.js CDN.
@@ -131,8 +132,8 @@ class VWChart(
     @SuppressLint("SetJavaScriptEnabled")
     @Composable
     private fun RenderChart(chartConfig: Map<String, Any?>, modifier: Modifier) {
-        val gson = remember { Gson() }
-        val chartConfigJson = remember(chartConfig) { gson.toJson(chartConfig) }
+        val jsonParser = remember { Json { ignoreUnknownKeys = true } }
+        val chartConfigJson = remember(chartConfig) { jsonParser.encodeToString(chartConfig) }
 
         val htmlContent = remember(chartConfigJson) { buildChartHtml(chartConfigJson) }
 

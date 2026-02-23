@@ -29,8 +29,8 @@ data class CommonStyle(
                     // If "border" exists → use it
                     // else → use full json (same as Dart)
                     border = asType<JsonLike>(json["border"]) ?: json,
-                    height = asType(json["height"]),
-                    width = asType(json["width"]),
+                    height = asType<String?>(json["height"]?.toString()),
+                    width = asType<String?>(json["width"]?.toString()),
                     clipBehavior = asType(json["clipBehavior"])
             )
         }
