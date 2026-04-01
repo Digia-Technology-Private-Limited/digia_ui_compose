@@ -1,15 +1,22 @@
 package com.digia.digiaui.framework.widgets
 
+import LocalUIResources
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.IconButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.runtime.rememberCoroutineScope
-import LocalUIResources
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextOverflow
 import com.digia.digiaui.framework.RenderPayload
 import com.digia.digiaui.framework.VirtualWidgetRegistry
 import com.digia.digiaui.framework.actions.LocalActionExecutor
@@ -26,38 +33,40 @@ import com.digia.digiaui.framework.state.LocalStateContextProvider
 import com.digia.digiaui.framework.utils.JsonLike
 import kotlinx.coroutines.launch
 
-/**
- * AppBar widget properties
- */
+/** AppBar widget properties */
 data class AppBarProps(
-    val title: JsonLike? = null,
-    val elevation: ExprOr<Double>? = null,
-    val shadowColor: ExprOr<String>? = null,
-    val backgroundColor: ExprOr<String>? = null,
-    val iconColor: ExprOr<String>? = null,
-    val leadingIcon: JsonLike? = null,
-    val automaticallyImplyLeading: ExprOr<Boolean>? = null,
-    val defaultButtonColor: ExprOr<String>? = null,
-    val onTapLeadingIcon: ActionFlow? = null,
-    val trailingIcon: JsonLike? = null,
-    val centerTitle: ExprOr<Boolean>? = null,
-    val visibility: ExprOr<Boolean>? = null
+        val title: JsonLike? = null,
+        val elevation: ExprOr<Double>? = null,
+        val shadowColor: ExprOr<String>? = null,
+        val backgroundColor: ExprOr<String>? = null,
+        val iconColor: ExprOr<String>? = null,
+        val leadingIcon: JsonLike? = null,
+        val automaticallyImplyLeading: ExprOr<Boolean>? = null,
+        val defaultButtonColor: ExprOr<String>? = null,
+        val onTapLeadingIcon: ActionFlow? = null,
+        val trailingIcon: JsonLike? = null,
+        val centerTitle: ExprOr<Boolean>? = null,
+        val visibility: ExprOr<Boolean>? = null
 ) {
     companion object {
         fun fromJson(json: JsonLike): AppBarProps {
             return AppBarProps(
-                title = json["title"] as? JsonLike,
-                elevation = ExprOr.fromValue(json["elevation"]),
-                shadowColor = ExprOr.fromValue(json["shadowColor"]),
-                backgroundColor = ExprOr.fromValue(json["backgroundColor"] ?: json["backgrounColor"]),
-                iconColor = ExprOr.fromValue(json["iconColor"]),
-                leadingIcon = json["leadingIcon"] as? JsonLike,
-                automaticallyImplyLeading = ExprOr.fromValue(json["automaticallyImplyLeading"]),
-                defaultButtonColor = ExprOr.fromValue(json["defaultButtonColor"]),
-                onTapLeadingIcon = (json["onTapLeadingIcon"] as? JsonLike)?.let { ActionFlow.fromJson(it) },
-                trailingIcon = json["trailingIcon"] as? JsonLike,
-                centerTitle = ExprOr.fromValue(json["centerTitle"]),
-                visibility = ExprOr.fromValue(json["visibility"])
+                    title = json["title"] as? JsonLike,
+                    elevation = ExprOr.fromValue(json["elevation"]),
+                    shadowColor = ExprOr.fromValue(json["shadowColor"]),
+                    backgroundColor =
+                            ExprOr.fromValue(json["backgroundColor"] ?: json["backgrounColor"]),
+                    iconColor = ExprOr.fromValue(json["iconColor"]),
+                    leadingIcon = json["leadingIcon"] as? JsonLike,
+                    automaticallyImplyLeading = ExprOr.fromValue(json["automaticallyImplyLeading"]),
+                    defaultButtonColor = ExprOr.fromValue(json["defaultButtonColor"]),
+                    onTapLeadingIcon =
+                            (json["onTapLeadingIcon"] as? JsonLike)?.let {
+                                ActionFlow.fromJson(it)
+                            },
+                    trailingIcon = json["trailingIcon"] as? JsonLike,
+                    centerTitle = ExprOr.fromValue(json["centerTitle"]),
+                    visibility = ExprOr.fromValue(json["visibility"])
             )
         }
     }
@@ -65,7 +74,7 @@ data class AppBarProps(
 
 /**
  * Virtual AppBar Widget
- * 
+ *
  * Implements Material3 TopAppBar with support for:
  * - Title (text or custom widget)
  * - Leading icon/widget
@@ -74,20 +83,21 @@ data class AppBarProps(
  * - Visibility control
  */
 class VWAppBar(
-    refName: String? = null,
-    commonProps: CommonProps? = null,
-    props: AppBarProps,
-    parent: VirtualNode? = null,
-    slots: ((VirtualCompositeNode<AppBarProps>) -> Map<String, List<VirtualNode>>?)? = null,
-    parentProps: Props? = null
-) : VirtualCompositeNode<AppBarProps>(
-    props = props,
-    commonProps = commonProps,
-    parentProps = parentProps,
-    parent = parent,
-    refName = refName,
-    _slots = slots
-) {
+        refName: String? = null,
+        commonProps: CommonProps? = null,
+        props: AppBarProps,
+        parent: VirtualNode? = null,
+        slots: ((VirtualCompositeNode<AppBarProps>) -> Map<String, List<VirtualNode>>?)? = null,
+        parentProps: Props? = null
+) :
+        VirtualCompositeNode<AppBarProps>(
+                props = props,
+                commonProps = commonProps,
+                parentProps = parentProps,
+                parent = parent,
+                refName = refName,
+                _slots = slots
+        ) {
 
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
@@ -98,80 +108,88 @@ class VWAppBar(
         val stateContext = LocalStateContextProvider.current
         val resources = LocalUIResources.current
 
-        // Get children
         val titleWidget = slot("title")
         val leadingWidget = slot("leading")
         val actionsWidgets = slotChildren("actions")
+        val bottomWidget = slot("bottom")
+        val backgroundWidget = slot("background")
 
-        // Evaluate properties
-        val backgroundColor = payload.evalExpr(props.backgroundColor)
-            ?.let { payload.evalColor(it) }
-        val iconColor = payload.evalExpr(props.iconColor)
-            ?.let { payload.evalColor(it) }
+        val backgroundColor = payload.evalExpr(props.backgroundColor)?.let { payload.evalColor(it) }
+        val iconColor = payload.evalExpr(props.iconColor)?.let { payload.evalColor(it) }
         val visibility = payload.evalExpr(props.visibility) ?: true
 
-        // Check visibility
-        if (!visibility) {
-            return
-        }
+        if (!visibility) return
 
-        // Build title content
         val titleContent = _buildTitle(payload, titleWidget)
 
         // Build leading content
-        val leadingContent: (@Composable () -> Unit)? = _buildLeading(payload, leadingWidget, scope, context, actionExecutor, stateContext, resources)
+        val leadingContent: (@Composable () -> Unit)? = _buildLeading(payload, leadingWidget)
 
         // Build actions content
         val actionsContent: @Composable androidx.compose.foundation.layout.RowScope.() -> Unit = {
             _buildActions(payload, actionsWidgets)
         }
 
-        // Render Material3 TopAppBar
-        TopAppBar(
-            title = titleContent,
-            navigationIcon = leadingContent ?: {},
-            actions = actionsContent,
-            colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = backgroundColor ?: TopAppBarDefaults.topAppBarColors().containerColor,
-                scrolledContainerColor = backgroundColor ?: TopAppBarDefaults.topAppBarColors().scrolledContainerColor,
-                navigationIconContentColor = iconColor ?: TopAppBarDefaults.topAppBarColors().navigationIconContentColor,
-                actionIconContentColor = iconColor ?: TopAppBarDefaults.topAppBarColors().actionIconContentColor,
-                titleContentColor = iconColor ?: TopAppBarDefaults.topAppBarColors().titleContentColor
-            )
-        )
+        Surface(
+                color = backgroundColor ?: TopAppBarDefaults.topAppBarColors().containerColor,
+                modifier = Modifier.fillMaxWidth()
+        ) {
+            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                Box(modifier = Modifier.matchParentSize(), contentAlignment = Alignment.Center) {
+                    backgroundWidget?.ToWidget(payload)
+                }
+
+                Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    TopAppBar(
+                            title = titleContent,
+                            navigationIcon = leadingContent ?: {},
+                            actions = actionsContent,
+                            colors =
+                                    TopAppBarDefaults.topAppBarColors(
+                                            containerColor = Color.Transparent,
+                                            scrolledContainerColor = Color.Transparent,
+                                            navigationIconContentColor = iconColor
+                                                            ?: TopAppBarDefaults.topAppBarColors()
+                                                                    .navigationIconContentColor,
+                                            actionIconContentColor = iconColor
+                                                            ?: TopAppBarDefaults.topAppBarColors()
+                                                                    .actionIconContentColor,
+                                            titleContentColor = iconColor
+                                                            ?: TopAppBarDefaults.topAppBarColors()
+                                                                    .titleContentColor
+                                    )
+                    )
+                    bottomWidget?.ToWidget(payload)
+                }
+            }
+        }
     }
 
-    /**
-     * Build the title widget or text
-     */
-    private fun _buildTitle(payload: RenderPayload, titleWidget: VirtualNode?): @Composable () -> Unit {
+    /** Build the title widget or text */
+    private fun _buildTitle(
+            payload: RenderPayload,
+            titleWidget: VirtualNode?
+    ): @Composable () -> Unit {
         return {
             if (titleWidget != null) {
                 titleWidget.ToWidget(payload)
             } else if (props.title != null) {
                 val titleText = (props.title["text"] as? String) ?: ""
-                Text(
-                    text = titleText,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
+                Text(text = titleText, maxLines = 1, overflow = TextOverflow.Ellipsis)
             } else {
                 Text("")
             }
         }
     }
 
-    /**
-     * Build the leading icon/widget
-     */
+    /** Build the leading icon/widget */
+    @Composable
     private fun _buildLeading(
-        payload: RenderPayload,
-        leadingWidget: VirtualNode?,
-        scope: kotlinx.coroutines.CoroutineScope,
-        context: android.content.Context,
-        actionExecutor: com.digia.digiaui.framework.actions.ActionExecutor,
-        stateContext: com.digia.digiaui.framework.state.StateContext?,
-        resources: com.digia.digiaui.framework.UIResources
+            payload: RenderPayload,
+            leadingWidget: VirtualNode?
     ): (@Composable () -> Unit)? {
         if (leadingWidget != null) {
             return { leadingWidget.ToWidget(payload) }
@@ -180,80 +198,70 @@ class VWAppBar(
         val leadingIconProps = props.leadingIcon?.let { VWIconProps.fromJson(it) }
         if (leadingIconProps == null) return null
 
-        val iconWidget = VWIcon(
-            props = leadingIconProps,
-            commonProps = null,
-            parent = this
-        )
+        val iconWidget = VWIcon(props = leadingIconProps, commonProps = null, parent = this)
 
         return {
-            IconButton(
-                onClick = {
-                    props.onTapLeadingIcon?.let { actionFlow ->
-                        scope.launch {
-                            payload.executeAction(
-                                context = context,
-                                actionFlow = actionFlow,
-                                actionExecutor = actionExecutor,
-                                stateContext = stateContext,
-                                resourcesProvider = resources,
-                                incomingScopeContext = null
-                            )
-                        }
-                    }
-                }
-            ) {
-                iconWidget.ToWidget(payload)
-            }
+            val scope = rememberCoroutineScope()
+            val context = LocalContext.current
+            val actionExecutor = LocalActionExecutor.current
+            val stateContext = LocalStateContextProvider.current
+            val resources = LocalUIResources.current
+
+            Box(
+                    modifier =
+                            Modifier.clickable {
+                                props.onTapLeadingIcon?.let { actionFlow ->
+                                    scope.launch {
+                                        payload.executeAction(
+                                                context = context,
+                                                actionFlow = actionFlow,
+                                                actionExecutor = actionExecutor,
+                                                stateContext = stateContext,
+                                                resourcesProvider = resources,
+                                                incomingScopeContext = null
+                                        )
+                                    }
+                                }
+                            }
+            ) { iconWidget.ToWidget(payload) }
         }
     }
 
-    /**
-     * Build the actions (trailing icons/widgets)
-     */
+    /** Build the actions (trailing icons/widgets) */
     @Composable
     private fun androidx.compose.foundation.layout.RowScope._buildActions(
-        payload: RenderPayload,
-        actionsWidgets: List<VirtualNode>
+            payload: RenderPayload,
+            actionsWidgets: List<VirtualNode>
     ) {
         if (actionsWidgets.isNotEmpty()) {
-            actionsWidgets.forEach { action ->
-                action.ToWidget(payload)
-            }
+            actionsWidgets.forEach { action -> action.ToWidget(payload) }
         } else {
             val trailingIconProps = props.trailingIcon?.let { VWIconProps.fromJson(it) }
             if (trailingIconProps != null) {
-                val iconWidget = VWIcon(
-                    props = trailingIconProps,
-                    commonProps = null,
-                    parent = this@VWAppBar
-                )
+                val iconWidget =
+                        VWIcon(
+                                props = trailingIconProps,
+                                commonProps = null,
+                                parent = this@VWAppBar
+                        )
                 iconWidget.ToWidget(payload)
             }
         }
     }
 }
 
-
-
-
-/**
- * Builder function for AppBar widget
- */
+/** Builder function for AppBar widget */
 fun appBarBuilder(
-    data: VWNodeData,
-    parent: VirtualNode?,
-    registry: VirtualWidgetRegistry
+        data: VWNodeData,
+        parent: VirtualNode?,
+        registry: VirtualWidgetRegistry
 ): VirtualNode {
     return VWAppBar(
-        refName = data.refName,
-        commonProps = data.commonProps,
-        parent = parent,
-        parentProps = data.parentProps,
-        props = AppBarProps.fromJson(data.props.value),
-        slots = {
-                self ->
-            registerAllChildern(data.childGroups, self, registry)
-        },
+            refName = data.refName,
+            commonProps = data.commonProps,
+            parent = parent,
+            parentProps = data.parentProps,
+            props = AppBarProps.fromJson(data.props.value),
+            slots = { self -> registerAllChildern(data.childGroups, self, registry) },
     )
 }
